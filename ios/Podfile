@@ -40,4 +40,29 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # codesign falla con "resource fork / Finder information not allowed" cuando el proyecto
+  # vive bajo ~/Documents (iCloud) o tiene metadatos de Finder. Limpia xattrs antes de firmar.
+  phase_name = '[CP] Strip xattrs (CodeSign)'
+  shell_script = <<~'SCRIPT'.strip
+    if [ -n "${TARGET_BUILD_DIR:-}" ] && [ -d "${TARGET_BUILD_DIR}" ]; then
+      /usr/bin/find "${TARGET_BUILD_DIR}" -name "*.framework" -type d 2>/dev/null | while IFS= read -r fw; do
+        /usr/bin/find "$fw" -exec /usr/bin/xattr -c {} \\; 2>/dev/null || true
+      done
+    fi
+  SCRIPT
+
+  installer.pods_project.targets.each do |target|
+    next unless target.is_a?(Xcodeproj::Project::Object::PBXNativeTarget)
+    next if target.build_phases.any? { |p| p.respond_to?(:name) && p.name == phase_name }
+
+    phase = installer.pods_project.new(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+    phase.name = phase_name
+    phase.shell_script = shell_script
+    phase.show_env_vars_in_log = '0'
+    phase.run_only_for_deployment_postprocessing = '0'
+    idx = [target.build_phases.count - 1, 0].max
+    target.build_phases.insert(idx, phase)
+  end
+  installer.pods_project.save
 end
