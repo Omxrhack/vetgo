@@ -47,22 +47,23 @@ post_install do |installer|
   shell_script = <<~'SCRIPT'.strip
     if [ -n "${TARGET_BUILD_DIR:-}" ] && [ -d "${TARGET_BUILD_DIR}" ]; then
       /usr/bin/find "${TARGET_BUILD_DIR}" -name "*.framework" -type d 2>/dev/null | while IFS= read -r fw; do
-        /usr/bin/find "$fw" -exec /usr/bin/xattr -c {} \\; 2>/dev/null || true
+        /usr/bin/xattr -cr "$fw" 2>/dev/null || true
       done
     fi
   SCRIPT
 
   installer.pods_project.targets.each do |target|
     next unless target.is_a?(Xcodeproj::Project::Object::PBXNativeTarget)
-    next if target.build_phases.any? { |p| p.respond_to?(:name) && p.name == phase_name }
+    # Evitar duplicados si cambia la posición del script.
+    target.build_phases.delete_if { |p| p.respond_to?(:name) && p.name == phase_name }
 
     phase = installer.pods_project.new(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
     phase.name = phase_name
     phase.shell_script = shell_script
     phase.show_env_vars_in_log = '0'
     phase.run_only_for_deployment_postprocessing = '0'
-    idx = [target.build_phases.count - 1, 0].max
-    target.build_phases.insert(idx, phase)
+    # Debe ir **después** de Resources (copias pueden reinyectar xattrs desde ~/Documents / iCloud).
+    target.build_phases << phase
   end
   installer.pods_project.save
 end
