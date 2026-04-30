@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/auth/auth_storage.dart';
-import '../core/network/auth_outcomes.dart';
+import '../core/network/auth_outcomes.dart' show LoginKind;
 import '../core/network/vetgo_api_client.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -109,10 +109,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 28),
                     if (_globalError != null) ...[
-                      MaterialBanner(
-                        content: Text(_globalError!),
-                        backgroundColor: scheme.errorContainer,
-                        leading: Icon(Icons.error_outline, color: scheme.error),
+                      _InlineErrorCard(
+                        message: _globalError!,
+                        onDismiss: () => setState(() => _globalError = null),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -184,5 +183,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _looksLikeEmail(String s) {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s);
+  }
+}
+
+class _InlineErrorCard extends StatelessWidget {
+  const _InlineErrorCard({required this.message, required this.onDismiss});
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.errorContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error_outline, color: scheme.error, size: 22),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+            IconButton(
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../auth/auth_flow.dart';
+import '../core/auth/auth_storage.dart';
 import '../home/home_screen.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../onboarding/vetgo_onboarding_page.dart';
@@ -13,7 +15,7 @@ class AppFlow extends StatefulWidget {
   State<AppFlow> createState() => _AppFlowState();
 }
 
-enum _AppStage { splash, onboarding, home }
+enum _AppStage { splash, onboarding, auth, home }
 
 class _AppFlowState extends State<AppFlow> {
   static const Duration _minSplashTime = Duration(seconds: 3);
@@ -41,16 +43,35 @@ class _AppFlowState extends State<AppFlow> {
     await _prepareApp();
     if (!mounted) return;
     final onboardingDone = await OnboardingPrefs.isComplete();
+    final loggedIn = await AuthStorage.isLoggedIn();
     if (!mounted) return;
     setState(() {
-      _stage = onboardingDone ? _AppStage.home : _AppStage.onboarding;
+      if (!onboardingDone) {
+        _stage = _AppStage.onboarding;
+      } else if (!loggedIn) {
+        _stage = _AppStage.auth;
+      } else {
+        _stage = _AppStage.home;
+      }
     });
+  }
+
+  void _onAuthenticated() {
+    setState(() => _stage = _AppStage.home);
+  }
+
+  void _onLoggedOut() {
+    setState(() => _stage = _AppStage.auth);
   }
 
   Future<void> _finishOnboarding() async {
     await OnboardingPrefs.markComplete();
     if (!mounted) return;
-    setState(() => _stage = _AppStage.home);
+    final loggedIn = await AuthStorage.isLoggedIn();
+    if (!mounted) return;
+    setState(() {
+      _stage = loggedIn ? _AppStage.home : _AppStage.auth;
+    });
   }
 
   @override
@@ -90,10 +111,15 @@ class _AppFlowState extends State<AppFlow> {
           key: const ValueKey<String>('onboarding'),
           child: VetgoOnboardingPage(onFinished: _finishOnboarding),
         );
+      case _AppStage.auth:
+        return KeyedSubtree(
+          key: const ValueKey<String>('auth'),
+          child: AuthFlow(onAuthenticated: _onAuthenticated),
+        );
       case _AppStage.home:
-        return const KeyedSubtree(
-          key: ValueKey<String>('home'),
-          child: HomeScreen(),
+        return KeyedSubtree(
+          key: const ValueKey<String>('home'),
+          child: HomeScreen(onLoggedOut: _onLoggedOut),
         );
     }
   }

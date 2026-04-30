@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/network/auth_outcomes.dart';
+import '../core/network/auth_outcomes.dart' show RegisterKind;
 import '../core/network/vetgo_api_client.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -117,10 +117,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 24),
                     if (_globalError != null) ...[
-                      MaterialBanner(
-                        content: Text(_globalError!),
-                        backgroundColor: scheme.errorContainer,
-                        leading: Icon(Icons.error_outline, color: scheme.error),
+                      _RegisterErrorCard(
+                        message: _globalError!,
+                        onDismiss: () => setState(() => _globalError = null),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -214,5 +213,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _looksLikeEmail(String s) {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s);
+  }
+}
+
+class _RegisterErrorCard extends StatelessWidget {
+  const _RegisterErrorCard({required this.message, required this.onDismiss});
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.errorContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error_outline, color: scheme.error, size: 22),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+            IconButton(
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../core/auth/auth_storage.dart';
 import '../core/config/app_config.dart';
 import '../core/network/vetgo_api_client.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onLoggedOut});
+
+  /// Tras cerrar sesión vuelve al flujo de login ([AuthFlow]).
+  final VoidCallback? onLoggedOut;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -63,6 +67,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              if (widget.onLoggedOut != null) ...[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () async {
+                      await AuthStorage.clear();
+                      widget.onLoggedOut?.call();
+                    },
+                    child: const Text('Cerrar sesión'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               FutureBuilder<HealthCheckResult>(
                 future: _healthFuture,
                 builder: (context, snapshot) {

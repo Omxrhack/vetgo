@@ -204,7 +204,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     keyboardType: TextInputType.number,
-                    onCompleted: _loading ? null : _submit,
+                    onCompleted: (pin) {
+                      if (!_loading) _submit(pin);
+                    },
                     onChanged: (_) {
                       if (_error != null) setState(() => _error = null);
                     },
