@@ -45,6 +45,15 @@ post_install do |installer|
   # vive bajo ~/Documents (iCloud) o tiene metadatos de Finder. Limpia xattrs antes de firmar.
   phase_name = '[CP] Strip xattrs (CodeSign)'
   shell_script = <<~'SCRIPT'.strip
+    # Limpiar xattrs del BUILT_PRODUCTS_DIR completo antes de CodeSign
+    if [ -n "${BUILT_PRODUCTS_DIR:-}" ] && [ -d "${BUILT_PRODUCTS_DIR}" ]; then
+      /usr/bin/xattr -cr "${BUILT_PRODUCTS_DIR}" 2>/dev/null || true
+    fi
+    # Limpiar xattrs del TARGET_BUILD_DIR específico
+    if [ -n "${TARGET_BUILD_DIR:-}" ] && [ -d "${TARGET_BUILD_DIR}" ]; then
+      /usr/bin/xattr -cr "${TARGET_BUILD_DIR}" 2>/dev/null || true
+    fi
+    # Limpiar frameworks específicamente
     if [ -n "${TARGET_BUILD_DIR:-}" ] && [ -d "${TARGET_BUILD_DIR}" ]; then
       /usr/bin/find "${TARGET_BUILD_DIR}" -name "*.framework" -type d 2>/dev/null | while IFS= read -r fw; do
         /usr/bin/xattr -cr "$fw" 2>/dev/null || true
@@ -61,9 +70,12 @@ post_install do |installer|
     phase.name = phase_name
     phase.shell_script = shell_script
     phase.show_env_vars_in_log = '0'
-    phase.run_only_for_deployment_postprocessing = '0'
-    # Debe ir **después** de Resources (copias pueden reinyectar xattrs desde ~/Documents / iCloud).
-    target.build_phases << phase
+    # IMPORTANTE: debe ejecutarse ANTES de CodeSign, por eso input_paths y output_paths vacíos
+    phase.input_paths = []
+    phase.output_paths = []
+    # Insertar ANTES de CodeSign (normalmente después de Compile/Link pero antes de Sign)
+    # Lo insertamos al principio de build_phases para asegurar que se ejecute temprano
+    target.build_phases.insert(0, phase)
   end
   installer.pods_project.save
 end
