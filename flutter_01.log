@@ -1,0 +1,66 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter analyze
+
+## exception
+
+_Exception: Exception: analysis server exited with code 255 and output:
+[stderr] /Users/omarbermejo/flutter/flutter/bin/cache/dart-sdk/bin/snapshots/analysis_server.dart.snapshot is an AOT snapshot and should be run with 'dartaotruntime'
+
+```
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel stable, 3.41.7, on macOS 26.3.1 25D771280a darwin-arm64, locale es-MX) [1,038ms]
+    • Flutter version 3.41.7 on channel stable at /Users/omarbermejo/flutter/flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision cc0734ac71 (2 weeks ago), 2026-04-15 21:21:08 -0700
+    • Engine revision 59aa584fdf
+    • Dart version 3.11.5
+    • DevTools version 2.54.2
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[✓] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [2.9s]
+    • Android SDK at /Users/omarbermejo/Library/Android/sdk
+    • Emulator version 36.3.10.0 (build_id 14472402) (CL:N/A)
+    • Platform android-36, build-tools 36.1.0
+    • ANDROID_HOME = /Users/omarbermejo/Library/Android/sdk
+    • Java binary at: /Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    • Java version OpenJDK Runtime Environment (build 21.0.8+-14196175-b1038.72)
+    • All Android licenses accepted.
+
+[!] Xcode - develop for iOS and macOS (Xcode 26.2) [2.2s]
+    • Xcode at /Applications/Xcode.app/Contents/Developer
+    • Build 17C52
+    ! CocoaPods 1.12.1 out of date (1.16.2 is recommended).
+        CocoaPods is a package manager for iOS or macOS platform code.
+        Without CocoaPods, plugins will not work on iOS or macOS.
+        For more info, see https://flutter.dev/to/platform-plugins
+      To update CocoaPods, see https://guides.cocoapods.org/using/getting-started.html#updating-cocoapods
+
+[✓] Chrome - develop for the web [5ms]
+    • Chrome at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+[✓] Connected device (5 available) [7.3s]
+    • sdk gphone16k arm64 (mobile)           • emulator-5554                        • android-arm64  • Android 16 (API 36) (emulator)
+    • iPhone 17 Pro Omar (wireless) (mobile) • 00008150-000650E10A88401C            • ios            • iOS 26.5 23F5059e
+    • iPhone 17 Pro Max (mobile)             • E1F852E1-0D9B-4C28-BCFA-23F4F7C140D6 • ios            • com.apple.CoreSimulator.SimRuntime.iOS-26-2 (simulator)
+    • macOS (desktop)                        • macos                                • darwin-arm64   • macOS 26.3.1 25D771280a darwin-arm64
+    • Chrome (web)                           • chrome                               • web-javascript • Google Chrome 147.0.7727.117
+    ! Error: Browsing on the local area network for iPhone de Asahel . Ensure the device is unlocked and attached with a cable or associated with the same local area network as this Mac.
+      The device must be opted into Developer Mode to connect wirelessly. (code -27)
+    ! Error: Browsing on the local area network for iPhone. Ensure the device is unlocked and attached with a cable or associated with the same local area network as this Mac.
+      The device must be opted into Developer Mode to connect wirelessly. (code -27)
+
+[✓] Network resources [305ms]
+    • All expected network resources are available.
+
+! Doctor found issues in 1 category.
+```

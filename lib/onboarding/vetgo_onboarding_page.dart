@@ -130,12 +130,14 @@ class VetgoOnboardingPage extends StatelessWidget {
           ),
           image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page3),
           decoration: pageDecoration.copyWith(
-            // Reparto vertical: el pie necesita ~30 % para botón + texto sin overflow.
-            imageFlex: 4,
-            bodyFlex: 3,
+            // Más zona superior → el copy queda más abajo; CTA sigue en ~30 %.
+            imageFlex: 5,
+            bodyFlex: 2,
             footerFlex: 3,
-            // Un poco menos de banda inferior que en 1–2 para no comprimir el CTA.
-            safeArea: 40,
+            safeArea: 25,
+            // Título / cuerpo: separación media (no tan amplia como en 1–2).
+            titlePadding: const EdgeInsets.only(bottom: 12),
+            descriptionPadding: const EdgeInsets.only(bottom: 14),
           ),
           footer: Padding(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
