@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
+import 'onboarding/onboarding_prefs.dart';
+import 'onboarding/vetgo_onboarding_page.dart';
 import 'theme/vetgo_theme.dart';
 
 void main() {
@@ -29,16 +31,18 @@ class SplashGate extends StatefulWidget {
   State<SplashGate> createState() => _SplashGateState();
 }
 
+enum _AppStage { splash, onboarding, home }
+
 class _SplashGateState extends State<SplashGate> {
   static const Duration _minSplashTime = Duration(seconds: 3);
   static const Duration _extraSplashTime = Duration(seconds: 1);
 
-  late final Future<void> _startupFuture;
+  _AppStage _stage = _AppStage.splash;
 
   @override
   void initState() {
     super.initState();
-    _startupFuture = _prepareApp();
+    _bootstrap();
   }
 
   Future<void> _prepareApp() async {
@@ -56,18 +60,32 @@ class _SplashGateState extends State<SplashGate> {
     await Future<void>.delayed(_extraSplashTime);
   }
 
+  Future<void> _bootstrap() async {
+    await _prepareApp();
+    if (!mounted) return;
+    final onboardingDone = await OnboardingPrefs.isComplete();
+    if (!mounted) return;
+    setState(() {
+      _stage = onboardingDone ? _AppStage.home : _AppStage.onboarding;
+    });
+  }
+
+  Future<void> _finishOnboarding() async {
+    await OnboardingPrefs.markComplete();
+    if (!mounted) return;
+    setState(() => _stage = _AppStage.home);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _startupFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return const HomeScreen();
-        }
-
+    switch (_stage) {
+      case _AppStage.splash:
         return const SplashScreen();
-      },
-    );
+      case _AppStage.onboarding:
+        return VetgoOnboardingPage(onFinished: _finishOnboarding);
+      case _AppStage.home:
+        return const HomeScreen();
+    }
   }
 }
 
