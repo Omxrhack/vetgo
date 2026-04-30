@@ -6,6 +6,7 @@ import 'onboarding/vetgo_onboarding_page.dart';
 import 'theme/vetgo_theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MainApp());
 }
 
