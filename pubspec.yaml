@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   flutter_animate: ^4.5.2
   flutter_dotenv: ^6.0.1
+  flutter_secure_storage: ^9.2.2
   introduction_screen: ^4.0.0
   lottie: ^3.3.3
   pinput: ^6.0.2
