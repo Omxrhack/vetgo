@@ -61,12 +61,13 @@ class VetgoOnboardingPage extends StatelessWidget {
       imageFlex: 5,
       bodyFlex: 5,
       footerFlex: 0,
-      safeArea: 4,
+      // Aire bajo el texto para que no quede pegado a Omitir / puntos / flecha.
+      safeArea: 56,
       bodyAlignment: Alignment.bottomCenter,
       imageAlignment: Alignment.center,
-      contentMargin: const EdgeInsets.fromLTRB(28, 0, 28, 10),
+      contentMargin: const EdgeInsets.fromLTRB(28, 0, 28, 20),
       titlePadding: const EdgeInsets.only(bottom: 16),
-      bodyPadding: const EdgeInsets.only(bottom: 8),
+      bodyPadding: const EdgeInsets.only(bottom: 24),
       titleTextStyle: titleStyle,
       bodyTextStyle: bodyStyle,
     );
@@ -133,6 +134,8 @@ class VetgoOnboardingPage extends StatelessWidget {
             imageFlex: 4,
             bodyFlex: 3,
             footerFlex: 3,
+            // Un poco menos de banda inferior que en 1–2 para no comprimir el CTA.
+            safeArea: 40,
           ),
           footer: Padding(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
@@ -159,8 +162,8 @@ class VetgoOnboardingPage extends StatelessWidget {
         spacing: const EdgeInsets.symmetric(horizontal: 5),
       ),
       dotsContainerDecorator: null,
-      controlsMargin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      controlsPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      controlsMargin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      controlsPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       curve: Curves.easeInOutCubic,
     );
   }
