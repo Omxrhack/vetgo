@@ -16,87 +16,83 @@ class VetgoOnboardingPage extends StatelessWidget {
   /// Si lo defines, el enlace "Iniciar sesión" lo usa; si no, llama a [onFinished].
   final VoidCallback? onSignIn;
 
+  static const Color _onImageText = Colors.white;
+  static const Color _onImageSubtle = Color(0xE6FFFFFF); // ~90% white
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     final pageDecoration = PageDecoration(
-      imageFlex: 3,
-      bodyFlex: 2,
-      safeArea: 24,
+      fullScreen: true,
+      imageFlex: 6,
+      bodyFlex: 4,
+      footerFlex: 0,
+      safeArea: 8,
+      bodyAlignment: Alignment.bottomCenter,
+      imageAlignment: Alignment.center,
+      contentMargin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
       titlePadding: const EdgeInsets.only(bottom: 12),
-      bodyPadding: const EdgeInsets.only(bottom: 8),
-      contentMargin: const EdgeInsets.symmetric(horizontal: 24),
-      imagePadding: const EdgeInsets.fromLTRB(24, 32, 24, 8),
+      bodyPadding: const EdgeInsets.only(bottom: 20),
       titleTextStyle: theme.textTheme.headlineSmall!.copyWith(
         fontWeight: FontWeight.w700,
-        color: scheme.onSurface,
+        color: _onImageText,
         height: 1.2,
+        shadows: const [
+          Shadow(color: Colors.black54, blurRadius: 12, offset: Offset(0, 2)),
+        ],
       ),
       bodyTextStyle: theme.textTheme.bodyLarge!.copyWith(
-        color: scheme.onSurface.withValues(alpha: 0.72),
+        color: _onImageSubtle,
         height: 1.35,
-      ),
-      boxDecoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDark
-              ? [
-                  const Color(0xFF1A2E22),
-                  scheme.surface,
-                ]
-              : [
-                  const Color(0xFFE8F5EC),
-                  scheme.surface,
-                ],
-        ),
+        shadows: const [
+          Shadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 1)),
+        ],
       ),
     );
 
     return IntroductionScreen(
-      globalBackgroundColor: scheme.surface,
+      globalBackgroundColor: Colors.black,
       showSkipButton: true,
       skipOrBackFlex: 0,
       nextFlex: 1,
       dotsFlex: 2,
       showDoneButton: false,
       onSkip: onFinished,
-      skip: Text(
+      skip: const Text(
         'Omitir',
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: scheme.primary,
+          color: _onImageText,
         ),
       ),
-      next: Icon(Icons.arrow_forward, color: scheme.primary),
-      baseBtnStyle: TextButton.styleFrom(foregroundColor: scheme.primary),
+      next: const Icon(Icons.arrow_forward, color: _onImageText),
+      baseBtnStyle: TextButton.styleFrom(foregroundColor: _onImageText),
       showBackButton: false,
       pages: [
         PageViewModel(
           title: 'Tu mascota, siempre acompañada',
           body:
               'Encuentra veterinarios, emergencias y seguimiento del cuidado en un solo lugar.',
-          image: _OnboardingImage(assetPath: OnboardingAssets.page1),
+          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page1),
           decoration: pageDecoration,
         ),
         PageViewModel(
           title: 'Cuidado que se adapta a ti',
           body:
               'Guarda historial, citas y recordatorios pensados para la salud de tu compañero.',
-          image: _OnboardingImage(assetPath: OnboardingAssets.page2),
+          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page2),
           decoration: pageDecoration,
         ),
         PageViewModel(
           title: 'Empieza en segundos',
           body:
               'Sin complicaciones: agenda, consulta y actúa cuando más importa.',
-          image: _OnboardingImage(assetPath: OnboardingAssets.page3),
-          decoration: pageDecoration,
+          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page3),
+          decoration: pageDecoration.copyWith(footerFlex: 1),
           footer: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -124,7 +120,7 @@ class VetgoOnboardingPage extends StatelessWidget {
                   TextSpan(
                     text: '¿Ya tienes cuenta? ',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.7),
+                      color: _onImageSubtle,
                     ),
                     children: [
                       WidgetSpan(
@@ -150,25 +146,30 @@ class VetgoOnboardingPage extends StatelessWidget {
           ),
         ),
       ],
-      dotsDecorator: DotsDecorator(
-        size: const Size(8, 8),
-        activeSize: const Size(22, 8),
-        activeColor: scheme.primary,
-        color: scheme.onSurface.withValues(alpha: 0.28),
-        activeShape: const RoundedRectangleBorder(
+      dotsDecorator: const DotsDecorator(
+        size: Size(8, 8),
+        activeSize: Size(22, 8),
+        activeColor: Colors.white,
+        color: Color(0x66FFFFFF),
+        activeShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
-        spacing: const EdgeInsets.symmetric(horizontal: 4),
+        spacing: EdgeInsets.symmetric(horizontal: 4),
+      ),
+      dotsContainerDecorator: const BoxDecoration(
+        color: Color(0x33000000),
+        borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       controlsMargin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      controlsPadding: const EdgeInsets.symmetric(vertical: 8),
+      controlsPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       curve: Curves.easeInOut,
     );
   }
 }
 
-class _OnboardingImage extends StatelessWidget {
-  const _OnboardingImage({required this.assetPath});
+/// Imagen a pantalla completa + degradado oscuro de abajo hacia arriba (para texto blanco abajo).
+class _FullBleedOnboardingImage extends StatelessWidget {
+  const _FullBleedOnboardingImage({required this.assetPath});
 
   final String assetPath;
 
@@ -176,26 +177,49 @@ class _OnboardingImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Image.asset(
+    return Positioned.fill(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
             assetPath,
             fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            alignment: Alignment.center,
             errorBuilder: (context, error, stackTrace) {
               return ColoredBox(
-                color: primary.withValues(alpha: 0.12),
-                child: Icon(
-                  Icons.pets_rounded,
-                  size: 96,
-                  color: primary.withValues(alpha: 0.5),
+                color: primary.withValues(alpha: 0.25),
+                child: Center(
+                  child: Icon(
+                    Icons.pets_rounded,
+                    size: 96,
+                    color: primary.withValues(alpha: 0.6),
+                  ),
                 ),
               );
             },
           ),
-        ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.88),
+                      Colors.black.withValues(alpha: 0.5),
+                      Colors.black.withValues(alpha: 0.12),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.28, 0.52, 0.78],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
