@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '../storage/vetgo_prefs.dart';
 import 'auth_session.dart';
 
 /// Persistencia mínima de sesión (tokens + snapshot de usuario).
@@ -13,13 +12,13 @@ abstract final class AuthStorage {
   static const _keyUserJson = 'vetgo_user_json';
 
   static Future<bool> isLoggedIn() async {
-    final p = await SharedPreferences.getInstance();
+    final p = await VetgoPrefs.backend;
     final t = p.getString(_keyAccess);
     return t != null && t.isNotEmpty;
   }
 
   static Future<void> saveSession(AuthSession session) async {
-    final p = await SharedPreferences.getInstance();
+    final p = await VetgoPrefs.backend;
     if (session.accessToken != null) {
       await p.setString(_keyAccess, session.accessToken!);
     } else {
@@ -48,7 +47,7 @@ abstract final class AuthStorage {
   }
 
   static Future<void> clear() async {
-    final p = await SharedPreferences.getInstance();
+    final p = await VetgoPrefs.backend;
     await p.remove(_keyAccess);
     await p.remove(_keyRefresh);
     await p.remove(_keyExpiresIn);
@@ -58,7 +57,7 @@ abstract final class AuthStorage {
 
   /// Email guardado en el último user snapshot (puede ser null).
   static Future<String?> readEmail() async {
-    final p = await SharedPreferences.getInstance();
+    final p = await VetgoPrefs.backend;
     final raw = p.getString(_keyUserJson);
     if (raw == null) return null;
     try {
