@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
+import '../auth/auth_session.dart';
 import '../config/app_config.dart';
+import 'auth_outcomes.dart';
 
 /// Cliente HTTP para el backend Vetgo.
 ///

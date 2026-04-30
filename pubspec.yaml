@@ -14,6 +14,7 @@ dependencies:
   flutter_dotenv: ^6.0.1
   introduction_screen: ^4.0.0
   lottie: ^3.3.3
+  pinput: ^6.0.2
   shared_preferences: ^2.5.5
 
 dev_dependencies:
