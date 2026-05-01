@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:vetgo/auth/widgets/auth_screen_shell.dart';
 import 'package:vetgo/auth/widgets/onboarding_profile_photo_field.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/location/onboarding_location_fill.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
@@ -38,6 +39,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
   final _radius = TextEditingController(text: '15');
   final _offeredServices = TextEditingController();
   final _scheduleLabel = TextEditingController(text: 'Lunes a viernes 9-18');
+  final _vetBaseAddress = TextEditingController();
   final _clabe = TextEditingController();
   final _bankName = TextEditingController();
   final _rfc = TextEditingController();
@@ -46,6 +48,10 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
   bool _hasVehicle = true;
   String _specialty = 'medicina_general';
   bool _acceptsEmergencies = false;
+
+  double? _baseLatitude;
+  double? _baseLongitude;
+  bool _baseLocationBusy = false;
 
   String? _profileAvatarUrl;
 
@@ -71,6 +77,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
     _radius.dispose();
     _offeredServices.dispose();
     _scheduleLabel.dispose();
+    _vetBaseAddress.dispose();
     _clabe.dispose();
     _bankName.dispose();
     _rfc.dispose();
@@ -95,8 +102,8 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
         'cedula': _cedula.text.trim(),
         'university': _university.text.trim(),
         'experience_years': _experience,
-        'base_latitude': null,
-        'base_longitude': null,
+        'base_latitude': _baseLatitude,
+        'base_longitude': _baseLongitude,
         'coverage_radius_km': radius.clamp(1, 100),
         'has_vehicle': _hasVehicle,
       },
@@ -106,6 +113,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
         'accepts_emergencies': _acceptsEmergencies,
         'schedule_json': <String, dynamic>{
           'label': _scheduleLabel.text.trim(),
+          if (_vetBaseAddress.text.trim().isNotEmpty) 'base_location_note': _vetBaseAddress.text.trim(),
         },
       },
       'vet_finances': <String, dynamic>{
@@ -145,6 +153,23 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
       return;
     }
     await widget.onSubmit(_buildPayload());
+  }
+
+  Future<void> _useMyLocationForBase() async {
+    setState(() => _baseLocationBusy = true);
+    final result = await loadAddressFromDeviceLocation();
+    if (!mounted) return;
+    setState(() => _baseLocationBusy = false);
+    if (!result.ok) {
+      VetgoNotice.show(context, message: result.errorMessage ?? 'Error', isError: true);
+      return;
+    }
+    setState(() {
+      _vetBaseAddress.text = result.addressText ?? '';
+      _baseLatitude = result.latitude;
+      _baseLongitude = result.longitude;
+    });
+    VetgoNotice.show(context, message: AppStrings.onboardingUbicacionAplicada);
   }
 
   Future<void> _back() async {
@@ -282,6 +307,38 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
                       title: 'Cómo atiendes',
                     ),
                     const SizedBox(height: 14),
+                    Text(
+                      AppStrings.onboardingVetBaseDireccionHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.62),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: widget.loading || _baseLocationBusy ? null : _useMyLocationForBase,
+                      icon: _baseLocationBusy
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.primary,
+                              ),
+                            )
+                          : const Icon(Icons.my_location_rounded),
+                      label: Text(AppStrings.onboardingUsarUbicacion),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _vetBaseAddress,
+                      maxLines: 2,
+                      decoration: authInputDecoration(
+                        context,
+                        label: AppStrings.onboardingVetBaseDireccionLabel,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _radius,
                       keyboardType: TextInputType.number,

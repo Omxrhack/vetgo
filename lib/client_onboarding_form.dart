@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:vetgo/auth/widgets/auth_screen_shell.dart';
 import 'package:vetgo/auth/widgets/onboarding_profile_photo_field.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/location/onboarding_location_fill.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
 /// Formulario alineado con `clientOnboardingSchema` del backend.
 class ClientOnboardingForm extends StatefulWidget {
@@ -47,6 +50,10 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
 
   String? _profileAvatarUrl;
 
+  double? _pickedLatitude;
+  double? _pickedLongitude;
+  bool _locationBusy = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,8 +90,8 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
       'client_details': <String, dynamic>{
         'address_text': _address.text.trim(),
         'address_notes': _addressNotes.text.trim(),
-        'latitude': null,
-        'longitude': null,
+        'latitude': _pickedLatitude,
+        'longitude': _pickedLongitude,
       },
       'pet_profile': <String, dynamic>{
         'name': _petName.text.trim(),
@@ -146,6 +153,23 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
       return;
     }
     await widget.onSubmit(_buildPayload());
+  }
+
+  Future<void> _useMyLocationForAddress() async {
+    setState(() => _locationBusy = true);
+    final result = await loadAddressFromDeviceLocation();
+    if (!mounted) return;
+    setState(() => _locationBusy = false);
+    if (!result.ok) {
+      VetgoNotice.show(context, message: result.errorMessage ?? 'Error', isError: true);
+      return;
+    }
+    setState(() {
+      _address.text = result.addressText ?? '';
+      _pickedLatitude = result.latitude;
+      _pickedLongitude = result.longitude;
+    });
+    VetgoNotice.show(context, message: AppStrings.onboardingUbicacionAplicada);
   }
 
   Future<void> _back() async {
@@ -247,6 +271,21 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                     const AuthSectionHeader(
                       eyebrow: 'DIRECCIÓN',
                       title: 'Dónde te encontramos',
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: widget.loading || _locationBusy ? null : _useMyLocationForAddress,
+                      icon: _locationBusy
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          : const Icon(Icons.my_location_rounded),
+                      label: Text(AppStrings.onboardingUsarUbicacion),
                     ),
                     const SizedBox(height: 14),
                     TextFormField(

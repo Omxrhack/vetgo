@@ -322,6 +322,17 @@ abstract final class AppStrings {
   static const onboardingVetFotoRequerida =
       'Sube una foto de perfil desde la galer\u00EDa para continuar.';
 
+  static const onboardingUsarUbicacion = 'Usar mi ubicaci\u00F3n actual';
+
+  static const onboardingUbicacionAplicada =
+      'Direcci\u00F3n rellenada con tu ubicaci\u00F3n.';
+
+  static const onboardingVetBaseDireccionLabel =
+      'Direcci\u00F3n o zona base';
+
+  static const onboardingVetBaseDireccionHint =
+      'Opcional. Tambi\u00E9n guardamos coordenadas para cobertura y emergencias.';
+
   static const petPhotoCambiarTooltip = 'Cambiar foto de la mascota';
 
   static const petPhotoActualizada = 'Foto de la mascota actualizada.';
