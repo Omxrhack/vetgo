@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:vetgo/widgets/vet/vet_app_colors.dart';
+import 'vet_app_colors.dart';
 
 class VetSectionTitle extends StatelessWidget {
   const VetSectionTitle({

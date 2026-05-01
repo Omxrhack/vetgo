@@ -5,7 +5,7 @@ import '../core/auth/auth_session.dart';
 import '../core/auth/auth_storage.dart';
 import '../core/config/app_config.dart';
 import '../core/network/vetgo_api_client.dart';
-import 'package:vetgo/vet/vet_shell.dart';
+import '../vet/vet_shell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onLoggedOut});

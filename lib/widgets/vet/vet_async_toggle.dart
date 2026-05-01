@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:vetgo/widgets/vet/vet_app_colors.dart';
-import 'package:vetgo/widgets/vet/vet_soft_card.dart';
+import 'vet_app_colors.dart';
+import 'vet_soft_card.dart';
 
 /// Toggle grande de disponibilidad con estado de carga animado.
 class VetDutyToggleCard extends StatelessWidget {

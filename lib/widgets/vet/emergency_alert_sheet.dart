@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:vetgo/widgets/vet/vet_app_colors.dart';
-import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
-import 'package:vetgo/widgets/vet/vet_soft_card.dart';
+import 'vet_app_colors.dart';
+import 'vet_async_toggle.dart';
+import 'vet_soft_card.dart';
 
 class VetEmergencyVm {
   VetEmergencyVm({
