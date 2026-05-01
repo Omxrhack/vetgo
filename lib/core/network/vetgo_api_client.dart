@@ -654,24 +654,26 @@ class VetgoApiClient {
     return err;
   }
 
-  /// `POST /api/auth/resend-otp` — devuelve `null` si OK, o mensaje de error.
-  Future<String?> resendOtp(String email) async {
+  /// `POST /api/auth/resend-otp`. Si [alreadyVerified] es true, el usuario debe ir a login.
+  Future<({String? error, bool alreadyVerified})> resendOtp(String email) async {
     try {
       await _api.post<Map<String, dynamic>>(
         '/auth/resend-otp',
         data: <String, dynamic>{'email': email.trim()},
       );
-      return null;
+      return (error: null, alreadyVerified: false);
     } on DioException catch (e) {
       final map = parseResponseMap(e.response?.data);
       final code = map?['code'] as String?;
       final err = map?['error']?.toString() ??
           e.message ??
           'No se pudo reenviar el código.';
+      final verified =
+          e.response?.statusCode == 409 && code == 'EMAIL_ALREADY_VERIFIED';
       if (e.response?.statusCode == 429 && code == 'EMAIL_RATE_LIMIT') {
-        return err;
+        return (error: err, alreadyVerified: false);
       }
-      return err;
+      return (error: err, alreadyVerified: verified);
     }
   }
 }

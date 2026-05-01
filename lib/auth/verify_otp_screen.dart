@@ -6,19 +6,24 @@ import '../core/auth/auth_storage.dart';
 import '../core/network/vetgo_api_client.dart';
 import 'widgets/auth_scenic_layer.dart';
 import 'widgets/auth_screen_shell.dart';
+import '../widgets/vetgo_notice.dart';
 
-/// Código de verificación de 6 dígitos (Supabase + backend).
+/// Pantalla de código tras registro o login sin verificar.
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({
     super.key,
     required this.email,
     required this.onVerified,
+    this.onNavigateToLogin,
     this.hint,
   });
 
   final String email;
   final String? hint;
   final VoidCallback onVerified;
+
+  /// Si la cuenta queda verificada pero sin tokens (p. ej. sin contraseña en OTP), volver a login.
+  final VoidCallback? onNavigateToLogin;
 
   @override
   State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
@@ -59,10 +64,16 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         widget.onVerified();
         return;
       }
+      if (!mounted) return;
+      VetgoNotice.show(
+        context,
+        message:
+            'Correo verificado. Entra con tu contraseña para continuar.',
+      );
+      widget.onNavigateToLogin?.call();
       setState(() {
-        _error =
-            'Cuenta verificada pero sin sesión automática. Inicia sesión con tu contraseña.';
-        _resendInfo = null;
+        _pinController.clear();
+        _focusNode.requestFocus();
       });
       return;
     }
@@ -81,16 +92,46 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       _error = null;
       _resendInfo = null;
     });
-    final err = await _api.resendOtp(widget.email);
+    final result = await _api.resendOtp(widget.email);
     if (!mounted) return;
     setState(() {
       _resending = false;
-      if (err != null) {
-        _error = err;
+      if (result.alreadyVerified) {
+        _error = null;
+        _resendInfo = null;
+      } else if (result.error != null) {
+        _error = result.error;
       } else {
         _resendInfo = 'Si hay cuota disponible, revisa tu correo.';
       }
     });
+    if (!mounted) return;
+    if (result.alreadyVerified) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Correo ya verificado'),
+          content: const Text(
+            'Este correo ya está confirmado. Inicia sesión con tu contraseña.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Seguir aquí'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                widget.onNavigateToLogin?.call();
+              },
+              child: const Text('Ir a iniciar sesión'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
