@@ -520,6 +520,56 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/vet/pets/:id/upload-photo` — veterinario con cita o emergencia asignada.
+  Future<(Map<String, dynamic>? pet, String? error)> uploadPetPhotoAsVet({
+    required String petId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final formData = FormData.fromMap({
+        'photo': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      final r = await _api.post<Map<String, dynamic>>(
+        '/vet/pets/$petId/upload-photo',
+        data: formData,
+        options: opts,
+      );
+      final data = r.data;
+      if (data == null) return (null, 'Respuesta vacía del servidor.');
+      return (data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/pets/:id/upload-photo` — dueño autenticado.
+  Future<(Map<String, dynamic>? pet, String? error)> uploadPetPhotoAsOwner({
+    required String petId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final formData = FormData.fromMap({
+        'photo': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      final r = await _api.post<Map<String, dynamic>>(
+        '/pets/$petId/upload-photo',
+        data: formData,
+        options: opts,
+      );
+      final data = r.data;
+      if (data == null) return (null, 'Respuesta vacía del servidor.');
+      return (data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/vet/emergencies/active`
   Future<VetJsonResult> getVetEmergenciesActive() async {
     final opts = await _authorizedOptions();

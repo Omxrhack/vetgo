@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-import 'core/network/vetgo_api_client.dart';
-import 'theme/vet_operator_colors.dart';
-import 'widgets/vet/vet_pastel_chip.dart';
-import 'widgets/vet/vet_section_title.dart';
-import 'widgets/vet/vet_soft_card.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/theme/vet_operator_colors.dart';
+import 'package:vetgo/widgets/vet/vet_pastel_chip.dart';
+import 'package:vetgo/widgets/vet/vet_section_title.dart';
+import 'package:vetgo/widgets/vet/vet_soft_card.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Expediente r·pido antes de la visita a domicilio.
+/// Expediente rùpido antes de la visita a domicilio.
 class VetPatientRecordScreen extends StatefulWidget {
   const VetPatientRecordScreen({
     super.key,
@@ -24,6 +27,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
   Map<String, dynamic>? _payload;
   String? _error;
   bool _loading = true;
+  bool _uploadingPhoto = false;
 
   @override
   void initState() {
@@ -57,7 +61,38 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
       final months = (now.year - bd.year) * 12 + now.month - bd.month;
       return months <= 0 ? 'Cachorro / menor a 1 mes' : '$months mes(es)';
     }
-    return '$years a?o(s)';
+    return '$years a\u00f1o(s)';
+  }
+
+  Future<void> _pickAndUploadPetPhoto() async {
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1536, imageQuality: 88);
+    if (x == null || !mounted) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      final bytes = await x.readAsBytes();
+      final name = x.name.trim().isNotEmpty ? x.name.trim() : 'pet.jpg';
+      final (petRow, err) = await _api.uploadPetPhotoAsVet(
+        petId: widget.petId,
+        bytes: bytes,
+        filename: name,
+      );
+      if (!mounted) return;
+      if (err != null) {
+        VetgoNotice.show(context, message: err, isError: true);
+        return;
+      }
+      if (petRow != null && _payload != null) {
+        final merged = Map<String, dynamic>.from(_payload!);
+        final prevPet = merged['pet'] is Map<String, dynamic> ? Map<String, dynamic>.from(merged['pet'] as Map) : <String, dynamic>{};
+        prevPet.addAll(petRow);
+        merged['pet'] = prevPet;
+        setState(() => _payload = merged);
+      }
+      VetgoNotice.show(context, message: AppStrings.petPhotoActualizada);
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
   }
 
   @override
@@ -123,16 +158,50 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 44,
-                backgroundColor: VetOperatorColors.mintSoft,
-                backgroundImage: photo != null && photo.isNotEmpty ? NetworkImage(photo) : null,
-                child: photo == null || photo.isEmpty
-                    ? Text(
-                        name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-                      )
-                    : null,
+              Tooltip(
+                message: AppStrings.petPhotoCambiarTooltip,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _uploadingPhoto ? null : _pickAndUploadPetPhoto,
+                    child: SizedBox(
+                      width: 88,
+                      height: 88,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: VetOperatorColors.mintSoft,
+                            backgroundImage: photo != null && photo.isNotEmpty ? NetworkImage(photo) : null,
+                            child: photo == null || photo.isEmpty
+                                ? Text(
+                                    name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+                                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                                  )
+                                : null,
+                          ),
+                          if (_uploadingPhoto)
+                            Positioned.fill(
+                              child: ClipOval(
+                                child: ColoredBox(
+                                  color: Colors.black.withValues(alpha: 0.4),
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(strokeWidth: 2.6, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -188,19 +257,19 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         VetSoftCard(
           color: VetOperatorColors.peach.withValues(alpha: 0.35),
           child: Text(
-            cd?['address_text']?.toString() ?? 'Sin direcciÛn registrada',
+            cd?['address_text']?.toString() ?? 'Sin direcciùn registrada',
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 24),
         const VetSectionTitle(
-          title: 'Notas mÈdicas / alergias',
+          title: 'Notas mùdicas / alergias',
           subtitle: 'Revisa antes de tocar el timbre.',
         ),
         VetSoftCard(
           color: VetOperatorColors.mintSoft.withValues(alpha: 0.4),
           child: Text(
-            medical != null && medical.isNotEmpty ? medical : 'Sin notas mÈdicas registradas.',
+            medical != null && medical.isNotEmpty ? medical : 'Sin notas mùdicas registradas.',
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
           ),
         ),

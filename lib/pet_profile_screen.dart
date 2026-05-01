@@ -1,17 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/client/pastel_status_chip.dart';
 import 'package:vetgo/widgets/client/timeline_medical_tile.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Expediente mÈdico digital de una mascota.
-class PetProfileScreen extends StatelessWidget {
+/// Expediente medico digital de una mascota; el dueno puede cambiar la foto.
+class PetProfileScreen extends StatefulWidget {
   const PetProfileScreen({super.key, required this.pet});
 
   final ClientPetVm pet;
+
+  @override
+  State<PetProfileScreen> createState() => _PetProfileScreenState();
+}
+
+class _PetProfileScreenState extends State<PetProfileScreen> {
+  final VetgoApiClient _api = VetgoApiClient();
+  String? _photoUrlOverride;
+  bool _uploadingPhoto = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _photoUrlOverride = widget.pet.photoUrl;
+  }
+
+  String? get _photoDisplay =>
+      (_photoUrlOverride != null && _photoUrlOverride!.isNotEmpty) ? _photoUrlOverride : widget.pet.photoUrl;
+
+  Future<void> _pickAndUploadPetPhoto() async {
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1536, imageQuality: 88);
+    if (x == null || !mounted) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      final bytes = await x.readAsBytes();
+      final name = x.name.trim().isNotEmpty ? x.name.trim() : 'pet.jpg';
+      final (petRow, err) = await _api.uploadPetPhotoAsOwner(
+        petId: widget.pet.id,
+        bytes: bytes,
+        filename: name,
+      );
+      if (!mounted) return;
+      if (err != null) {
+        VetgoNotice.show(context, message: err, isError: true);
+        return;
+      }
+      final url = petRow?['photo_url']?.toString();
+      if (url != null && url.isNotEmpty) {
+        setState(() => _photoUrlOverride = url);
+      }
+      VetgoNotice.show(context, message: AppStrings.petPhotoActualizada);
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,17 +80,50 @@ class PetProfileScreen extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: SizedBox(
-                    width: 104,
-                    height: 104,
-                    child: pet.photoUrl != null && pet.photoUrl!.isNotEmpty
-                        ? Image.network(pet.photoUrl!, fit: BoxFit.cover)
-                        : ColoredBox(
-                            color: ClientPastelColors.skySoft.withValues(alpha: 0.75),
-                            child: Icon(Icons.pets_rounded, size: 48, color: ClientPastelColors.skyDeep.withValues(alpha: 0.55)),
-                          ),
+                Tooltip(
+                  message: AppStrings.petPhotoCambiarTooltip,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: _uploadingPhoto ? null : _pickAndUploadPetPhoto,
+                      child: SizedBox(
+                        width: 104,
+                        height: 104,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(22),
+                              child: SizedBox(
+                                width: 104,
+                                height: 104,
+                                child: _photoDisplay != null && _photoDisplay!.isNotEmpty
+                                    ? Image.network(_photoDisplay!, fit: BoxFit.cover)
+                                    : ColoredBox(
+                                        color: ClientPastelColors.skySoft.withValues(alpha: 0.75),
+                                        child: Icon(Icons.pets_rounded, size: 48, color: ClientPastelColors.skyDeep.withValues(alpha: 0.55)),
+                                      ),
+                              ),
+                            ),
+                            if (_uploadingPhoto)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: ColoredBox(
+                                  color: Colors.black.withValues(alpha: 0.42),
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -49,12 +132,12 @@ class PetProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        pet.name,
+                        widget.pet.name,
                         style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${pet.speciesLabel}${pet.breedLabel.isNotEmpty ? ' ∑ ${pet.breedLabel}' : ''}',
+                        '${widget.pet.speciesLabel}${widget.pet.breedLabel.isNotEmpty ? ' ù ${widget.pet.breedLabel}' : ''}',
                         style: theme.textTheme.bodyMedium?.copyWith(color: muted, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 10),
@@ -62,12 +145,12 @@ class PetProfileScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.monitor_weight_outlined, size: 18, color: muted),
                           const SizedBox(width: 6),
-                          Text(pet.weightLabel, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
+                          Text(widget.pet.weightLabel, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(width: 16),
                           Icon(Icons.cake_outlined, size: 18, color: muted),
                           const SizedBox(width: 6),
                           Text(
-                            pet.ageLabel.isEmpty ? 'Edad ó' : pet.ageLabel,
+                            widget.pet.ageLabel.isEmpty ? 'Edad ù' : widget.pet.ageLabel,
                             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ],
@@ -86,13 +169,13 @@ class PetProfileScreen extends StatelessWidget {
             runSpacing: 10,
             children: [
               PastelStatusChip(
-                label: 'Vacunas al dÌa',
+                label: 'Vacunas al dùa',
                 icon: Icons.verified_rounded,
                 backgroundColor: ClientPastelColors.mintSoft.withValues(alpha: 0.72),
                 foregroundColor: ClientPastelColors.mintDeep,
               ),
               PastelStatusChip(
-                label: 'DesparasitaciÛn OK',
+                label: 'Desparasitaciùn OK',
                 icon: Icons.healing_rounded,
                 backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.75),
                 foregroundColor: ClientPastelColors.skyDeep,
@@ -113,7 +196,7 @@ class PetProfileScreen extends StatelessWidget {
               children: [
                 TimelineMedicalTile(
                   title: 'Consulta general',
-                  subtitle: 'Chequeo anual, presiÛn y escucha cardÌaca normal.',
+                  subtitle: 'Chequeo anual, presiùn y escucha cardùaca normal.',
                   dateLabel: '12 marzo 2026',
                   dotColor: ClientPastelColors.mintDeep,
                   isLast: false,
@@ -126,8 +209,8 @@ class PetProfileScreen extends StatelessWidget {
                   isLast: false,
                 ),
                 TimelineMedicalTile(
-                  title: 'DesparasitaciÛn interna',
-                  subtitle: 'Tableta oral; prÛxima dosis en 90 dÌas.',
+                  title: 'Desparasitaciùn interna',
+                  subtitle: 'Tableta oral; prùxima dosis en 90 dùas.',
                   dateLabel: '18 enero 2026',
                   dotColor: ClientPastelColors.amberSoft.withValues(alpha: 0.95),
                   isLast: true,

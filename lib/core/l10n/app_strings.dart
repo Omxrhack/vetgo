@@ -208,4 +208,8 @@ abstract final class AppStrings {
 
   /// Foto de perfil (Storage Supabase + dashboard).
   static const profilePhotoCambiarTooltip = 'Cambiar foto de perfil';
+
+  static const petPhotoCambiarTooltip = 'Cambiar foto de la mascota';
+
+  static const petPhotoActualizada = 'Foto de la mascota actualizada.';
 }
