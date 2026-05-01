@@ -18,29 +18,14 @@ class ProfileOnboardingFlow extends StatefulWidget {
 }
 
 class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
-  final _clientKey = GlobalKey<ClientOnboardingFormState>();
-  final _vetKey = GlobalKey<VetOnboardingFormState>();
-
   String? _role;
   bool _loading = false;
   String? _error;
 
-  Future<void> _submit() async {
+  Future<void> _submit(Map<String, dynamic> body) async {
     final token = await AuthStorage.readAccessToken();
     if (token == null || token.isEmpty) {
-      setState(() => _error = 'SesiÃ³n no vÃ¡lida. Vuelve a iniciar sesiÃ³n.');
-      return;
-    }
-
-    Map<String, dynamic>? body;
-    if (_role == 'client') {
-      body = _clientKey.currentState?.buildPayloadIfValid();
-    } else if (_role == 'vet') {
-      body = _vetKey.currentState?.buildPayloadIfValid();
-    }
-
-    if (body == null) {
-      setState(() => _error = 'Revisa los campos marcados.');
+      setState(() => _error = 'Sesión no válida. Vuelve a iniciar sesión.');
       return;
     }
 
@@ -178,51 +163,17 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
                         error: _error,
                         onDismissError: () => setState(() => _error = null),
                         form: _role == 'client'
-                            ? ClientOnboardingForm(key: _clientKey)
-                            : VetOnboardingForm(key: _vetKey),
-                      ),
-                    ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-            child: _role == null
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                    child: FilledButton(
-                      onPressed: _loading ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                        textStyle: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: _loading
-                            ? SizedBox(
-                                key: const ValueKey('loading'),
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: scheme.onPrimary,
-                                ),
+                            ? ClientOnboardingForm(
+                                loading: _loading,
+                                onSubmit: _submit,
                               )
-                            : const Text(
-                                'Guardar y continuar',
-                                key: ValueKey('label'),
+                            : VetOnboardingForm(
+                                loading: _loading,
+                                onSubmit: _submit,
                               ),
                       ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -288,11 +239,11 @@ class _RolePicker extends StatelessWidget {
           children: [
             const AuthBrandHeader(
               title: 'Completa tu perfil',
-              subtitle: 'CuÃ©ntanos cÃ³mo vas a usar Vetgo para personalizar tu experiencia.',
+              subtitle: 'Cuéntanos cómo vas a usar Vetgo para personalizar tu experiencia.',
             ),
             const SizedBox(height: 28),
             _RoleCard(
-              title: 'Soy dueÃ±o de mascota',
+              title: 'Soy dueño de mascota',
               subtitle: 'Busco veterinarios y servicios para mis mascotas.',
               icon: Icons.pets_rounded,
               onTap: () => onPick('client'),
@@ -300,7 +251,7 @@ class _RolePicker extends StatelessWidget {
             const SizedBox(height: 14),
             _RoleCard(
               title: 'Soy veterinario',
-              subtitle: 'Ofrezco consultas y servicios a domicilio o en lÃ­nea.',
+              subtitle: 'Ofrezco consultas y servicios a domicilio o en línea.',
               icon: Icons.medical_services_outlined,
               onTap: () => onPick('vet'),
             ),
