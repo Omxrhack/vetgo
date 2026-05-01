@@ -7,7 +7,7 @@ import '../core/network/vetgo_api_client.dart';
 import 'widgets/auth_scenic_layer.dart';
 import 'widgets/auth_screen_shell.dart';
 
-/// Codigo de verificacion de 8 digitos (Supabase + backend).
+/// Codigo de verificacion de 6 digitos (Supabase + backend).
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({
     super.key,
@@ -40,7 +40,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   }
 
   Future<void> _submit(String token) async {
-    if (token.length < 8) return;
+    if (token.length < 6) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -153,7 +153,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   AuthBrandHeader(
                     title: 'Verifica tu correo',
                     subtitle: widget.hint ??
-                        'Ingresa el codigo de 8 digitos que enviamos a tu correo.',
+                        'Ingresa el codigo de 6 digitos que enviamos a tu correo.',
                   ),
                   const SizedBox(height: 8),
                   SelectableText(
@@ -184,7 +184,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   ),
                   Center(
                     child: Pinput(
-                      length: 8,
+                      length: 6,
                       controller: _pinController,
                       focusNode: _focusNode,
                       autofocus: true,

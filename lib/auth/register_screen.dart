@@ -130,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const AuthBrandHeader(
                     title: 'Crear cuenta',
                     subtitle:
-                        'Te enviaremos un codigo de 8 digitos por correo para activar tu cuenta.',
+                        'Te enviaremos un codigo de 6 digitos por correo para activar tu cuenta.',
                   ),
                   const SizedBox(height: 32),
                   AnimatedSwitcher(
