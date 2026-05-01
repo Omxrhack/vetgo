@@ -12,15 +12,19 @@ import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
 import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
 
-/// Contenedor principal del veterinario con pestaÒas y vigilancia de emergencias.
+/// Contenedor principal del veterinario con pestaùas y vigilancia de emergencias.
 class VetShell extends StatefulWidget {
   const VetShell({
     super.key,
     required this.profileFirstName,
+    this.profilePhotoUrl,
+    this.onProfilePhotoUpdated,
     required this.onLoggedOut,
   });
 
   final String profileFirstName;
+  final String? profilePhotoUrl;
+  final VoidCallback? onProfilePhotoUpdated;
   final VoidCallback onLoggedOut;
 
   @override
@@ -231,6 +235,8 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
           VetDashboardScreen(
             api: _api,
             profileName: widget.profileFirstName,
+            profilePhotoUrl: widget.profilePhotoUrl,
+            onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
             onVetBaseResolved: _onVetBaseResolved,
             onLogout: widget.onLoggedOut,
           ),

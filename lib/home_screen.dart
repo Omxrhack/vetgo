@@ -45,8 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final role = _session?.profile?['role']?.toString();
     if (role == 'vet') {
       final vetName = _session?.profile?['full_name']?.toString() ?? '';
+      final vetAvatar = _session?.profile?['avatar_url']?.toString();
       return VetShell(
         profileFirstName: vetName,
+        profilePhotoUrl: vetAvatar != null && vetAvatar.isNotEmpty ? vetAvatar : null,
+        onProfilePhotoUpdated: () {
+          _loadSession();
+        },
         onLoggedOut: () async {
           await AuthStorage.clear();
           widget.onLoggedOut?.call();
@@ -61,6 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
       userName: clientName,
       profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null,
       ownerUserId: _session?.user?['id']?.toString(),
+      onProfilePhotoUpdated: () {
+        _loadSession();
+      },
       onLogout: () async {
         await AuthStorage.clear();
         widget.onLoggedOut?.call();

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
-import 'core/l10n/app_strings.dart';
-import 'core/network/vetgo_api_client.dart';
-import 'theme/vet_operator_colors.dart';
-import 'widgets/vet/vet_async_toggle.dart';
-import 'widgets/vet/vet_section_title.dart';
-import 'widgets/vet/vet_soft_card.dart';
-import 'vet_patient_record_screen.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/theme/vet_operator_colors.dart';
+import 'package:vetgo/vet_patient_record_screen.dart';
+import 'package:vetgo/widgets/profile_photo_avatar.dart';
+import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
+import 'package:vetgo/widgets/vet/vet_section_title.dart';
+import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
 typedef VetBaseCallback = void Function(double? lat, double? lng);
 
@@ -17,12 +18,16 @@ class VetDashboardScreen extends StatefulWidget {
     super.key,
     required this.api,
     required this.profileName,
+    this.profilePhotoUrl,
+    this.onProfilePhotoUpdated,
     required this.onLogout,
     this.onVetBaseResolved,
   });
 
   final VetgoApiClient api;
   final String profileName;
+  final String? profilePhotoUrl;
+  final VoidCallback? onProfilePhotoUpdated;
   final VoidCallback onLogout;
   final VetBaseCallback? onVetBaseResolved;
 
@@ -126,18 +131,38 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              background: Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 52),
-                  child: Text(
-                    dateLine,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: muted,
-                      fontWeight: FontWeight.w500,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 52),
+                      child: Text(
+                        dateLine,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: muted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 56, top: 36),
+                      child: ProfilePhotoAvatar(
+                        heroTag: 'vet_avatar',
+                        imageUrl: widget.profilePhotoUrl,
+                        placeholderBackground: VetOperatorColors.mintSoft,
+                        placeholderIconColor: VetOperatorColors.mintDeep,
+                        radius: 28,
+                        icon: Icons.person_rounded,
+                        onUploaded: widget.onProfilePhotoUpdated,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
