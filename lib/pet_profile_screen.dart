@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'models/client_pet_vm.dart';
-import 'theme/client_pastel.dart';
-import 'widgets/client/client_soft_card.dart';
-import 'widgets/client/pastel_status_chip.dart';
-import 'widgets/client/timeline_medical_tile.dart';
+import 'package:vetgo/models/client_pet_vm.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/client/pastel_status_chip.dart';
+import 'package:vetgo/widgets/client/timeline_medical_tile.dart';
 
 /// Expediente médico digital de una mascota.
 class PetProfileScreen extends StatelessWidget {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'models/client_demo_data.dart';
-import 'models/client_pet_vm.dart';
-import 'theme/client_pastel.dart';
-import 'widgets/client/async_endpoint_button.dart';
-import 'widgets/client/client_soft_card.dart';
+import 'package:vetgo/models/client_demo_data.dart';
+import 'package:vetgo/models/client_pet_vm.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/async_endpoint_button.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// SOS Emergencia 24/7 ù acciùn rùpida con gradiente suave.
+/// SOS Emergencia 24/7: acciÛn r·pida con gradiente suave.
 class EmergencySOSScreen extends StatefulWidget {
   const EmergencySOSScreen({super.key});
 

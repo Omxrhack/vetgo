@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/client_pastel.dart';
-import 'client_soft_card.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
 
 /// Tarjeta de producto con botón "+ Agregar" animado (simula endpoint).
 class StoreProductCard extends StatefulWidget {

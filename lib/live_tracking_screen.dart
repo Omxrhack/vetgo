@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'widgets/client/live_tracking_bottom_sheet.dart';
-import 'widgets/client/map_placeholder_box.dart';
+import 'package:vetgo/widgets/client/live_tracking_bottom_sheet.dart';
+import 'package:vetgo/widgets/client/map_placeholder_box.dart';
 
 /// Rastreo de cita activa (cliente): mapa placeholder + panel inferior.
 class LiveTrackingScreen extends StatelessWidget {

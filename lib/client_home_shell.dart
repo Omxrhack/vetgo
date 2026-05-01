@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'client_dashboard_screen.dart';
-import 'emergency_sos_screen.dart';
-import 'models/client_demo_data.dart';
-import 'store_screen.dart';
-import 'theme/client_pastel.dart';
+import 'package:vetgo/client_dashboard_screen.dart';
+import 'package:vetgo/emergency_sos_screen.dart';
+import 'package:vetgo/models/client_demo_data.dart';
+import 'package:vetgo/store_screen.dart';
+import 'package:vetgo/theme/client_pastel.dart';
 
 /// Contenedor cliente: inicio + tienda + acceso SOS (alineado con VetgoTheme).
 class ClientHomeShell extends StatefulWidget {

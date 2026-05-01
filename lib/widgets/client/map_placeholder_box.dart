@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/client_pastel.dart';
+import 'package:vetgo/theme/client_pastel.dart';
 
 /// Placeholder de mapa hasta integrar SDK de mapas.
 class MapPlaceholderBox extends StatelessWidget {

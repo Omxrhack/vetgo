@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'client_soft_card.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
 
 /// Tarjeta de acceso rápido del dashboard (ícono grande + etiqueta).
 class PastelQuickActionCard extends StatelessWidget {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'theme/client_pastel.dart';
-import 'widgets/client/store_category_pill.dart';
-import 'widgets/client/store_product_card.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/store_category_pill.dart';
+import 'package:vetgo/widgets/client/store_product_card.dart';
 
-/// Tienda Vetgo ù catùlogo demo con micro-animaciones en ùAgregarù.
+/// Tienda Vetgo: catùlogo demo con micro-animaciones en ù+ Agregarù.
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
 
@@ -52,7 +52,7 @@ class _StoreScreenState extends State<StoreScreen> {
             child: TextField(
               controller: _search,
               decoration: InputDecoration(
-                hintText: 'Buscar productosù',
+                hintText: 'Buscar productosÖ',
                 prefixIcon: Icon(Icons.search_rounded, color: ClientPastelColors.mutedOn(context)),
                 filled: true,
                 fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.65),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/client_pastel.dart';
-import 'client_soft_card.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
 
 /// Panel inferior del rastreo (veterinario, ETA, acciones).
 class LiveTrackingBottomSheet extends StatelessWidget {

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'emergency_sos_screen.dart';
-import 'live_tracking_screen.dart';
-import 'models/client_demo_data.dart';
-import 'models/client_pet_vm.dart';
-import 'pet_profile_screen.dart';
-import 'store_screen.dart';
-import 'theme/client_pastel.dart';
-import 'widgets/client/async_endpoint_button.dart';
-import 'widgets/client/client_soft_card.dart';
-import 'widgets/client/pastel_quick_action_card.dart';
+import 'package:vetgo/emergency_sos_screen.dart';
+import 'package:vetgo/live_tracking_screen.dart';
+import 'package:vetgo/models/client_demo_data.dart';
+import 'package:vetgo/models/client_pet_vm.dart';
+import 'package:vetgo/pet_profile_screen.dart';
+import 'package:vetgo/store_screen.dart';
+import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/widgets/client/async_endpoint_button.dart';
+import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/client/pastel_quick_action_card.dart';
 
-/// Home / dashboard principal del cliente (estùtica pastel Vetgo).
+/// Home / dashboard principal del cliente (estÈtica pastel Vetgo).
 class ClientDashboardScreen extends StatelessWidget {
   const ClientDashboardScreen({
     super.key,
