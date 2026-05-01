@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ClientHomeShell(
       userName: clientName,
       profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null,
+      ownerUserId: _session?.user?['id']?.toString(),
       onLogout: () async {
         await AuthStorage.clear();
         widget.onLoggedOut?.call();

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'package:vetgo/emergency_sos_screen.dart';
+import 'package:vetgo/client/client_quick_access_hub_screen.dart';
+import 'package:vetgo/client/client_strings.dart';
 import 'package:vetgo/live_tracking_screen.dart';
-import 'package:vetgo/models/client_demo_data.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
 import 'package:vetgo/store_screen.dart';
@@ -12,20 +12,28 @@ import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/client/pastel_quick_action_card.dart';
 
-/// Home / dashboard principal del cliente (estÈtica pastel Vetgo).
+/// Home / dashboard principal del cliente (estetica pastel Vetgo).
 class ClientDashboardScreen extends StatelessWidget {
   const ClientDashboardScreen({
     super.key,
     required this.userName,
     this.profilePhotoUrl,
     required this.pets,
+    this.petsLoading = false,
+    this.petsError,
+    required this.onRefreshPets,
     required this.onLogout,
+    required this.onOpenEmergency,
   });
 
   final String userName;
   final String? profilePhotoUrl;
   final List<ClientPetVm> pets;
+  final bool petsLoading;
+  final String? petsError;
+  final Future<void> Function() onRefreshPets;
   final VoidCallback onLogout;
+  final VoidCallback onOpenEmergency;
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +44,7 @@ class ClientDashboardScreen extends StatelessWidget {
 
     return RefreshIndicator(
       color: scheme.primary,
-      onRefresh: () async {
-        await Future<void>.delayed(const Duration(milliseconds: 650));
-      },
+      onRefresh: onRefreshPets,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -50,7 +56,7 @@ class ClientDashboardScreen extends StatelessWidget {
             expandedHeight: 118,
             actions: [
               IconButton(
-                tooltip: 'Cerrar sesiùn',
+                tooltip: ClientStrings.cerrarSesionTooltip,
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: onLogout,
               ),
@@ -58,7 +64,7 @@ class ClientDashboardScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, right: 56, bottom: 14),
               title: Text(
-                'ùHola, $displayName!',
+                ClientStrings.holaNombre(displayName),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -92,6 +98,26 @@ class ClientDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (petsError != null && petsError!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: ClientSoftCard(
+                        color: scheme.errorContainer.withValues(alpha: 0.35),
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Icon(Icons.cloud_off_rounded, color: scheme.error),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '${ClientStrings.mascotasErrorParcial} ($petsError)',
+                                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ClientSoftCard(
                     color: ClientPastelColors.amberSoft.withValues(alpha: 0.55),
                     padding: const EdgeInsets.all(18),
@@ -104,12 +130,12 @@ class ClientDashboardScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Recordatorios',
+                                ClientStrings.recordatoriosTitulo,
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Vacuna anual de Luna en 6 dùas ù Cita de revisiùn Michi el jueves',
+                                ClientStrings.recordatoriosCuerpo,
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                               ),
                             ],
@@ -123,66 +149,92 @@ class ClientDashboardScreen extends StatelessWidget {
                       .slideY(begin: 0.04, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
                   const SizedBox(height: 22),
                   Text(
-                    'Accesos rùpidos',
+                    ClientStrings.accesosRapidos,
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 1.05,
-                    children: [
-                      PastelQuickActionCard(
-                        icon: Icons.emergency_rounded,
-                        label: 'Urgencia\n24/7',
-                        backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.65),
-                        iconColor: scheme.error.withValues(alpha: 0.85),
-                        onTap: () => Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(builder: (_) => const EmergencySOSScreen()),
+                  Material(
+                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(22),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (_) => ClientQuickAccessHubScreen(pets: pets),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: ClientPastelColors.mintSoft.withValues(alpha: 0.9),
+                              child: Icon(Icons.apps_rounded, color: ClientPastelColors.mintDeep, size: 30),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    ClientStrings.accesosHubTitulo,
+                                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    ClientStrings.accesosHubSubtitulo,
+                                    style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, color: scheme.outline),
+                          ],
                         ),
                       ),
-                      PastelQuickActionCard(
-                        icon: Icons.calendar_month_rounded,
-                        label: 'Agendar\nVisita',
-                        backgroundColor: ClientPastelColors.mintSoft.withValues(alpha: 0.55),
-                        iconColor: ClientPastelColors.mintDeep,
-                        onTap: () => _showScheduleDemo(context),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 80.ms, duration: 400.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.05, end: 0, delay: 80.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PastelQuickActionCard(
+                          icon: Icons.emergency_rounded,
+                          label: 'Urgencia\n24/7',
+                          backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.65),
+                          iconColor: scheme.error.withValues(alpha: 0.85),
+                          onTap: onOpenEmergency,
+                        ),
                       ),
-                      PastelQuickActionCard(
-                        icon: Icons.pets_rounded,
-                        label: 'Mis\nMascotas',
-                        backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.72),
-                        iconColor: ClientPastelColors.skyDeep,
-                        onTap: () {
-                          final first = pets.isNotEmpty ? pets.first : ClientDemoData.pets.first;
-                          Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(builder: (_) => PetProfileScreen(pet: first)),
-                          );
-                        },
-                      ),
-                      PastelQuickActionCard(
-                        icon: Icons.storefront_rounded,
-                        label: 'Tienda',
-                        backgroundColor: ClientPastelColors.amberSoft.withValues(alpha: 0.72),
-                        iconColor: scheme.secondary,
-                        onTap: () => Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(builder: (_) => const StoreScreen()),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: PastelQuickActionCard(
+                          icon: Icons.storefront_rounded,
+                          label: 'Tienda',
+                          backgroundColor: ClientPastelColors.amberSoft.withValues(alpha: 0.72),
+                          iconColor: scheme.secondary,
+                          onTap: () => Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(builder: (_) => const StoreScreen()),
+                          ),
                         ),
                       ),
                     ],
                   )
                       .animate()
-                      .fadeIn(delay: 80.ms, duration: 400.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.05, end: 0, delay: 80.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                      .fadeIn(delay: 120.ms, duration: 400.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.05, end: 0, delay: 120.ms, duration: 400.ms, curve: Curves.easeOutCubic),
                   const SizedBox(height: 26),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Tus mascotas',
+                        ClientStrings.tusMascotas,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       TextButton(
@@ -195,40 +247,42 @@ class ClientDashboardScreen extends StatelessWidget {
                                   ),
                                 );
                               },
-                        child: const Text('Ver expediente'),
+                        child: const Text(ClientStrings.verExpediente),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 112,
-                    child: pets.isEmpty
-                        ? Text(
-                            'Aùade una mascota para verla aquù.',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: muted),
-                          )
-                        : ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: pets.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 14),
-                            itemBuilder: (context, i) {
-                              final p = pets[i];
-                              return _PetCarouselTile(
-                                pet: p,
-                                onTap: () {
-                                  Navigator.of(context).push<void>(
-                                    MaterialPageRoute<void>(builder: (_) => PetProfileScreen(pet: p)),
+                    height: 128,
+                    child: petsLoading && pets.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : pets.isEmpty
+                            ? Text(
+                                ClientStrings.carouselSinMascotas,
+                                style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                              )
+                            : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: pets.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                                itemBuilder: (context, i) {
+                                  final p = pets[i];
+                                  return _PetCarouselTile(
+                                    pet: p,
+                                    onTap: () {
+                                      Navigator.of(context).push<void>(
+                                        MaterialPageRoute<void>(builder: (_) => PetProfileScreen(pet: p)),
+                                      );
+                                    },
                                   );
                                 },
-                              );
-                            },
-                          ),
+                              ),
                   ),
                   const SizedBox(height: 18),
                   AsyncEndpointButton(
-                    label: 'Simular cita en camino',
+                    label: ClientStrings.simularCitaEnCamino,
                     icon: Icons.location_searching_rounded,
-                    loadingLabel: 'Conectandoù',
+                    loadingLabel: ClientStrings.conectando,
                     style: FilledButton.styleFrom(
                       backgroundColor: ClientPastelColors.skyDeep.withValues(alpha: 0.88),
                       foregroundColor: Colors.white,
@@ -239,8 +293,8 @@ class ClientDashboardScreen extends StatelessWidget {
                       await Navigator.of(context).push<void>(
                         MaterialPageRoute<void>(
                           builder: (_) => const LiveTrackingScreen(
-                            vetName: 'Dra. Hernùndez',
-                            etaLabel: 'Llegada estimada: 14 min',
+                            vetName: ClientStrings.demoVetNombre,
+                            etaLabel: ClientStrings.demoEta,
                           ),
                         ),
                       );
@@ -252,53 +306,6 @@ class ClientDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _showScheduleDemo(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(ctx).bottom + 16, left: 16, right: 16),
-          child: ClientSoftCard(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Agendar visita',
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Elige fecha sugerida. Esta acciùn simula una llamada al servidor.',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: ClientPastelColors.mutedOn(ctx),
-                        height: 1.35,
-                      ),
-                ),
-                const SizedBox(height: 20),
-                AsyncEndpointButton(
-                  label: 'Confirmar solicitud',
-                  icon: Icons.check_rounded,
-                  loadingLabel: 'Agendandoù',
-                  style: FilledButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary),
-                  onPressed: () async {
-                    await Future<void>.delayed(const Duration(milliseconds: 1400));
-                    if (ctx.mounted) Navigator.of(ctx).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -320,7 +327,7 @@ class _PetCarouselTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Ink(
           width: 100,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
@@ -335,21 +342,27 @@ class _PetCarouselTile extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
-                radius: 30,
+                radius: 26,
                 backgroundColor: ClientPastelColors.mintSoft,
                 backgroundImage: pet.photoUrl != null && pet.photoUrl!.isNotEmpty ? NetworkImage(pet.photoUrl!) : null,
                 child: pet.photoUrl == null || pet.photoUrl!.isEmpty
                     ? Icon(Icons.pets_rounded, color: ClientPastelColors.mintDeep)
                     : null,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 pet.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  height: 1.15,
+                ),
               ),
             ],
           ),

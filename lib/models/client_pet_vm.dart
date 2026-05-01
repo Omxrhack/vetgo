@@ -6,7 +6,7 @@ class ClientPetVm {
     this.photoUrl,
     this.speciesLabel = 'Mascota',
     this.breedLabel = '',
-    this.weightLabel = ' kg',
+    this.weightLabel = '— kg',
     this.ageLabel = '',
   });
 
@@ -28,7 +28,7 @@ class ClientPetVm {
     final photoUrl = json['photo_url']?.toString();
 
     final weight = json['weight'];
-    var weightLabel = ' kg';
+    var weightLabel = '— kg';
     if (weight is num) {
       weightLabel =
           weight % 1 == 0 ? '${weight.toInt()} kg' : '${weight.toStringAsFixed(1)} kg';
@@ -45,7 +45,7 @@ class ClientPetVm {
           years--;
         }
         if (years >= 0) {
-          ageLabel = years == 1 ? '1 ao' : '$years aos';
+          ageLabel = years == 1 ? '1 año' : '$years años';
         }
       } catch (_) {}
     }

@@ -43,7 +43,7 @@ class LiveTrackingScreen extends StatelessWidget {
               onCall: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Iniciando llamadaù'),
+                    content: const Text('Iniciando llamadaÖ'),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
@@ -52,7 +52,7 @@ class LiveTrackingScreen extends StatelessWidget {
               onChat: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Abriendo chatù'),
+                    content: const Text('Abriendo chatÖ'),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
