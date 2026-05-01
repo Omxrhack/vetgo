@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../core/network/vetgo_api_client.dart';
-import '../theme/vet_operator_colors.dart';
-import '../widgets/vet/vet_async_toggle.dart';
-import '../widgets/vet/vet_soft_card.dart';
+import 'core/network/vetgo_api_client.dart';
+import 'theme/vet_operator_colors.dart';
+import 'widgets/vet/vet_async_toggle.dart';
+import 'widgets/vet/vet_soft_card.dart';
 import 'vet_patient_record_screen.dart';
 import 'vet_route_screen.dart';
 
-/// Agenda del dùa con lùnea de tiempo e ùtems expansibles.
+/// Agenda del dÌa con lÌnea de tiempo e Ìtems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,
@@ -126,7 +126,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
     if (list.isEmpty) {
       return Text(
         key: const ValueKey<String>('empty'),
-        'Sin citas para este dùa. Asigna vet_id en una cita para pruebas.',
+        'Sin citas para este d?a. Asigna vet_id en una cita para pruebas.',
         style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
       );
     }
@@ -147,7 +147,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
             ),
           ),
         Text(
-          'Lùnea del dùa',
+          'L?nea del d?a',
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 14),
@@ -220,7 +220,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           subtitle: Text(
-                            '$petName ù ${addr ?? 'Sin colonia'}',
+                            '$petName ? ${addr ?? 'Sin colonia'}',
                             style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
                           ),
                           children: [

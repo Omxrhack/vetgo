@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/vet_operator_colors.dart';
-import '../widgets/vet/vet_soft_card.dart';
+import 'theme/vet_operator_colors.dart';
+import 'widgets/vet/vet_soft_card.dart';
 
 /// Pantalla temporal hasta integrar mapa en vivo (Google Maps u otro SDK).
 class VetRouteScreen extends StatelessWidget {

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../core/network/vetgo_api_client.dart';
-import '../theme/vet_operator_colors.dart';
-import '../widgets/vet/vet_pastel_chip.dart';
-import '../widgets/vet/vet_section_title.dart';
-import '../widgets/vet/vet_soft_card.dart';
+import 'core/network/vetgo_api_client.dart';
+import 'theme/vet_operator_colors.dart';
+import 'widgets/vet/vet_pastel_chip.dart';
+import 'widgets/vet/vet_section_title.dart';
+import 'widgets/vet/vet_soft_card.dart';
 
-/// Expediente rùpido antes de la visita a domicilio.
+/// Expediente r·pido antes de la visita a domicilio.
 class VetPatientRecordScreen extends StatefulWidget {
   const VetPatientRecordScreen({
     super.key,
