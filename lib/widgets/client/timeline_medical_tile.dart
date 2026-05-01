@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:vetgo/theme/client_pastel.dart';
 
-/// Entrada de línea de tiempo en expediente médico.
+/// Entrada de lÃ­nea de tiempo en expediente mÃ©dico.
 class TimelineMedicalTile extends StatelessWidget {
   const TimelineMedicalTile({
     super.key,

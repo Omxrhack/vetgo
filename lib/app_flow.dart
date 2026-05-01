@@ -12,7 +12,7 @@ import 'profile_onboarding_flow.dart';
 import 'splash/splash_screen.dart';
 import 'core/auth/silent_auth.dart';
 
-/// Orquesta las etapas iniciales con transiciùn animada entre pantallas.
+/// Orquesta las etapas iniciales con transici√≥n animada entre pantallas.
 class AppFlow extends StatefulWidget {
   const AppFlow({super.key});
 
@@ -191,7 +191,7 @@ enum SessionBootstrapResult {
   home,
 }
 
-/// Resuelve sesiùn persistida: renueva access si expirù, obtiene estado fresco del servidor.
+/// Resuelve sesi√≥n persistida: renueva access si expir√≥, obtiene estado fresco del servidor.
 abstract final class SessionBootstrap {
   static Future<SessionBootstrapResult> resolve() async {
     final api = VetgoApiClient();

@@ -137,7 +137,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${widget.pet.speciesLabel}${widget.pet.breedLabel.isNotEmpty ? ' ù ${widget.pet.breedLabel}' : ''}',
+                        '${widget.pet.speciesLabel}${widget.pet.breedLabel.isNotEmpty ? ' ¬∑ ${widget.pet.breedLabel}' : ''}',
                         style: theme.textTheme.bodyMedium?.copyWith(color: muted, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 10),
@@ -150,7 +150,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                           Icon(Icons.cake_outlined, size: 18, color: muted),
                           const SizedBox(width: 6),
                           Text(
-                            widget.pet.ageLabel.isEmpty ? 'Edad ù' : widget.pet.ageLabel,
+                            widget.pet.ageLabel.isEmpty ? 'Edad ¬∑' : widget.pet.ageLabel,
                             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ],
@@ -169,13 +169,13 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             runSpacing: 10,
             children: [
               PastelStatusChip(
-                label: 'Vacunas al dùa',
+                label: 'Vacunas al d√≠a',
                 icon: Icons.verified_rounded,
                 backgroundColor: ClientPastelColors.mintSoft.withValues(alpha: 0.72),
                 foregroundColor: ClientPastelColors.mintDeep,
               ),
               PastelStatusChip(
-                label: 'Desparasitaciùn OK',
+                label: 'Desparasitaci√≥n OK',
                 icon: Icons.healing_rounded,
                 backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.75),
                 foregroundColor: ClientPastelColors.skyDeep,
@@ -196,7 +196,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               children: [
                 TimelineMedicalTile(
                   title: 'Consulta general',
-                  subtitle: 'Chequeo anual, presiùn y escucha cardùaca normal.',
+                  subtitle: 'Chequeo anual, presi√≥n y escucha card√≠aca normal.',
                   dateLabel: '12 marzo 2026',
                   dotColor: ClientPastelColors.mintDeep,
                   isLast: false,
@@ -209,8 +209,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                   isLast: false,
                 ),
                 TimelineMedicalTile(
-                  title: 'Desparasitaciùn interna',
-                  subtitle: 'Tableta oral; prùxima dosis en 90 dùas.',
+                  title: 'Desparasitaci√≥n interna',
+                  subtitle: 'Tableta oral; pr√≥xima dosis en 90 d√≠as.',
                   dateLabel: '18 enero 2026',
                   dotColor: ClientPastelColors.amberSoft.withValues(alpha: 0.95),
                   isLast: true,

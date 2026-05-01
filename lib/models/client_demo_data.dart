@@ -1,6 +1,6 @@
 import 'client_pet_vm.dart';
 
-/// Datos de demostración para pantallas cliente hasta conectar API.
+/// Datos de demostraciÃ³n para pantallas cliente hasta conectar API.
 abstract final class ClientDemoData {
   static const List<ClientPetVm> pets = [
     ClientPetVm(
@@ -9,15 +9,15 @@ abstract final class ClientDemoData {
       speciesLabel: 'Perro',
       breedLabel: 'Mestiza',
       weightLabel: '12 kg',
-      ageLabel: '3 años',
+      ageLabel: '3 aÃ±os',
     ),
     ClientPetVm(
       id: '2',
       name: 'Michi',
       speciesLabel: 'Gato',
-      breedLabel: 'Siamés',
+      breedLabel: 'SiamÃ©s',
       weightLabel: '4 kg',
-      ageLabel: '7 años',
+      ageLabel: '7 aÃ±os',
     ),
     ClientPetVm(
       id: '3',
@@ -25,7 +25,7 @@ abstract final class ClientDemoData {
       speciesLabel: 'Perro',
       breedLabel: 'Bulldog',
       weightLabel: '18 kg',
-      ageLabel: '5 años',
+      ageLabel: '5 aÃ±os',
     ),
   ];
 }

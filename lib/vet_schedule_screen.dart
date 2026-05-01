@@ -10,7 +10,7 @@ import 'package:vetgo/widgets/vetgo_notice.dart';
 import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
-/// Agenda del dùa con lùnea de tiempo e ùtems expansibles.
+/// Agenda del d√≠a con l√≠nea de tiempo e √≠tems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,

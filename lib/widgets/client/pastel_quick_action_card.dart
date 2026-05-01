@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// Tarjeta de acceso r·pido del dashboard (Ìcono grande + etiqueta).
+/// Tarjeta de acceso r√°pido del dashboard (√≠cono grande + etiqueta).
 class PastelQuickActionCard extends StatelessWidget {
   const PastelQuickActionCard({
     super.key,

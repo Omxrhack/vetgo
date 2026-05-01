@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// Tarjeta de producto con botón "+ Agregar" animado (simula endpoint).
+/// Tarjeta de producto con botÃ³n "+ Agregar" animado (simula endpoint).
 class StoreProductCard extends StatefulWidget {
   const StoreProductCard({
     super.key,
@@ -130,7 +130,7 @@ class _StoreProductCardState extends State<StoreProductCard> {
                               Icon(Icons.check_rounded, color: ClientPastelColors.mintDeep, size: 20),
                               const SizedBox(width: 6),
                               Text(
-                                'Añadido',
+                                'AÃ±adido',
                                 style: theme.textTheme.labelLarge?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: ClientPastelColors.mintDeep,

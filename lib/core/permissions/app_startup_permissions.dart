@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Permisos solicitados durante el splash para reducir fallos en emergencias,
-/// citas (mapa / ubicación) y selección de fotos (perfil, mascotas, onboarding).
+/// citas (mapa / ubicaciÃ³n) y selecciÃ³n de fotos (perfil, mascotas, onboarding).
 abstract final class AppStartupPermissions {
   static Future<void> requestAll() async {
     if (kIsWeb) return;

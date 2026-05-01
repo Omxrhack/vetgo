@@ -23,10 +23,10 @@ class ClientHomeShell extends StatefulWidget {
   final String? profilePhotoUrl;
   final VoidCallback onLogout;
 
-  /// `auth.users.id` del dueùo (JWT); necesario para `GET /api/pets/:ownerId`.
+  /// `auth.users.id` del due√±o (JWT); necesario para `GET /api/pets/:ownerId`.
   final String? ownerUserId;
 
-  /// Tras subir foto de perfil (Storage) recarga sesiùn en [HomeScreen].
+  /// Tras subir foto de perfil (Storage) recarga sesi√≥n en [HomeScreen].
   final VoidCallback? onProfilePhotoUpdated;
 
   @override
@@ -53,7 +53,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       if (!mounted) return;
       setState(() {
         _petsLoading = false;
-        _petsError = 'No se pudo obtener tu cuenta. Vuelve a iniciar sesiùn.';
+        _petsError = 'No se pudo obtener tu cuenta. Vuelve a iniciar sesi√≥n.';
         _pets = [];
       });
       return;

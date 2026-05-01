@@ -16,7 +16,7 @@ import 'package:vetgo/widgets/vetgo_notice.dart';
 
 final LatLng _fallbackVisitMapCenter = LatLng(19.4326, -99.1332);
 
-/// Flujo para agendar visita: mascota, fecha/hora/ubicaciùn en mapa, confirmaciùn y API.
+/// Flujo para agendar visita: mascota, fecha/hora/ubicaci√≥n en mapa, confirmaci√≥n y API.
 class ScheduleVisitFlowScreen extends StatefulWidget {
   const ScheduleVisitFlowScreen({super.key, required this.pets});
 
@@ -159,7 +159,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     final dt = _combinedLocalDateTime();
     final datePart = DateFormat('EEEE d MMM y', 'es').format(dt);
     final timePart = DateFormat.Hm('es').format(dt);
-    return '$datePart ù $timePart';
+    return '$datePart ¬∑ $timePart';
   }
 
   @override

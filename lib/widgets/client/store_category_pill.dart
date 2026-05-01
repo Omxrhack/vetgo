@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Categoría horizontal tipo píldora para la tienda.
+/// CategorÃ­a horizontal tipo pÃ­ldora para la tienda.
 class StoreCategoryPill extends StatelessWidget {
   const StoreCategoryPill({
     super.key,

@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 /// Mapa OpenStreetMap con marcador (sin API key de Google).
 ///
-/// Atribución: datos © colaboradores de OpenStreetMap.
+/// AtribuciÃ³n: datos Â© colaboradores de OpenStreetMap.
 class SimpleOsmMap extends StatefulWidget {
   const SimpleOsmMap({
     super.key,

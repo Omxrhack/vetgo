@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:vetgo/theme/vet_operator_colors.dart';
 
-/// Mapa OSM para ruta veterinario: posición actual + destino (emergencia/cita) y línea entre ambos.
+/// Mapa OSM para ruta veterinario: posiciÃ³n actual + destino (emergencia/cita) y lÃ­nea entre ambos.
 class VetRouteOsmMap extends StatefulWidget {
   const VetRouteOsmMap({
     super.key,

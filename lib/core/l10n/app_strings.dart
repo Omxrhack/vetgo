@@ -356,7 +356,7 @@ abstract final class AppStrings {
   /// Foto de perfil (Storage Supabase + dashboard).
   static const profilePhotoCambiarTooltip = 'Cambiar foto de perfil';
 
-  /// Onboarding: selector de galerùa en lugar de URL manual.
+  /// Onboarding: selector de galer√≠a en lugar de URL manual.
   static const onboardingFotoPerfilTitulo = 'Foto de perfil';
 
   static const onboardingFotoPerfilSubtitulo =

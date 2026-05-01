@@ -10,7 +10,7 @@ import 'package:vetgo/widgets/vet/vet_section_title.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Expediente rùpido antes de la visita a domicilio.
+/// Expediente r√°pido antes de la visita a domicilio.
 class VetPatientRecordScreen extends StatefulWidget {
   const VetPatientRecordScreen({
     super.key,
@@ -274,19 +274,19 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         VetSoftCard(
           color: VetOperatorColors.peach.withValues(alpha: 0.35),
           child: Text(
-            cd?['address_text']?.toString() ?? 'Sin direcciùn registrada',
+            cd?['address_text']?.toString() ?? 'Sin direcci√≥n registrada',
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 24),
         const VetSectionTitle(
-          title: 'Notas mùdicas / alergias',
+          title: 'Notas m√©dicas / alergias',
           subtitle: 'Revisa antes de tocar el timbre.',
         ),
         VetSoftCard(
           color: VetOperatorColors.mintSoft.withValues(alpha: 0.4),
           child: Text(
-            medical != null && medical.isNotEmpty ? medical : 'Sin notas mùdicas registradas.',
+            medical != null && medical.isNotEmpty ? medical : 'Sin notas m√©dicas registradas.',
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
           ),
         ),

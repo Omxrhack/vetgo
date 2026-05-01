@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// BotÛn que anima a estado de carga mientras [onPressed] (async) est· en curso.
+/// Bot√≥n que anima a estado de carga mientras [onPressed] (async) est√° en curso.
 class AsyncEndpointButton extends StatefulWidget {
   const AsyncEndpointButton({
     super.key,

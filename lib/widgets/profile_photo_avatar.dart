@@ -6,7 +6,7 @@ import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Avatar de perfil: al pulsar abre la galería, sube al bucket (`POST /api/auth/upload-photo`) y refresca la sesión local.
+/// Avatar de perfil: al pulsar abre la galerÃ­a, sube al bucket (`POST /api/auth/upload-photo`) y refresca la sesiÃ³n local.
 class ProfilePhotoAvatar extends StatefulWidget {
   const ProfilePhotoAvatar({
     super.key,
