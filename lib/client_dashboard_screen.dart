@@ -387,6 +387,119 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       ),
     );
   }
+
+  Widget _buildClientAppointmentsSection(ThemeData theme, Color muted) {
+    if (_apptLoading && _appointmentsRaw.isEmpty) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_apptError != null) {
+      return ClientSoftCard(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.28),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_month_rounded, color: theme.colorScheme.error, size: 26),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                AppStrings.clienteCitasErrorCarga,
+                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final upcoming = _upcomingAppointments();
+    if (upcoming.isEmpty) {
+      return ClientSoftCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Text(
+          AppStrings.clienteSinCitasProgramadas,
+          style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < upcoming.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _ClientAppointmentSummaryTile(
+            row: upcoming[i],
+            muted: muted,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ClientAppointmentSummaryTile extends StatelessWidget {
+  const _ClientAppointmentSummaryTile({
+    required this.row,
+    required this.muted,
+  });
+
+  final Map<String, dynamic> row;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheduledRaw = row['scheduled_at']?.toString();
+    final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
+    final whenLabel = dt != null
+        ? '${DateFormat('EEEE d MMM', 'es').format(dt)} \u00B7 ${DateFormat.Hm('es').format(dt)}'
+        : '\u2014';
+    final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
+    final petName = petMap['name']?.toString().trim().isNotEmpty == true
+        ? petMap['name']!.toString().trim()
+        : AppStrings.vetMascota;
+    final vetMap = row['vet'] is Map<String, dynamic> ? row['vet'] as Map<String, dynamic> : {};
+    final vetName = vetMap['full_name']?.toString().trim() ?? '';
+    final hasVetId = row['vet_id'] != null && row['vet_id'].toString().trim().isNotEmpty;
+    final vetLine = !hasVetId
+        ? AppStrings.clienteCitaVeterinarioPendiente
+        : (vetName.isNotEmpty ? AppStrings.clienteCitaLineaVeterinario(vetName) : AppStrings.clienteCitaVeterinarioPendiente);
+
+    return ClientSoftCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            whenLabel,
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            petName,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.medical_information_outlined, size: 18, color: ClientPastelColors.skyDeep),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  vetLine,
+                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PetCarouselTile extends StatelessWidget {

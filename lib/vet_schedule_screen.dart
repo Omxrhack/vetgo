@@ -180,6 +180,8 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
           final addr = row['client_address'] is Map<String, dynamic>
               ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
               : null;
+          final vetMap = row['vet'] is Map<String, dynamic> ? row['vet'] as Map<String, dynamic> : {};
+          final vetName = vetMap['full_name']?.toString().trim() ?? '';
           final addrNotes = row['client_address'] is Map<String, dynamic>
               ? (row['client_address'] as Map<String, dynamic>)['address_notes']?.toString()
               : null;
