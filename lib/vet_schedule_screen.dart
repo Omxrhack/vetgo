@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'core/network/vetgo_api_client.dart';
-import 'theme/vet_operator_colors.dart';
-import 'widgets/vet/vet_async_toggle.dart';
-import 'widgets/vet/vet_soft_card.dart';
-import 'vet_patient_record_screen.dart';
-import 'vet_route_screen.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/theme/vet_operator_colors.dart';
+import 'package:vetgo/vet_patient_record_screen.dart';
+import 'package:vetgo/vet_route_screen.dart';
+import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
+import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
 /// Agenda del día con línea de tiempo e ítems expansibles.
 class VetScheduleScreen extends StatefulWidget {
@@ -94,10 +95,10 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
               pinned: true,
               backgroundColor: theme.scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
-              title: const Text('Agenda y ruta'),
+              title: Text(AppStrings.vetScheduleTitulo),
               actions: [
                 IconButton(
-                  tooltip: 'Cerrar sesión',
+                  tooltip: AppStrings.cerrarSesionTooltip,
                   icon: const Icon(Icons.logout_rounded),
                   onPressed: widget.onLogout,
                 ),
@@ -138,8 +139,8 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
     if (list.isEmpty) {
       return Text(
         key: const ValueKey<String>('empty'),
-        'Sin citas para este día. Asigna vet_id en una cita para pruebas.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+        AppStrings.vetScheduleSinCitas,
+        style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.4),
       );
     }
 
@@ -159,23 +160,33 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
             ),
           ),
         Text(
-          'Línea del día',
+          AppStrings.vetScheduleLineaDelDia,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 14),
         ...List.generate(list.length, (i) {
           final row = list[i] is Map<String, dynamic> ? list[i] as Map<String, dynamic> : {};
           final id = row['id']?.toString() ?? '$i';
+          final vetIdAssigned = row['vet_id'];
+          final isPoolAppointment = vetIdAssigned == null;
           final scheduledRaw = row['scheduled_at']?.toString();
           final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
           final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
           final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
-          final petName = petMap['name']?.toString() ?? 'Mascota';
+          final petName = petMap['name']?.toString() ?? AppStrings.vetMascota;
+          final species = petMap['species']?.toString() ?? '';
+          final breed = petMap['breed']?.toString() ?? '';
+          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' · ');
           final addr = row['client_address'] is Map<String, dynamic>
               ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
               : null;
+          final addrNotes = row['client_address'] is Map<String, dynamic>
+              ? (row['client_address'] as Map<String, dynamic>)['address_notes']?.toString()
+              : null;
           final busy = _routeBusy[id] == true;
-          final subtitleAddr = addr ?? 'Sin colonia';
+          final subtitleAddr = addr?.trim().isNotEmpty == true ? addr!.trim() : AppStrings.vetScheduleSinColonia;
+          final notes = row['notes']?.toString().trim() ?? '';
+          final statusRaw = row['status']?.toString() ?? '';
 
           return Padding(
             padding: EdgeInsets.only(bottom: i == list.length - 1 ? 24 : 14),
@@ -227,13 +238,52 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                           key: PageStorageKey<String>('appt_$id'),
                           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          title: Text(
-                            timeLabel,
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  timeLabel,
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              if (isPoolAppointment)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Chip(
+                                    visualDensity: VisualDensity.compact,
+                                    label: Text(
+                                      AppStrings.vetScheduleCitaSinAsignar,
+                                      style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                    backgroundColor: VetOperatorColors.peach.withValues(alpha: 0.55),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                            ],
                           ),
-                          subtitle: Text(
-                            '$petName ? $subtitleAddr',
-                            style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                speciesLine.isNotEmpty ? '$petName \u00B7 $speciesLine' : petName,
+                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                subtitleAddr,
+                                style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (addrNotes != null && addrNotes.trim().isNotEmpty)
+                                Text(
+                                  addrNotes.trim(),
+                                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
                           ),
                           children: [
                             AnimatedSwitcher(
@@ -243,6 +293,25 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  if (statusRaw.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Text(
+                                        AppStrings.vetScheduleEstado(statusRaw),
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: muted,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  if (notes.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: Text(
+                                        notes,
+                                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                                      ),
+                                    ),
                                   TextButton.icon(
                                     onPressed: () {
                                       final petId = petMap['id']?.toString();
@@ -254,14 +323,20 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                       );
                                     },
                                     icon: const Icon(Icons.article_outlined),
-                                    label: const Text('Ver expediente'),
+                                    label: Text(AppStrings.vetScheduleVerExpediente),
                                   ),
                                   const SizedBox(height: 6),
-                                  VetAsyncPrimaryButton(
-                                    label: 'Iniciar ruta',
-                                    busy: busy,
-                                    onPressed: busy ? null : () => _startRoute(id),
-                                  ),
+                                  if (isPoolAppointment)
+                                    Text(
+                                      AppStrings.vetScheduleRutaRequiereAsignacion,
+                                      style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                    )
+                                  else
+                                    VetAsyncPrimaryButton(
+                                      label: AppStrings.vetScheduleIniciarRuta,
+                                      busy: busy,
+                                      onPressed: busy ? null : () => _startRoute(id),
+                                    ),
                                 ],
                               ),
                             ),

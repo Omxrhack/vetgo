@@ -64,6 +64,27 @@ abstract final class AppStrings {
 
   static const vetNavAgenda = 'Agenda';
 
+  /// Agenda del veterinario (pantalla de citas).
+  static const vetScheduleTitulo = 'Agenda y ruta';
+
+  static const vetScheduleSinCitas =
+      'Sin citas para este d\u00EDa. Las solicitudes pendientes sin veterinario asignado tambi\u00E9n aparecen aqu\u00ED.';
+
+  static const vetScheduleLineaDelDia = 'L\u00EDnea del d\u00EDa';
+
+  static const vetScheduleVerExpediente = 'Ver expediente';
+
+  static const vetScheduleIniciarRuta = 'Iniciar ruta';
+
+  static const vetScheduleCitaSinAsignar = 'Sin asignar';
+
+  static const vetScheduleRutaRequiereAsignacion =
+      'La ruta en vivo estar\u00E1 disponible cuando la cita te est\u00E9 asignada.';
+
+  static const vetScheduleSinColonia = 'Sin direcci\u00F3n registrada';
+
+  static String vetScheduleEstado(String estado) => 'Estado: $estado';
+
   static const vetResumenHoy = 'Resumen de hoy';
 
   static const vetCitasPendientes = 'Citas pendientes';

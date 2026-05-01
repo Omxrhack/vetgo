@@ -110,7 +110,6 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
       initialDate: _visitDate!,
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: last,
-      locale: const Locale('es', 'MX'),
     );
     if (d != null) setState(() => _visitDate = DateTime(d.year, d.month, d.day));
   }
