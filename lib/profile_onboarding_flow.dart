@@ -7,10 +7,7 @@ import 'vet_onboarding_form.dart';
 
 /// Onboarding de perfil (cliente o veterinario) tras verificar correo.
 class ProfileOnboardingFlow extends StatefulWidget {
-  const ProfileOnboardingFlow({
-    super.key,
-    required this.onFinished,
-  });
+  const ProfileOnboardingFlow({super.key, required this.onFinished});
 
   final VoidCallback onFinished;
 
@@ -83,9 +80,7 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Completa tu perfil'),
-      ),
+      appBar: AppBar(title: const Text('Completa tu perfil')),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,20 +90,23 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
                 color: scheme.errorContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(_error!, style: TextStyle(color: scheme.onErrorContainer)),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: scheme.onErrorContainer),
+                  ),
                 ),
               ),
             Expanded(
               child: _role == null
                   ? _RolePicker(
                       onPick: (r) => setState(() {
-                            _role = r;
-                            _error = null;
-                          }),
+                        _role = r;
+                        _error = null;
+                      }),
                     )
                   : _role == 'client'
-                      ? ClientOnboardingForm(key: _clientKey)
-                      : VetOnboardingForm(key: _vetKey),
+                  ? ClientOnboardingForm(key: _clientKey)
+                  : VetOnboardingForm(key: _vetKey),
             ),
             if (_role != null)
               Padding(
@@ -146,7 +144,9 @@ class _RolePicker extends StatelessWidget {
       children: [
         Text(
           'Como quieres usar Vetgo?',
-          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -203,9 +203,17 @@ class _RoleCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
