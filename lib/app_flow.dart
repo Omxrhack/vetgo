@@ -222,7 +222,7 @@ abstract final class SessionBootstrap {
     }
 
     if (!hasAccess(session) && !hasRefresh(session)) {
-      if (pendingOtpEmail != null && pendingOtpEmail.trim().isNotEmpty) {
+      if ((pendingOtpEmail ?? '').trim().isNotEmpty) {
         return SessionBootstrapResult.needsOtp;
       }
       await trySilentRestore();
@@ -230,7 +230,7 @@ abstract final class SessionBootstrap {
       pendingOtpEmail = await AuthStorage.readPendingOtpEmail();
 
       if (!hasAccess(session) && !hasRefresh(session)) {
-        if (pendingOtpEmail != null && pendingOtpEmail.trim().isNotEmpty) {
+        if ((pendingOtpEmail ?? '').trim().isNotEmpty) {
           return SessionBootstrapResult.needsOtp;
         }
         await AuthStorage.clear();
