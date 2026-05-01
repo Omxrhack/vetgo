@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:vetgo/client_dashboard_screen.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/emergency_sos_screen.dart';
 import 'package:vetgo/models/client_demo_data.dart';
+import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/store_screen.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 
@@ -13,18 +15,70 @@ class ClientHomeShell extends StatefulWidget {
     required this.userName,
     this.profilePhotoUrl,
     required this.onLogout,
+    this.ownerUserId,
   });
 
   final String userName;
   final String? profilePhotoUrl;
   final VoidCallback onLogout;
 
+  /// `auth.users.id` del dueño (JWT); necesario para `GET /api/pets/:ownerId`.
+  final String? ownerUserId;
+
   @override
   State<ClientHomeShell> createState() => _ClientHomeShellState();
 }
 
 class _ClientHomeShellState extends State<ClientHomeShell> {
+  final VetgoApiClient _api = VetgoApiClient();
   int _tab = 0;
+
+  List<ClientPetVm> _pets = [];
+  bool _petsLoading = true;
+  String? _petsError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPets();
+  }
+
+  Future<void> _loadPets() async {
+    final id = widget.ownerUserId?.trim();
+    if (id == null || id.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _petsLoading = false;
+        _petsError = 'No se pudo obtener tu cuenta. Vuelve a iniciar sesión.';
+        _pets = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _petsLoading = true;
+      _petsError = null;
+    });
+
+    final (list, err) = await _api.listPetsByOwner(ownerId: id);
+    if (!mounted) return;
+
+    if (err != null) {
+      setState(() {
+        _petsLoading = false;
+        _petsError = err;
+        _pets = List<ClientPetVm>.from(ClientDemoData.pets);
+      });
+      return;
+    }
+
+    final mapped = list!.map(ClientPetVm.fromApiJson).toList();
+    setState(() {
+      _petsLoading = false;
+      _petsError = null;
+      _pets = mapped;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +92,18 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
           ClientDashboardScreen(
             userName: widget.userName,
             profilePhotoUrl: widget.profilePhotoUrl,
-            pets: ClientDemoData.pets,
+            pets: _pets,
+            petsLoading: _petsLoading,
+            petsError: _petsError,
+            onRefreshPets: _loadPets,
             onLogout: widget.onLogout,
+            onOpenEmergency: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => EmergencySOSScreen(pets: _pets),
+                ),
+              );
+            },
           ),
           const StoreScreen(),
         ],
@@ -47,7 +111,9 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       floatingActionButton: FloatingActionButton.large(
         onPressed: () {
           Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(builder: (_) => const EmergencySOSScreen()),
+            MaterialPageRoute<void>(
+              builder: (_) => EmergencySOSScreen(pets: _pets),
+            ),
           );
         },
         backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.95),

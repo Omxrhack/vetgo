@@ -261,6 +261,102 @@ class VetgoApiClient {
     }
   }
 
+  /// `GET /api/pets/:ownerId` — solo el dueño autenticado puede listar sus mascotas.
+  Future<(List<Map<String, dynamic>>? list, String? error)> listPetsByOwner({
+    required String ownerId,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<dynamic>(
+        '/pets/$ownerId',
+        options: opts,
+      );
+      final data = r.data;
+      if (data is! List<dynamic>) {
+        return (null, 'Formato de respuesta inesperado.');
+      }
+      final out = <Map<String, dynamic>>[];
+      for (final e in data) {
+        if (e is Map<String, dynamic>) {
+          out.add(e);
+        } else if (e is Map) {
+          out.add(Map<String, dynamic>.from(e));
+        }
+      }
+      return (out, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/products` — catálogo (no requiere token).
+  Future<(Map<String, dynamic>? data, String? error)> listProducts({
+    int page = 1,
+    int limit = 24,
+    String? search,
+    String? category,
+  }) async {
+    try {
+      final q = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+        if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+        if (category != null && category.trim().isNotEmpty) 'category': category.trim(),
+      };
+      final r = await _api.get<Map<String, dynamic>>(
+        '/products',
+        queryParameters: q,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/emergencies`
+  Future<VetJsonResult> createEmergency({
+    required String petId,
+    required String symptoms,
+    required double latitude,
+    required double longitude,
+    String? status,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/emergencies',
+        data: <String, dynamic>{
+          'pet_id': petId,
+          'symptoms': symptoms,
+          'latitude': latitude,
+          'longitude': longitude,
+          if (status != null && status.isNotEmpty) 'status': status,
+        },
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/tracking/:id`
+  Future<VetJsonResult> getTrackingSession({required String sessionId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/tracking/$sessionId',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   Future<Options?> _authorizedOptions() async {
     final token = await AuthStorage.readAccessToken();
     if (token == null || token.isEmpty) return null;
