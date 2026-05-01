@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'models/client_demo_data.dart';
 import 'models/client_pet_vm.dart';
 import 'theme/client_pastel.dart';
 import 'widgets/client/async_endpoint_button.dart';
 import 'widgets/client/client_soft_card.dart';
 
-/// SOS Emergencia 24/7 ó acciÛn r·pida con gradiente suave.
+/// SOS Emergencia 24/7 ù acciùn rùpida con gradiente suave.
 class EmergencySOSScreen extends StatefulWidget {
   const EmergencySOSScreen({super.key});
 
@@ -17,9 +18,9 @@ class EmergencySOSScreen extends StatefulWidget {
 class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
   bool _searching = false;
 
-  static const List<ClientPetVm> _pets = ClientDashboardScreen.demoPets;
+  static const List<ClientPetVm> _pets = ClientDemoData.pets;
 
-  ClientPetVm _selectedPet = ClientDashboardScreen.demoPets.first;
+  ClientPetVm _selectedPet = ClientDemoData.pets.first;
   final TextEditingController _symptoms = TextEditingController();
 
   @override
@@ -124,7 +125,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 16),
                                         child: Text(
-                                          'Buscando veterinarios cercanosÖ',
+                                          'Buscando veterinarios cercanosù',
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                                         ),
@@ -149,12 +150,10 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                       ),
                     ),
                   ),
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .shimmer(delay: 400.ms, duration: 1800.ms, color: Colors.white.withValues(alpha: 0.35)),
+                ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOutCubic),
                 const SizedBox(height: 40),
                 Text(
-                  'Detalle r·pido (opcional)',
+                  'Detalle rùpido (opcional)',
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 12),
@@ -186,9 +185,9 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                         enabled: !_searching,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'SÌntomas',
+                          labelText: 'Sùntomas',
                           alignLabelWithHint: true,
-                          hintText: 'Describe lo que observasÖ',
+                          hintText: 'Describe lo que observasù',
                           border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                         ),
                       ),
@@ -196,7 +195,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                       AsyncEndpointButton(
                         label: 'Enviar datos al equipo SOS',
                         icon: Icons.send_rounded,
-                        loadingLabel: 'EnviandoÖ',
+                        loadingLabel: 'Enviandoù',
                         style: FilledButton.styleFrom(
                           backgroundColor: ClientPastelColors.mintDeep,
                           foregroundColor: Colors.white,

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'emergency_sos_screen.dart';
 import 'live_tracking_screen.dart';
+import 'models/client_demo_data.dart';
 import 'models/client_pet_vm.dart';
 import 'pet_profile_screen.dart';
 import 'store_screen.dart';
@@ -11,7 +12,7 @@ import 'widgets/client/async_endpoint_button.dart';
 import 'widgets/client/client_soft_card.dart';
 import 'widgets/client/pastel_quick_action_card.dart';
 
-/// Home / dashboard principal del cliente (estÈtica pastel Vetgo).
+/// Home / dashboard principal del cliente (estùtica pastel Vetgo).
 class ClientDashboardScreen extends StatelessWidget {
   const ClientDashboardScreen({
     super.key,
@@ -25,33 +26,6 @@ class ClientDashboardScreen extends StatelessWidget {
   final String? profilePhotoUrl;
   final List<ClientPetVm> pets;
   final VoidCallback onLogout;
-
-  static final List<ClientPetVm> demoPets = [
-    const ClientPetVm(
-      id: '1',
-      name: 'Luna',
-      speciesLabel: 'Perro',
-      breedLabel: 'Mestiza',
-      weightLabel: '12 kg',
-      ageLabel: '3 aÒos',
-    ),
-    const ClientPetVm(
-      id: '2',
-      name: 'Michi',
-      speciesLabel: 'Gato',
-      breedLabel: 'SiamÈs',
-      weightLabel: '4 kg',
-      ageLabel: '7 aÒos',
-    ),
-    const ClientPetVm(
-      id: '3',
-      name: 'Rocky',
-      speciesLabel: 'Perro',
-      breedLabel: 'Bulldog',
-      weightLabel: '18 kg',
-      ageLabel: '5 aÒos',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +50,7 @@ class ClientDashboardScreen extends StatelessWidget {
             expandedHeight: 118,
             actions: [
               IconButton(
-                tooltip: 'Cerrar sesiÛn',
+                tooltip: 'Cerrar sesiùn',
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: onLogout,
               ),
@@ -84,7 +58,7 @@ class ClientDashboardScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, right: 56, bottom: 14),
               title: Text(
-                '°Hola, $displayName!',
+                'ùHola, $displayName!',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -114,7 +88,7 @@ class ClientDashboardScreen extends StatelessWidget {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -135,7 +109,7 @@ class ClientDashboardScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Vacuna anual de Luna en 6 dÌas ∑ Cita de revisiÛn Michi el jueves',
+                                'Vacuna anual de Luna en 6 dùas ù Cita de revisiùn Michi el jueves',
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                               ),
                             ],
@@ -149,7 +123,7 @@ class ClientDashboardScreen extends StatelessWidget {
                       .slideY(begin: 0.04, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
                   const SizedBox(height: 22),
                   Text(
-                    'Accesos r·pidos',
+                    'Accesos rùpidos',
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 12),
@@ -183,7 +157,7 @@ class ClientDashboardScreen extends StatelessWidget {
                         backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.72),
                         iconColor: ClientPastelColors.skyDeep,
                         onTap: () {
-                          final first = pets.isNotEmpty ? pets.first : ClientDashboardScreen.demoPets.first;
+                          final first = pets.isNotEmpty ? pets.first : ClientDemoData.pets.first;
                           Navigator.of(context).push<void>(
                             MaterialPageRoute<void>(builder: (_) => PetProfileScreen(pet: first)),
                           );
@@ -229,7 +203,10 @@ class ClientDashboardScreen extends StatelessWidget {
                   SizedBox(
                     height: 112,
                     child: pets.isEmpty
-                        ? Text('AÒade una mascota para verla aquÌ.', style: theme.textTheme.bodyMedium?.copyWith(color: muted))
+                        ? Text(
+                            'Aùade una mascota para verla aquù.',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                          )
                         : ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: pets.length,
@@ -251,7 +228,7 @@ class ClientDashboardScreen extends StatelessWidget {
                   AsyncEndpointButton(
                     label: 'Simular cita en camino',
                     icon: Icons.location_searching_rounded,
-                    loadingLabel: 'ConectandoÖ',
+                    loadingLabel: 'Conectandoù',
                     style: FilledButton.styleFrom(
                       backgroundColor: ClientPastelColors.skyDeep.withValues(alpha: 0.88),
                       foregroundColor: Colors.white,
@@ -262,7 +239,7 @@ class ClientDashboardScreen extends StatelessWidget {
                       await Navigator.of(context).push<void>(
                         MaterialPageRoute<void>(
                           builder: (_) => const LiveTrackingScreen(
-                            vetName: 'Dra. Hern·ndez',
+                            vetName: 'Dra. Hernùndez',
                             etaLabel: 'Llegada estimada: 14 min',
                           ),
                         ),
@@ -300,7 +277,7 @@ class ClientDashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Elige fecha sugerida. Esta acciÛn simula una llamada al servidor.',
+                  'Elige fecha sugerida. Esta acciùn simula una llamada al servidor.',
                   style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                         color: ClientPastelColors.mutedOn(ctx),
                         height: 1.35,
@@ -310,7 +287,7 @@ class ClientDashboardScreen extends StatelessWidget {
                 AsyncEndpointButton(
                   label: 'Confirmar solicitud',
                   icon: Icons.check_rounded,
-                  loadingLabel: 'AgendandoÖ',
+                  loadingLabel: 'Agendandoù',
                   style: FilledButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary),
                   onPressed: () async {
                     await Future<void>.delayed(const Duration(milliseconds: 1400));

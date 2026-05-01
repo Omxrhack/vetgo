@@ -46,7 +46,10 @@ class _AsyncEndpointButtonState extends State<AsyncEndpointButton> {
       duration: const Duration(milliseconds: 240),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
-      transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: ScaleTransition(scale: anim, child: child)),
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(scale: anim, child: child),
+      ),
       child: _busy
           ? SizedBox(
               key: const ValueKey<String>('loading'),
@@ -87,18 +90,30 @@ class _AsyncEndpointButtonState extends State<AsyncEndpointButton> {
               key: const ValueKey<String>('idle'),
               height: widget.height,
               width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: widget.onPressed == null ? null : _handleTap,
-                icon: widget.icon != null ? Icon(widget.icon, size: 22) : const SizedBox.shrink(),
-                label: Text(widget.label, style: const TextStyle(fontWeight: FontWeight.w700)),
-                style: widget.style ??
-                    FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(widget.borderRadius),
-                      ),
-                      elevation: 0,
+              child: widget.icon != null
+                  ? FilledButton.icon(
+                      onPressed: widget.onPressed == null ? null : _handleTap,
+                      icon: Icon(widget.icon, size: 22),
+                      label: Text(widget.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      style: widget.style ??
+                          FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                            ),
+                            elevation: 0,
+                          ),
+                    )
+                  : FilledButton(
+                      onPressed: widget.onPressed == null ? null : _handleTap,
+                      style: widget.style ??
+                          FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                            ),
+                            elevation: 0,
+                          ),
+                      child: Text(widget.label, style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
-              ),
             ),
     );
   }
