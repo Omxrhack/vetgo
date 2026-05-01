@@ -288,7 +288,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             maxLines: 3,
             decoration: authInputDecoration(
               context,
-              label: 'Notas médicas (opcional)',
+              label: 'Notas mÃ©dicas (opcional)',
             ),
           ),
         ],

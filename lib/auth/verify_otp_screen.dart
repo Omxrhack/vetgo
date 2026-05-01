@@ -31,6 +31,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   bool _loading = false;
   bool _resending = false;
   String? _error;
+  String? _resendInfo;
 
   @override
   void dispose() {
@@ -44,6 +45,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _resendInfo = null;
     });
     final outcome = await _api.verifyOtp(email: widget.email, token: token);
     if (!mounted) return;
@@ -60,12 +62,14 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       setState(() {
         _error =
             'Cuenta verificada pero sin sesión automática. Inicia sesión con tu contraseña.';
+        _resendInfo = null;
       });
       return;
     }
 
     setState(() {
       _error = outcome.message ?? 'Código incorrecto.';
+      _resendInfo = null;
       _pinController.clear();
       _focusNode.requestFocus();
     });
@@ -75,19 +79,18 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     setState(() {
       _resending = true;
       _error = null;
+      _resendInfo = null;
     });
     final err = await _api.resendOtp(widget.email);
     if (!mounted) return;
-    setState(() => _resending = false);
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Si hay cuota disponible, revisa tu correo.'),
-        ),
-      );
-    }
+    setState(() {
+      _resending = false;
+      if (err != null) {
+        _error = err;
+      } else {
+        _resendInfo = 'Si hay cuota disponible, revisa tu correo.';
+      }
+    });
   }
 
   @override
@@ -182,6 +185,25 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             ),
                           ),
                   ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: (_error != null || _resendInfo == null)
+                        ? const SizedBox.shrink(key: ValueKey('no_resend_info'))
+                        : Padding(
+                            key: const ValueKey('resend_info'),
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _ResendInfoBanner(
+                              message: _resendInfo!,
+                              onDismiss: () =>
+                                  setState(() => _resendInfo = null),
+                            ),
+                          ),
+                  ),
                   Center(
                     child: Pinput(
                       length: 6,
@@ -201,7 +223,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         if (!_loading) _submit(pin);
                       },
                       onChanged: (_) {
-                        if (_error != null) setState(() => _error = null);
+                        if (_error != null || _resendInfo != null) {
+                          setState(() {
+                            _error = null;
+                            _resendInfo = null;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -264,6 +291,55 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResendInfoBanner extends StatelessWidget {
+  const _ResendInfoBanner({
+    required this.message,
+    required this.onDismiss,
+  });
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primaryContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.mark_email_read_outlined,
+              color: scheme.onPrimaryContainer,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: scheme.onPrimaryContainer,
+                  height: 1.35,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close_rounded, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              color: scheme.onPrimaryContainer,
+            ),
+          ],
         ),
       ),
     );

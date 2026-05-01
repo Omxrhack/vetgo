@@ -28,7 +28,7 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
   Future<void> _submit() async {
     final token = await AuthStorage.readAccessToken();
     if (token == null || token.isEmpty) {
-      setState(() => _error = 'Sesin no vlida. Vuelve a iniciar sesin.');
+      setState(() => _error = 'SesiÃ³n no vÃ¡lida. Vuelve a iniciar sesiÃ³n.');
       return;
     }
 
@@ -288,11 +288,11 @@ class _RolePicker extends StatelessWidget {
           children: [
             const AuthBrandHeader(
               title: 'Completa tu perfil',
-              subtitle: 'Cuntanos cmo vas a usar Vetgo para personalizar tu experiencia.',
+              subtitle: 'CuÃ©ntanos cÃ³mo vas a usar Vetgo para personalizar tu experiencia.',
             ),
             const SizedBox(height: 28),
             _RoleCard(
-              title: 'Soy dueño de mascota',
+              title: 'Soy dueÃ±o de mascota',
               subtitle: 'Busco veterinarios y servicios para mis mascotas.',
               icon: Icons.pets_rounded,
               onTap: () => onPick('client'),
@@ -300,7 +300,7 @@ class _RolePicker extends StatelessWidget {
             const SizedBox(height: 14),
             _RoleCard(
               title: 'Soy veterinario',
-              subtitle: 'Ofrezco consultas y servicios a domicilio o en línea.',
+              subtitle: 'Ofrezco consultas y servicios a domicilio o en lÃ­nea.',
               icon: Icons.medical_services_outlined,
               onTap: () => onPick('vet'),
             ),
