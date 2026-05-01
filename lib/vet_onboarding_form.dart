@@ -156,7 +156,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _experience,
+            initialValue: _experience,
             decoration: const InputDecoration(
               labelText: 'Anos de experiencia',
               border: OutlineInputBorder(),
@@ -190,7 +190,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _specialty,
+            initialValue: _specialty,
             decoration: const InputDecoration(
               labelText: 'Especialidad',
               border: OutlineInputBorder(),

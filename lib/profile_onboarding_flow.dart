@@ -85,43 +85,113 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_error != null)
-              Material(
-                color: scheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: scheme.onErrorContainer),
-                  ),
-                ),
-              ),
-            Expanded(
-              child: _role == null
-                  ? _RolePicker(
-                      onPick: (r) => setState(() {
-                        _role = r;
-                        _error = null;
-                      }),
-                    )
-                  : _role == 'client'
-                  ? ClientOnboardingForm(key: _clientKey)
-                  : VetOnboardingForm(key: _vetKey),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (c, a) =>
+                  SizeTransition(sizeFactor: a, child: FadeTransition(opacity: a, child: c)),
+              child: _error == null
+                  ? const SizedBox.shrink(key: ValueKey('err_none'))
+                  : Material(
+                      key: const ValueKey('err_msg'),
+                      color: scheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(color: scheme.onErrorContainer),
+                        ),
+                      ),
+                    ),
             ),
-            if (_role != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Guardar y continuar'),
-                ),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 380),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  final isPicker = child.key == const ValueKey('role_picker');
+                  final beginX = isPicker ? -0.15 : 0.15;
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(beginX, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
+                      child: child,
+                    ),
+                  );
+                },
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: <Widget>[
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  );
+                },
+                child: _role == null
+                    ? KeyedSubtree(
+                        key: const ValueKey('role_picker'),
+                        child: _RolePicker(
+                          onPick: (r) => setState(() {
+                            _role = r;
+                            _error = null;
+                          }),
+                        ),
+                      )
+                    : _role == 'client'
+                        ? KeyedSubtree(
+                            key: const ValueKey('role_client'),
+                            child: ClientOnboardingForm(key: _clientKey),
+                          )
+                        : KeyedSubtree(
+                            key: const ValueKey('role_vet'),
+                            child: VetOnboardingForm(key: _vetKey),
+                          ),
               ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              child: _role == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      child: Row(
+                        children: [
+                          IconButton.filledTonal(
+                            tooltip: 'Cambiar rol',
+                            onPressed: _loading
+                                ? null
+                                : () => setState(() => _role = null),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: _loading ? null : _submit,
+                              child: _loading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Guardar y continuar'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
           ],
         ),
       ),
