@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/auth/auth_storage.dart';
 import '../core/network/vetgo_api_client.dart';
-import 'client_onboarding_form.dart';
-import 'vet_onboarding_form.dart';
+import '../profile_onboarding/client_onboarding_form.dart';
+import '../profile_onboarding/vet_onboarding_form.dart';
 
 /// Onboarding de perfil (cliente o veterinario) tras verificar correo.
 class ProfileOnboardingFlow extends StatefulWidget {
@@ -80,8 +80,7 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -152,7 +151,7 @@ class _RolePicker extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _RoleCard(
-          title: 'Soy dueño de mascota',
+          title: 'Soy dueno de mascota',
           subtitle: 'Busco veterinarios y servicios para mis mascotas.',
           icon: Icons.pets,
           onTap: () => onPick('client'),
