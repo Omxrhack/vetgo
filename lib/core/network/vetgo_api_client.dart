@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 
 import '../auth/auth_session.dart';
+import '../auth/auth_storage.dart';
 import '../config/app_config.dart';
 import 'auth_outcomes.dart';
+
+typedef VetJsonResult = (Map<String, dynamic>? data, String? error);
 
 /// Cliente HTTP para el backend Vetgo.
 ///
@@ -256,6 +259,148 @@ class VetgoApiClient {
     } on DioException {
       return null;
     }
+  }
+
+  Future<Options?> _authorizedOptions() async {
+    final token = await AuthStorage.readAccessToken();
+    if (token == null || token.isEmpty) return null;
+    return Options(
+      headers: <String, dynamic>{
+        Headers.authorizationHeader: 'Bearer $token',
+      },
+    );
+  }
+
+  /// `PATCH /api/vet/availability`
+  Future<VetJsonResult> patchVetAvailability({required bool onDuty}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/availability',
+        data: <String, dynamic>{'on_duty': onDuty},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/vet/dashboard`
+  Future<VetJsonResult> getVetDashboard({String? date}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vet/dashboard',
+        queryParameters: date != null ? <String, dynamic>{'date': date} : null,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/vet/schedule`
+  Future<VetJsonResult> getVetSchedule({String? date}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vet/schedule',
+        queryParameters: date != null ? <String, dynamic>{'date': date} : null,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/vet/pets/:id/summary`
+  Future<VetJsonResult> getVetPetSummary({required String petId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vet/pets/$petId/summary',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/vet/emergencies/active`
+  Future<VetJsonResult> getVetEmergenciesActive() async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vet/emergencies/active',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/vet/emergencies/:id/respond`
+  Future<VetJsonResult> respondVetEmergency({
+    required String emergencyId,
+    required bool accept,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/vet/emergencies/$emergencyId/respond',
+        data: <String, dynamic>{'accept': accept},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/tracking/sessions`
+  Future<VetJsonResult> createTrackingSession({
+    String? appointmentId,
+    String? emergencyId,
+    required double vetLat,
+    required double vetLng,
+    int? etaMinutes,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    final body = <String, dynamic>{
+      'vet_lat': vetLat,
+      'vet_lng': vetLng,
+      if (appointmentId != null) 'appointment_id': appointmentId,
+      if (emergencyId != null) 'emergency_id': emergencyId,
+      if (etaMinutes != null) 'eta_minutes': etaMinutes,
+    };
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/tracking/sessions',
+        data: body,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  static String _vetDioMessage(DioException e) {
+    final map = parseResponseMap(e.response?.data);
+    final err = map?['error']?.toString() ?? e.message ?? e.type.toString();
+    return err;
   }
 
   /// `POST /api/auth/resend-otp` — devuelve `null` si OK, o mensaje de error.
