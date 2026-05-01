@@ -4,7 +4,6 @@ import 'auth/auth_flow.dart';
 import 'core/auth/auth_session.dart';
 import 'core/auth/auth_storage.dart';
 import 'core/network/vetgo_api_client.dart';
-import 'core/supabase/vetgo_supabase.dart';
 import 'home_screen.dart';
 import 'onboarding/onboarding_prefs.dart';
 import 'onboarding/vetgo_onboarding_page.dart';
@@ -221,10 +220,6 @@ abstract final class SessionBootstrap {
         profile: fresh.profile ?? session!.profile,
       );
       await AuthStorage.saveSession(session!);
-      await VetgoSupabase.syncSession(
-        refreshToken: session!.refreshToken,
-        accessToken: session!.accessToken,
-      );
       return true;
     }
 
@@ -257,10 +252,6 @@ abstract final class SessionBootstrap {
     if (me?.user != null) {
       session = session!.merge(user: me!.user, profile: me.profile);
       await AuthStorage.saveSession(session!);
-      await VetgoSupabase.syncSession(
-        refreshToken: session!.refreshToken,
-        accessToken: session!.accessToken,
-      );
     } else {
       return _fallbackFromCache();
     }

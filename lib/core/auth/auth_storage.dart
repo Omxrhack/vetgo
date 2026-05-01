@@ -77,6 +77,11 @@ abstract final class AuthStorage {
     } else {
       await p.remove(_keyProfileJson);
     }
+
+    await VetgoSupabase.syncSession(
+      refreshToken: session.refreshToken,
+      accessToken: session.accessToken,
+    );
   }
 
   /// Reconstruye [AuthSession] desde prefs (sin comprobar validez del JWT).
