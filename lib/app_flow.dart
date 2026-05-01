@@ -237,22 +237,35 @@ abstract final class SessionBootstrap {
       return SessionBootstrapResult.unauthenticated;
     }
 
-    AuthSession? me = await api.fetchMe(accessToken: accessToken);
+    AuthSession? me;
+    var authRejected = false;
+
+    Future<void> runFetch(String token) async {
+      final pair = await api.fetchMeWithAuthHint(accessToken: token);
+      me = pair.$1;
+      authRejected = pair.$2;
+    }
+
+    await runFetch(accessToken);
     if (me == null) {
       final refreshed = await doRefresh();
       if (refreshed) {
         session = await AuthStorage.loadSession();
         accessToken = session?.accessToken;
         if (accessToken != null && accessToken.isNotEmpty) {
-          me = await api.fetchMe(accessToken: accessToken);
+          await runFetch(accessToken);
         }
       }
     }
 
-    if (me?.user != null) {
-      session = session!.merge(user: me!.user, profile: me.profile);
+    if (me != null && me!.user != null) {
+      session = session!.merge(user: me!.user!, profile: me!.profile);
       await AuthStorage.saveSession(session!);
     } else {
+      if (authRejected) {
+        await AuthStorage.clear();
+        return SessionBootstrapResult.unauthenticated;
+      }
       return _fallbackFromCache();
     }
 

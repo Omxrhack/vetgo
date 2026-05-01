@@ -42,10 +42,30 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final role = _session?.profile?['role']?.toString();
+    final session = _session;
+    final uid = session?.user?['id']?.toString();
+    final roleRaw = session?.profile?['role'];
+    final role = roleRaw == null ? null : roleRaw.toString().trim();
+
+    if (session == null ||
+        !session.hasAccessToken ||
+        uid == null ||
+        uid.isEmpty ||
+        role == null ||
+        role.isEmpty ||
+        (role != 'vet' && role != 'client')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await AuthStorage.clear();
+        if (context.mounted) widget.onLoggedOut?.call();
+      });
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (role == 'vet') {
-      final vetName = _session?.profile?['full_name']?.toString() ?? '';
-      final vetAvatar = _session?.profile?['avatar_url']?.toString();
+      final vetName = session.profile?['full_name']?.toString() ?? '';
+      final vetAvatar = session.profile?['avatar_url']?.toString();
       return VetShell(
         profileFirstName: vetName,
         profilePhotoUrl: vetAvatar != null && vetAvatar.isNotEmpty ? vetAvatar : null,
@@ -59,13 +79,13 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final clientName = _session?.profile?['full_name']?.toString() ?? '';
-    final avatarUrl = _session?.profile?['avatar_url']?.toString();
+    final clientName = session.profile?['full_name']?.toString() ?? '';
+    final avatarUrl = session.profile?['avatar_url']?.toString();
 
     return ClientHomeShell(
       userName: clientName,
       profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null,
-      ownerUserId: _session?.user?['id']?.toString(),
+      ownerUserId: uid,
       onProfilePhotoUpdated: () {
         _loadSession();
       },

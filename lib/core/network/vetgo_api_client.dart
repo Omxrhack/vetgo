@@ -237,6 +237,12 @@ class VetgoApiClient {
 
   /// `GET /api/auth/me`
   Future<AuthSession?> fetchMe({required String accessToken}) async {
+    final (session, _) = await fetchMeWithAuthHint(accessToken: accessToken);
+    return session;
+  }
+
+  /// Igual que [fetchMe], pero indica si el servidor rechazo la sesion (401/403/404).
+  Future<(AuthSession? session, bool authRejected)> fetchMeWithAuthHint({required String accessToken}) async {
     try {
       final r = await _api.get<Map<String, dynamic>>(
         '/auth/me',
@@ -247,14 +253,19 @@ class VetgoApiClient {
         ),
       );
       final data = r.data;
-      if (data == null) return null;
-      return AuthSession(
-        accessToken: accessToken,
-        user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
-        profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+      if (data == null) return (null, false);
+      return (
+        AuthSession(
+          accessToken: accessToken,
+          user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
+          profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+        ),
+        false,
       );
-    } on DioException {
-      return null;
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final rejected = code == 401 || code == 403 || code == 404;
+      return (null, rejected);
     }
   }
 
