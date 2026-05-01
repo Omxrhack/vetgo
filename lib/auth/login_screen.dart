@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_storage.dart';
 import '../core/network/auth_outcomes.dart' show LoginKind;
 import '../core/network/vetgo_api_client.dart';
+import 'widgets/auth_scenic_layer.dart';
+import 'widgets/auth_screen_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -56,7 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
           widget.onSuccess();
         } else {
           setState(() {
-            _globalError = 'No se recibió un token. Intenta de nuevo o contacta soporte.';
+            _globalError =
+                'No se recibió un token. Intenta de nuevo o contacta soporte.';
           });
         }
       case LoginKind.needsVerification:
@@ -80,100 +83,149 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Scaffold(
-      body: SafeArea(
+    final primaryBtnStyle = FilledButton.styleFrom(
+      minimumSize: const Size.fromHeight(54),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 0,
+    );
+
+    return AuthPageShell(
+      variant: AuthScenicVariant.login,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Bienvenido de nuevo',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 8),
+                const AuthHeroHeader(
+                  title: 'Hola de nuevo',
+                  subtitle:
+                      'Inicia sesión para seguir cuidando a tus mascotas con Vetgo.',
+                  icon: Icons.pets_rounded,
+                ),
+                const SizedBox(height: 28),
+                AuthFormCard(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_globalError != null) ...[
+                          AuthErrorBanner(
+                            message: _globalError!,
+                            onDismiss: () =>
+                                setState(() => _globalError = null),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
+                        TextFormField(
+                          controller: _emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          autofillHints: const [AutofillHints.email],
+                          textInputAction: TextInputAction.next,
+                          decoration: authInputDecoration(
+                            context,
+                            label: 'Correo electrónico',
+                            hintText: 'nombre@ejemplo.com',
+                            prefixIcon: Icon(
+                              Icons.mail_outline_rounded,
+                              color: scheme.primary.withValues(alpha: 0.85),
+                            ),
+                          ),
+                          validator: (v) {
+                            final s = v?.trim() ?? '';
+                            if (s.isEmpty) return 'Ingresa tu correo.';
+                            if (!_looksLikeEmail(s)) return 'Correo no válido.';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordCtrl,
+                          obscureText: _obscure,
+                          autofillHints: const [AutofillHints.password],
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
+                          decoration: authInputDecoration(
+                            context,
+                            label: 'Contraseña',
+                            prefixIcon: Icon(
+                              Icons.lock_outline_rounded,
+                              color: scheme.primary.withValues(alpha: 0.85),
+                            ),
+                            suffixIcon: IconButton(
+                              tooltip: _obscure ? 'Mostrar' : 'Ocultar',
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: scheme.onSurface.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty)
+                              return 'Ingresa tu contraseña.';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 26),
+                        FilledButton(
+                          style: primaryBtnStyle,
+                          onPressed: _loading ? null : _submit,
+                          child: _loading
+                              ? SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: scheme.onPrimary,
+                                  ),
+                                )
+                              : const Text(
+                                  'Iniciar sesión',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Ingresa con el correo con el que te registraste.',
+                  ),
+                ),
+                const SizedBox(height: 22),
+                TextButton(
+                  onPressed: _loading ? null : widget.onRegister,
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text.rich(
+                    TextSpan(
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.75),
+                        color: scheme.onSurface.withValues(alpha: 0.78),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
-                    if (_globalError != null) ...[
-                      _InlineErrorCard(
-                        message: _globalError!,
-                        onDismiss: () => setState(() => _globalError = null),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    TextFormField(
-                      controller: _emailCtrl,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Correo electrónico',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) {
-                        final s = v?.trim() ?? '';
-                        if (s.isEmpty) return 'Ingresa tu correo.';
-                        if (!_looksLikeEmail(s)) return 'Correo no válido.';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordCtrl,
-                      obscureText: _obscure,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          tooltip: _obscure ? 'Mostrar' : 'Ocultar',
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(
-                            _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      children: [
+                        const TextSpan(text: '¿Primera vez aquí? '),
+                        TextSpan(
+                          text: 'Crear cuenta',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: scheme.primary,
                           ),
                         ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Ingresa tu contraseña.';
-                        return null;
-                      },
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _loading ? null : _submit,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Iniciar sesión'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: _loading ? null : widget.onRegister,
-                      child: const Text('¿No tienes cuenta? Crear cuenta'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -183,38 +235,5 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _looksLikeEmail(String s) {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s);
-  }
-}
-
-class _InlineErrorCard extends StatelessWidget {
-  const _InlineErrorCard({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.errorContainer,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.error_outline, color: scheme.error, size: 22),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message)),
-            IconButton(
-              onPressed: onDismiss,
-              icon: const Icon(Icons.close, size: 20),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

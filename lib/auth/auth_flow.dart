@@ -62,7 +62,6 @@ class _AuthFlowState extends State<AuthFlow> {
           email: _otpEmail,
           hint: _otpHint,
           onVerified: widget.onAuthenticated,
-          onBack: _goLogin,
         ),
     };
   }
