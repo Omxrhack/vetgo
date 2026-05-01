@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 
 import 'package:vetgo/client/client_quick_access_hub_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/live_tracking_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
@@ -14,7 +16,7 @@ import 'package:vetgo/widgets/dashboard/dashboard_section.dart';
 import 'package:vetgo/widgets/profile_photo_avatar.dart';
 
 /// Home / dashboard principal del cliente (estetica pastel Vetgo).
-class ClientDashboardScreen extends StatelessWidget {
+class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({
     super.key,
     required this.userName,
@@ -39,15 +41,77 @@ class ClientDashboardScreen extends StatelessWidget {
   final VoidCallback onOpenEmergency;
 
   @override
+  State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
+}
+
+class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
+  final VetgoApiClient _api = VetgoApiClient();
+  List<Map<String, dynamic>> _appointmentsRaw = [];
+  bool _apptLoading = true;
+  String? _apptError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointments();
+  }
+
+  Future<void> _loadAppointments() async {
+    setState(() {
+      _apptLoading = true;
+      _apptError = null;
+    });
+    final (data, err) = await _api.listMyAppointments();
+    if (!mounted) return;
+    if (err != null) {
+      setState(() {
+        _apptLoading = false;
+        _apptError = err;
+        _appointmentsRaw = [];
+      });
+      return;
+    }
+    final raw = data?['appointments'];
+    final list = raw is List
+        ? raw.map((e) => e is Map<String, dynamic> ? e : <String, dynamic>{}).toList()
+        : <Map<String, dynamic>>[];
+    setState(() {
+      _apptLoading = false;
+      _apptError = null;
+      _appointmentsRaw = list;
+    });
+  }
+
+  List<Map<String, dynamic>> _upcomingAppointments() {
+    final now = DateTime.now();
+    final startToday = DateTime(now.year, now.month, now.day);
+    return _appointmentsRaw.where((a) {
+      final st = a['status']?.toString() ?? '';
+      if (st == 'cancelled' || st == 'completed') return false;
+      final rawT = a['scheduled_at']?.toString();
+      final t = rawT != null ? DateTime.tryParse(rawT)?.toLocal() : null;
+      if (t == null) return false;
+      return !t.isBefore(startToday);
+    }).take(12).toList();
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait<void>([
+      widget.onRefreshPets(),
+      _loadAppointments(),
+    ]);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final muted = ClientPastelColors.mutedOn(context);
-    final displayName = userName.trim().isEmpty ? 'amigo' : userName.trim();
+    final displayName = widget.userName.trim().isEmpty ? 'amigo' : widget.userName.trim();
 
     return RefreshIndicator(
       color: scheme.primary,
-      onRefresh: onRefreshPets,
+      onRefresh: _onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -61,7 +125,7 @@ class ClientDashboardScreen extends StatelessWidget {
               IconButton(
                 tooltip: AppStrings.cerrarSesionTooltip,
                 icon: const Icon(Icons.logout_rounded),
-                onPressed: onLogout,
+                onPressed: widget.onLogout,
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -101,11 +165,11 @@ class ClientDashboardScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   ProfilePhotoAvatar(
                     heroTag: 'client_avatar',
-                    imageUrl: profilePhotoUrl,
+                    imageUrl: widget.profilePhotoUrl,
                     placeholderBackground: ClientPastelColors.mintSoft,
                     placeholderIconColor: ClientPastelColors.mintDeep,
                     radius: 26,
-                    onUploaded: onProfilePhotoUpdated,
+                    onUploaded: widget.onProfilePhotoUpdated,
                   ),
                 ],
               ),
@@ -117,7 +181,7 @@ class ClientDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (petsError != null && petsError!.isNotEmpty)
+                  if (widget.petsError != null && widget.petsError!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
                       child: ClientSoftCard(
@@ -129,7 +193,7 @@ class ClientDashboardScreen extends StatelessWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '${AppStrings.mascotasErrorParcial} ($petsError)',
+                                '${AppStrings.mascotasErrorParcial} (${widget.petsError})',
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                               ),
                             ),
@@ -174,6 +238,16 @@ class ClientDashboardScreen extends StatelessWidget {
                       .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
                       .slideY(begin: 0.03, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
                   DashboardSection(
+                    title: AppStrings.clienteProximasCitas,
+                    subtitleColor: muted,
+                    bottomSpacing: 18,
+                    spacingBeforeChild: 10,
+                    child: _buildClientAppointmentsSection(theme, muted),
+                  )
+                      .animate()
+                      .fadeIn(delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.03, end: 0, delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic),
+                  DashboardSection(
                     title: AppStrings.dashboardClienteSeccionAcciones,
                     subtitle: AppStrings.accesosHubSubtitulo,
                     subtitleColor: muted,
@@ -192,7 +266,7 @@ class ClientDashboardScreen extends StatelessWidget {
                                 onTap: () {
                                   Navigator.of(context).push<void>(
                                     MaterialPageRoute<void>(
-                                      builder: (_) => ClientQuickAccessHubScreen(pets: pets),
+                                      builder: (_) => ClientQuickAccessHubScreen(pets: widget.pets),
                                     ),
                                   );
                                 },
@@ -221,7 +295,7 @@ class ClientDashboardScreen extends StatelessWidget {
                                 label: AppStrings.quickActionEmergenciaLabel,
                                 backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.62),
                                 iconColor: scheme.error.withValues(alpha: 0.85),
-                                onTap: onOpenEmergency,
+                                onTap: widget.onOpenEmergency,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -259,12 +333,12 @@ class ClientDashboardScreen extends StatelessWidget {
                     bottomSpacing: 20,
                     spacingBeforeChild: 12,
                     trailing: TextButton(
-                      onPressed: pets.isEmpty
+                      onPressed: widget.pets.isEmpty
                           ? null
                           : () {
                               Navigator.of(context).push<void>(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => PetProfileScreen(pet: pets.first),
+                                  builder: (_) => PetProfileScreen(pet: widget.pets.first),
                                 ),
                               );
                             },
@@ -272,9 +346,9 @@ class ClientDashboardScreen extends StatelessWidget {
                     ),
                     child: SizedBox(
                       height: 148,
-                      child: petsLoading && pets.isEmpty
+                      child: widget.petsLoading && widget.pets.isEmpty
                           ? const Center(child: CircularProgressIndicator())
-                          : pets.isEmpty
+                          : widget.pets.isEmpty
                               ? Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
@@ -284,10 +358,10 @@ class ClientDashboardScreen extends StatelessWidget {
                                 )
                               : ListView.separated(
                                   scrollDirection: Axis.horizontal,
-                                  itemCount: pets.length,
+                                  itemCount: widget.pets.length,
                                   separatorBuilder: (_, _) => const SizedBox(width: 12),
                                   itemBuilder: (context, i) {
-                                    final p = pets[i];
+                                    final p = widget.pets[i];
                                     return _PetCarouselTile(
                                       pet: p,
                                       onTap: () {

@@ -40,6 +40,20 @@ abstract final class AppStrings {
   static const carouselSinMascotas =
       'A\u00F1ade una mascota para verla aqu\u00ED.';
 
+  static const clienteProximasCitas = 'Pr\u00F3ximas citas';
+
+  static const clienteSinCitasProgramadas =
+      'No tienes citas programadas con fecha de hoy en adelante.';
+
+  static const clienteCitasErrorCarga =
+      'No se pudieron cargar tus citas. Intenta de nuevo m\u00E1s tarde.';
+
+  static const clienteCitaVeterinarioPendiente =
+      'Veterinario por confirmar';
+
+  static String clienteCitaLineaVeterinario(String nombre) =>
+      'Veterinario: $nombre';
+
   static const simularCitaEnCamino = 'Simular cita en camino';
 
   static const conectando = 'Conectando\u2026';
@@ -84,6 +98,11 @@ abstract final class AppStrings {
   static const vetScheduleSinColonia = 'Sin direcci\u00F3n registrada';
 
   static String vetScheduleEstado(String estado) => 'Estado: $estado';
+
+  static const vetScheduleVeterinarioTitulo = 'Veterinario asignado';
+
+  static const vetProximaVisitaSinVeterinario =
+      'Sin veterinario asignado a\u00FAn';
 
   static const vetResumenHoy = 'Resumen de hoy';
 
@@ -289,7 +308,7 @@ abstract final class AppStrings {
   /// Foto de perfil (Storage Supabase + dashboard).
   static const profilePhotoCambiarTooltip = 'Cambiar foto de perfil';
 
-  /// Onboarding: selector de galerÌa en lugar de URL manual.
+  /// Onboarding: selector de galerùa en lugar de URL manual.
   static const onboardingFotoPerfilTitulo = 'Foto de perfil';
 
   static const onboardingFotoPerfilSubtitulo =
