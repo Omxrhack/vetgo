@@ -12,7 +12,7 @@ import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
 import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
 
-/// Contenedor principal del veterinario con pestaùas y vigilancia de emergencias.
+/// Contenedor principal del veterinario con pestaÒas y vigilancia de emergencias.
 class VetShell extends StatefulWidget {
   const VetShell({
     super.key,
