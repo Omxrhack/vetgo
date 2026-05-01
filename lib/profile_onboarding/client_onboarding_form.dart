@@ -230,7 +230,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             onChanged: (v) => setState(() => _neutered = v),
           ),
           DropdownButtonFormField<String>(
-            initialValue: _vaccines,
+            value: _vaccines,
             decoration: const InputDecoration(
               labelText: 'Vacunas al dùa',
               border: OutlineInputBorder(),
@@ -243,7 +243,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             onChanged: (v) => setState(() => _vaccines = v ?? 'unsure'),
           ),
           DropdownButtonFormField<String>(
-            initialValue: _temperament,
+            value: _temperament,
             decoration: const InputDecoration(
               labelText: 'Temperamento',
               border: OutlineInputBorder(),
