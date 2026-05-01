@@ -193,6 +193,71 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/auth/refresh`
+  Future<AuthSession?> refreshSession({required String refreshToken}) async {
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/auth/refresh',
+        data: <String, dynamic>{'refresh_token': refreshToken},
+      );
+      final data = r.data;
+      if (data == null) return null;
+      return AuthSession.fromJson(data);
+    } on DioException {
+      return null;
+    }
+  }
+
+  /// `GET /api/auth/me`
+  Future<AuthSession?> fetchMe({required String accessToken}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/auth/me',
+        options: Options(
+          headers: <String, dynamic>{
+            Headers.authorizationHeader: 'Bearer $accessToken',
+          },
+        ),
+      );
+      final data = r.data;
+      if (data == null) return null;
+      return AuthSession(
+        accessToken: accessToken,
+        user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
+        profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+      );
+    } on DioException {
+      return null;
+    }
+  }
+
+  /// `POST /api/auth/onboarding` — cuerpo según schema del backend (client | vet).
+  Future<AuthSession?> completeProfileOnboarding({
+    required String accessToken,
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/auth/onboarding',
+        data: body,
+        options: Options(
+          headers: <String, dynamic>{
+            Headers.authorizationHeader: 'Bearer $accessToken',
+          },
+        ),
+      );
+      final data = r.data;
+      if (data == null) return null;
+      return AuthSession(
+        accessToken: accessToken,
+        user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
+        profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+      );
+    } on DioException {
+      return null;
+    }
+  }
+
   /// `POST /api/auth/resend-otp` — devuelve `null` si OK, o mensaje de error.
   Future<String?> resendOtp(String email) async {
     try {
