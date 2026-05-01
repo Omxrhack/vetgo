@@ -1,5 +1,5 @@
-// Verifica que todos los `.dart` bajo `lib/` decodifiquen como UTF-8 estricto.
-// Uso (desde la raíz del proyecto): dart run tool/verify_utf8.dart
+// Strict UTF-8 check for all Dart sources under lib/.
+// Run from project root: dart run tool/verify_utf8.dart
 
 import 'dart:convert';
 import 'dart:io';
@@ -7,7 +7,7 @@ import 'dart:io';
 Future<void> main(List<String> args) async {
   final root = Directory('lib');
   if (!await root.exists()) {
-    stderr.writeln('No existe la carpeta lib/. Ejecuta desde la raíz de Vetgo.');
+    stderr.writeln('Missing lib/. Run from Vetgo project root.');
     exitCode = 2;
     return;
   }
@@ -25,11 +25,11 @@ Future<void> main(List<String> args) async {
   }
 
   if (errors.isEmpty) {
-    stdout.writeln('OK: todos los archivos lib/**/*.dart son UTF-8 válidos.');
+    stdout.writeln('OK: all lib/**/*.dart files are valid UTF-8.');
     return;
   }
 
-  stderr.writeln('UTF-8 inválido en ${errors.length} archivo(s):');
+  stderr.writeln('Invalid UTF-8 in ${errors.length} file(s):');
   for (final line in errors) {
     stderr.writeln('  $line');
   }
