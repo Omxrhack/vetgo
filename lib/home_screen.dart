@@ -7,10 +7,10 @@ import 'package:vetgo/core/auth/auth_session.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/config/app_config.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
-import 'vet_dashboard_screen.dart';
-import 'vet_route_screen.dart';
-import 'vet_schedule_screen.dart';
-import 'widgets/vet/emergency_alert_sheet.dart';
+import 'package:vetgo/vet_dashboard_screen.dart';
+import 'package:vetgo/vet_route_screen.dart';
+import 'package:vetgo/vet_schedule_screen.dart';
+import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onLoggedOut});
