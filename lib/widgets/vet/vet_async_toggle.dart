@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'vet_app_colors.dart';
+import '../../theme/vet_operator_colors.dart';
 import 'vet_soft_card.dart';
 
 /// Toggle grande de disponibilidad con estado de carga animado.
@@ -12,8 +12,8 @@ class VetDutyToggleCard extends StatelessWidget {
     required this.onChanged,
     this.offTitle = 'Fuera de turno',
     this.onTitle = 'Disponible para urgencias',
-    this.offSubtitle = 'No recibir·s alertas de emergencia.',
-    this.onSubtitle = 'Podr·s recibir asignaciones urgentes.',
+    this.offSubtitle = 'No recibirùs alertas de emergencia.',
+    this.onSubtitle = 'Podrùs recibir asignaciones urgentes.',
   });
 
   final bool available;
@@ -28,7 +28,7 @@ class VetDutyToggleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final bg = available ? VetAppColors.mintSoft.withValues(alpha: 0.55) : VetAppColors.peach.withValues(alpha: 0.45);
+    final bg = available ? VetOperatorColors.mintSoft.withValues(alpha: 0.55) : VetOperatorColors.peach.withValues(alpha: 0.45);
 
     return VetSoftCard(
       color: bg,
@@ -57,7 +57,7 @@ class VetDutyToggleCard extends StatelessWidget {
                   Text(
                     available ? onSubtitle : offSubtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: VetAppColors.textMuted,
+                      color: VetOperatorColors.textMuted,
                       height: 1.35,
                     ),
                   ),
@@ -79,8 +79,8 @@ class VetDutyToggleCard extends StatelessWidget {
                       scale: 1.15,
                       child: Switch.adaptive(
                         value: available,
-                        activeThumbColor: VetAppColors.mintDeep,
-                        activeTrackColor: VetAppColors.mintSoft,
+                        activeThumbColor: VetOperatorColors.mintDeep,
+                        activeTrackColor: VetOperatorColors.mintSoft,
                         onChanged: busy ? null : onChanged,
                       ),
                     ),
@@ -92,7 +92,7 @@ class VetDutyToggleCard extends StatelessWidget {
   }
 }
 
-/// BotÛn primario con sustituciÛn por indicador de carga.
+/// Botùn primario con sustituciùn por indicador de carga.
 class VetAsyncPrimaryButton extends StatelessWidget {
   const VetAsyncPrimaryButton({
     super.key,
@@ -111,7 +111,7 @@ class VetAsyncPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? VetAppColors.mintDeep;
+    final bg = backgroundColor ?? VetOperatorColors.mintDeep;
     final fg = foregroundColor ?? Colors.white;
 
     return AnimatedSwitcher(

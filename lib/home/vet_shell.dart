@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/network/vetgo_api_client.dart';
+import '../theme/vet_operator_colors.dart';
+import '../vet/vet_dashboard_screen.dart';
+import '../vet/vet_route_screen.dart';
+import '../vet/vet_schedule_screen.dart';
 import '../widgets/vet/emergency_alert_sheet.dart';
-import '../widgets/vet/vet_app_colors.dart';
-import 'vet_dashboard_screen.dart';
-import 'vet_route_screen.dart';
-import 'vet_schedule_screen.dart';
 
-/// Contenedor principal del veterinario con pestaùas y vigilancia de emergencias.
+/// Contenedor principal del veterinario con pestaÒas y vigilancia de emergencias.
 class VetShell extends StatefulWidget {
   const VetShell({
     super.key,
@@ -160,7 +160,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: VetAppColors.bone,
+      backgroundColor: VetOperatorColors.bone,
       body: IndexedStack(
         index: _tabIndex,
         children: [
@@ -178,7 +178,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
         backgroundColor: Colors.white,
-        indicatorColor: VetAppColors.mintSoft.withValues(alpha: 0.6),
+        indicatorColor: VetOperatorColors.mintSoft.withValues(alpha: 0.6),
         onDestinationSelected: (i) => setState(() => _tabIndex = i),
         destinations: const [
           NavigationDestination(
@@ -196,7 +196,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: widget.onLoggedOut,
-        backgroundColor: VetAppColors.mintDeep,
+        backgroundColor: VetOperatorColors.mintDeep,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.logout_rounded),
         label: const Text('Salir'),

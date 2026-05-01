@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/network/vetgo_api_client.dart';
-import '../widgets/vet/vet_app_colors.dart';
+import '../theme/vet_operator_colors.dart';
 import '../widgets/vet/vet_async_toggle.dart';
 import '../widgets/vet/vet_section_title.dart';
 import '../widgets/vet/vet_soft_card.dart';
@@ -92,14 +92,14 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
 
     return RefreshIndicator(
       onRefresh: _refresh,
-      color: VetAppColors.mintDeep,
+      color: VetOperatorColors.mintDeep,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverAppBar(
             pinned: true,
             floating: false,
-            backgroundColor: VetAppColors.bone,
+            backgroundColor: VetOperatorColors.bone,
             surfaceTintColor: Colors.transparent,
             expandedHeight: 132,
             flexibleSpace: FlexibleSpaceBar(
@@ -120,7 +120,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   child: Text(
                     dateLine,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: VetAppColors.textMuted,
+                      color: VetOperatorColors.textMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -184,7 +184,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
           children: [
             Expanded(
               child: VetSoftCard(
-                color: VetAppColors.mintSoft.withValues(alpha: 0.45),
+                color: VetOperatorColors.mintSoft.withValues(alpha: 0.45),
                 padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +192,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     Text(
                       'Citas pendientes',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: VetAppColors.textMuted,
+                        color: VetOperatorColors.textMuted,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -213,7 +213,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: VetSoftCard(
-                color: VetAppColors.amberSoft.withValues(alpha: 0.55),
+                color: VetOperatorColors.amberSoft.withValues(alpha: 0.55),
                 padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +221,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     Text(
                       'Ganancias (MXN)',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: VetAppColors.textMuted,
+                        color: VetOperatorColors.textMuted,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -252,7 +252,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'No hay visitas asignadas para hoy.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: VetAppColors.textMuted),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
                   ),
                 )
               : ListView.separated(
@@ -301,7 +301,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             const SizedBox(height: 4),
                             Text(
                               col.isEmpty ? 'Direcciùn pendiente' : col,
-                              style: theme.textTheme.bodySmall?.copyWith(color: VetAppColors.textMuted),
+                              style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),

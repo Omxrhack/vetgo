@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/network/vetgo_api_client.dart';
-import '../widgets/vet/vet_app_colors.dart';
+import '../theme/vet_operator_colors.dart';
 import '../widgets/vet/vet_async_toggle.dart';
 import '../widgets/vet/vet_soft_card.dart';
 import 'vet_patient_record_screen.dart';
@@ -80,16 +80,16 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: VetAppColors.bone,
+      backgroundColor: VetOperatorColors.bone,
       body: RefreshIndicator(
         onRefresh: _load,
-        color: VetAppColors.mintDeep,
+        color: VetOperatorColors.mintDeep,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: VetAppColors.bone,
+              backgroundColor: VetOperatorColors.bone,
               surfaceTintColor: Colors.transparent,
               title: const Text('Agenda y ruta'),
             ),
@@ -127,7 +127,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
       return Text(
         key: const ValueKey<String>('empty'),
         'Sin citas para este dùa. Asigna vet_id en una cita para pruebas.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: VetAppColors.textMuted),
+        style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
       );
     }
 
@@ -147,7 +147,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
             ),
           ),
         Text(
-          'LÌnea del dÌa',
+          'Lùnea del dùa',
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 14),
@@ -178,10 +178,10 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                         height: 14,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: VetAppColors.mintDeep.withValues(alpha: 0.85),
+                          color: VetOperatorColors.mintDeep.withValues(alpha: 0.85),
                           boxShadow: [
                             BoxShadow(
-                              color: VetAppColors.mintSoft.withValues(alpha: 0.9),
+                              color: VetOperatorColors.mintSoft.withValues(alpha: 0.9),
                               blurRadius: 10,
                               spreadRadius: 2,
                             ),
@@ -195,7 +195,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                           margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
-                            color: VetAppColors.mintSoft.withValues(alpha: 0.85),
+                            color: VetOperatorColors.mintSoft.withValues(alpha: 0.85),
                           ),
                         ),
                     ],
@@ -221,7 +221,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                           ),
                           subtitle: Text(
                             '$petName ù ${addr ?? 'Sin colonia'}',
-                            style: theme.textTheme.bodySmall?.copyWith(color: VetAppColors.textMuted),
+                            style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
                           ),
                           children: [
                             AnimatedSwitcher(

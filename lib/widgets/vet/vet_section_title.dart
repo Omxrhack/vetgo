@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'vet_app_colors.dart';
+import '../../theme/vet_operator_colors.dart';
 
 class VetSectionTitle extends StatelessWidget {
   const VetSectionTitle({
@@ -39,7 +39,7 @@ class VetSectionTitle extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: VetAppColors.textMuted,
+                      color: VetOperatorColors.textMuted,
                     ),
                   ),
                 ],

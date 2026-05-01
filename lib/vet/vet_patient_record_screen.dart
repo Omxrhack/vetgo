@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/network/vetgo_api_client.dart';
-import '../widgets/vet/vet_app_colors.dart';
+import '../theme/vet_operator_colors.dart';
 import '../widgets/vet/vet_pastel_chip.dart';
 import '../widgets/vet/vet_section_title.dart';
 import '../widgets/vet/vet_soft_card.dart';
@@ -65,7 +65,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: VetAppColors.bone,
+      backgroundColor: VetOperatorColors.bone,
       appBar: AppBar(
         title: const Text('Expediente del paciente'),
       ),
@@ -116,7 +116,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
             children: [
               CircleAvatar(
                 radius: 44,
-                backgroundColor: VetAppColors.mintSoft,
+                backgroundColor: VetOperatorColors.mintSoft,
                 backgroundImage: photo != null && photo.isNotEmpty ? NetworkImage(photo) : null,
                 child: photo == null || photo.isEmpty
                     ? Text(
@@ -137,7 +137,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
                     const SizedBox(height: 6),
                     Text(
                       '$species${breed != null && breed.isNotEmpty ? ' ù $breed' : ''}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: VetAppColors.textMuted),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -165,19 +165,19 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
           children: [
             VetPastelChip(
               label: temperament != null && temperament.isNotEmpty ? temperament : 'Temperamento no indicado',
-              backgroundColor: VetAppColors.amberSoft.withValues(alpha: 0.85),
+              backgroundColor: VetOperatorColors.amberSoft.withValues(alpha: 0.85),
               icon: Icons.pets_rounded,
             ),
             VetPastelChip(
               label: species,
-              backgroundColor: VetAppColors.lilacHint.withValues(alpha: 0.75),
+              backgroundColor: VetOperatorColors.lilacHint.withValues(alpha: 0.75),
             ),
           ],
         ),
         const SizedBox(height: 24),
         const VetSectionTitle(title: 'Domicilio'),
         VetSoftCard(
-          color: VetAppColors.peach.withValues(alpha: 0.35),
+          color: VetOperatorColors.peach.withValues(alpha: 0.35),
           child: Text(
             cd?['address_text']?.toString() ?? 'Sin direcciùn registrada',
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4, fontWeight: FontWeight.w600),
@@ -189,7 +189,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
           subtitle: 'Revisa antes de tocar el timbre.',
         ),
         VetSoftCard(
-          color: VetAppColors.mintSoft.withValues(alpha: 0.4),
+          color: VetOperatorColors.mintSoft.withValues(alpha: 0.4),
           child: Text(
             medical != null && medical.isNotEmpty ? medical : 'Sin notas mùdicas registradas.',
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),

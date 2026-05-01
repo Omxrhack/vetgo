@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Paleta pastel para el área operativa del veterinario (fuera del tema global cliente).
-abstract final class VetAppColors {
+/// Paleta pastel para el flujo operativo del veterinario.
+abstract final class VetOperatorColors {
   static const Color bone = Color(0xFFFAFAF7);
   static const Color mintSoft = Color(0xFFB8E8D5);
   static const Color mintDeep = Color(0xFF5BA890);

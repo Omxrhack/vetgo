@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'vet_app_colors.dart';
+import '../../theme/vet_operator_colors.dart';
 import 'vet_async_toggle.dart';
 import 'vet_soft_card.dart';
 
@@ -98,7 +98,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
           bottom: MediaQuery.paddingOf(context).bottom + 16,
         ),
         child: VetSoftCard(
-          color: VetAppColors.coralSoft.withValues(alpha: 0.92),
+          color: VetOperatorColors.coralSoft.withValues(alpha: 0.92),
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -106,7 +106,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
             children: [
               Row(
                 children: [
-                  Icon(Icons.emergency_rounded, color: VetAppColors.coralAccent, size: 30),
+                  Icon(Icons.emergency_rounded, color: VetOperatorColors.coralAccent, size: 30),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -140,7 +140,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
               VetAsyncPrimaryButton(
                 label: 'Aceptar',
                 busy: _acceptBusy,
-                backgroundColor: VetAppColors.mintDeep,
+                backgroundColor: VetOperatorColors.mintDeep,
                 onPressed: _acceptBusy || _rejectBusy
                     ? null
                     : () async {
