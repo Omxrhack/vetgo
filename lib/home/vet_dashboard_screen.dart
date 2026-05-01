@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
-import 'core/network/vetgo_api_client.dart';
-import 'theme/vet_operator_colors.dart';
-import 'widgets/vet/vet_async_toggle.dart';
-import 'widgets/vet/vet_section_title.dart';
-import 'widgets/vet/vet_soft_card.dart';
-import 'vet_patient_record_screen.dart';
+import '../core/network/vetgo_api_client.dart';
+import '../theme/vet_operator_colors.dart';
+import '../widgets/vet/vet_async_toggle.dart';
+import '../widgets/vet/vet_section_title.dart';
+import '../widgets/vet/vet_soft_card.dart';
+import '../vet_patient_record_screen.dart';
 
 typedef VetBaseCallback = void Function(double? lat, double? lng);
 

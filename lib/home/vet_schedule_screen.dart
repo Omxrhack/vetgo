@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'core/network/vetgo_api_client.dart';
-import 'theme/vet_operator_colors.dart';
-import 'widgets/vet/vet_async_toggle.dart';
-import 'widgets/vet/vet_soft_card.dart';
-import 'vet_patient_record_screen.dart';
+import '../core/network/vetgo_api_client.dart';
+import '../theme/vet_operator_colors.dart';
+import '../widgets/vet/vet_async_toggle.dart';
+import '../widgets/vet/vet_soft_card.dart';
+import '../vet_patient_record_screen.dart';
 import 'vet_route_screen.dart';
 
 /// Agenda del día con línea de tiempo e ítems expansibles.
