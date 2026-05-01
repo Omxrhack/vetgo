@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'verify_otp_screen.dart';
+import '../core/auth/auth_storage.dart';
 
 /// Orquesta login → registro → verificación OTP (mismo stack, sin `Navigator` anidado).
 class AuthFlow extends StatefulWidget {
@@ -66,6 +69,7 @@ class _AuthFlowState extends State<AuthFlow> {
   void _goLogin() => _go(_AuthView.login, mutate: () => _otpHint = null);
 
   void _goOtp(String email, {String? hint, bool alreadyUnverified = false}) {
+    unawaited(AuthStorage.savePendingOtpEmail(email.trim()));
     _go(
       _AuthView.otp,
       mutate: () {

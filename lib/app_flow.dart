@@ -10,6 +10,7 @@ import 'onboarding/onboarding_prefs.dart';
 import 'onboarding/vetgo_onboarding_page.dart';
 import 'profile_onboarding_flow.dart';
 import 'splash/splash_screen.dart';
+import 'core/auth/silent_auth.dart';
 
 /// Orquesta las etapas iniciales con transiciùn animada entre pantallas.
 class AppFlow extends StatefulWidget {
@@ -64,7 +65,7 @@ class _AppFlowState extends State<AppFlow> {
 
     String? otpEmail;
     if (dest == SessionBootstrapResult.needsOtp) {
-      otpEmail = await AuthStorage.readEmail();
+      otpEmail = await AuthStorage.readPendingOtpEmail() ?? await AuthStorage.readEmail();
       if (otpEmail == null || otpEmail.isEmpty) {
         if (!mounted) return;
         setState(() {
@@ -195,17 +196,46 @@ abstract final class SessionBootstrap {
   static Future<SessionBootstrapResult> resolve() async {
     final api = VetgoApiClient();
     AuthSession? session = await AuthStorage.loadSession();
+    var pendingOtpEmail = await AuthStorage.readPendingOtpEmail();
 
-    if (session == null) {
-      return SessionBootstrapResult.unauthenticated;
+    bool hasRefresh(AuthSession? s) =>
+        s?.refreshToken != null && s!.refreshToken!.isNotEmpty;
+    bool hasAccess(AuthSession? s) => s?.hasAccessToken ?? false;
+
+    Future<bool> trySilentRestore() async {
+      final silent = await SilentAuth.attempt();
+      switch (silent.kind) {
+        case SilentAuthKind.success:
+          session = await AuthStorage.loadSession();
+          return session != null && hasAccess(session);
+        case SilentAuthKind.needsOtp:
+          final em = silent.otpEmail?.trim();
+          if (em != null && em.isNotEmpty) {
+            await AuthStorage.savePendingOtpEmail(em);
+            pendingOtpEmail = em;
+          }
+          return false;
+        case SilentAuthKind.noCredentials:
+        case SilentAuthKind.failed:
+          return false;
+      }
     }
 
-    final hasRefresh = session.refreshToken != null && session.refreshToken!.isNotEmpty;
-    final hasAccess = session.hasAccessToken;
+    if (!hasAccess(session) && !hasRefresh(session)) {
+      if (pendingOtpEmail != null && pendingOtpEmail.trim().isNotEmpty) {
+        return SessionBootstrapResult.needsOtp;
+      }
+      await trySilentRestore();
+      session = await AuthStorage.loadSession();
+      pendingOtpEmail = await AuthStorage.readPendingOtpEmail();
 
-    if (!hasAccess && !hasRefresh) {
-      await AuthStorage.clear();
-      return SessionBootstrapResult.unauthenticated;
+      if (!hasAccess(session) && !hasRefresh(session)) {
+        if (pendingOtpEmail != null && pendingOtpEmail.trim().isNotEmpty) {
+          return SessionBootstrapResult.needsOtp;
+        }
+        await AuthStorage.clear();
+        return SessionBootstrapResult.unauthenticated;
+      }
     }
 
     Future<bool> doRefresh() async {
@@ -225,7 +255,7 @@ abstract final class SessionBootstrap {
       return true;
     }
 
-    if (!hasAccess || await AuthStorage.isAccessExpired()) {
+    if (!hasAccess(session) || await AuthStorage.isAccessExpired()) {
       final ok = await doRefresh();
       if (!ok) {
         await AuthStorage.clear();

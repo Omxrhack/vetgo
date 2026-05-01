@@ -13,6 +13,8 @@ abstract final class AuthStorage {
   static const _keyUserJson = 'vetgo_user_json';
   static const _keyProfileJson = 'vetgo_profile_json';
   static const _keyAccessExpiresAtMs = 'vetgo_access_expires_at_ms';
+  /// Registro / login sin verificar: recordar correo para abrir pantalla OTP al reiniciar.
+  static const _keyPendingOtpEmail = 'vetgo_pending_otp_email';
 
   static const int _expirySkewMs = 60 * 1000;
 
@@ -82,6 +84,29 @@ abstract final class AuthStorage {
       refreshToken: session.refreshToken,
       accessToken: session.accessToken,
     );
+
+    if (session.hasAccessToken) {
+      await clearPendingOtpEmail();
+    }
+  }
+
+  /// Persiste correo mientras falta verificación OTP (sin JWT aún).
+  static Future<void> savePendingOtpEmail(String email) async {
+    final t = email.trim();
+    if (t.isEmpty) return;
+    final p = await VetgoPrefs.backend;
+    await p.setString(_keyPendingOtpEmail, t);
+  }
+
+  static Future<String?> readPendingOtpEmail() async {
+    final p = await VetgoPrefs.backend;
+    final v = p.getString(_keyPendingOtpEmail);
+    return v != null && v.trim().isNotEmpty ? v.trim() : null;
+  }
+
+  static Future<void> clearPendingOtpEmail() async {
+    final p = await VetgoPrefs.backend;
+    await p.remove(_keyPendingOtpEmail);
   }
 
   /// Reconstruye [AuthSession] desde prefs (sin comprobar validez del JWT).
@@ -129,6 +154,7 @@ abstract final class AuthStorage {
     await p.remove(_keyUserJson);
     await p.remove(_keyProfileJson);
     await p.remove(_keyAccessExpiresAtMs);
+    await p.remove(_keyPendingOtpEmail);
   }
 
   /// Email guardado en el último user snapshot (puede ser null).

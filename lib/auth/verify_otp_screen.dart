@@ -65,6 +65,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         return;
       }
       if (!mounted) return;
+      await AuthStorage.clearPendingOtpEmail();
+      if (!mounted) return;
       VetgoNotice.show(
         context,
         message:
@@ -107,6 +109,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     });
     if (!mounted) return;
     if (result.alreadyVerified) {
+      await AuthStorage.clearPendingOtpEmail();
+      if (!mounted) return;
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
