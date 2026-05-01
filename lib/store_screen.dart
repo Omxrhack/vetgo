@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/store_category_pill.dart';
 import 'package:vetgo/widgets/client/store_product_card.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Tienda Vetgo: catálogo desde `GET /api/products` con micro-animaciones.
+/// Tienda Vetgo: catalogo desde `GET /api/products` con micro-animaciones.
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
 
@@ -20,7 +22,7 @@ class _StoreScreenState extends State<StoreScreen> {
   final VetgoApiClient _api = VetgoApiClient();
 
   int _categoryIndex = 0;
-  List<String> _categories = <String>['Todos'];
+  List<String> _categories = <String>[AppStrings.storeCategoriaTodos];
 
   List<_ProductRow> _products = <_ProductRow>[];
   bool _loading = true;
@@ -49,7 +51,7 @@ class _StoreScreenState extends State<StoreScreen> {
     final cat = (_categoryIndex > 0 && _categoryIndex < _categories.length)
         ? _categories[_categoryIndex]
         : null;
-    final categoryParam = (cat != null && cat != 'Todos') ? cat : null;
+    final categoryParam = (cat != null && cat != AppStrings.storeCategoriaTodos) ? cat : null;
 
     final (data, err) = await _api.listProducts(
       page: 1,
@@ -71,13 +73,13 @@ class _StoreScreenState extends State<StoreScreen> {
 
     final raw = data?['data'];
     final rows = <_ProductRow>[];
-    final catSet = <String>{'Todos'};
+    final catSet = <String>{AppStrings.storeCategoriaTodos};
 
     if (raw is List<dynamic>) {
       for (final e in raw) {
         if (e is! Map) continue;
         final m = Map<String, dynamic>.from(e);
-        final name = m['name']?.toString() ?? 'Producto';
+        final name = m['name']?.toString() ?? AppStrings.storeProductoFallback;
         final price = m['price'];
         final c = m['category']?.toString().trim() ?? '';
         if (c.isNotEmpty) {
@@ -98,14 +100,13 @@ class _StoreScreenState extends State<StoreScreen> {
       }
     }
 
-    final sortedCats = catSet.where((c) => c != 'Todos').toList()..sort();
-    final nextCategories = <String>['Todos', ...sortedCats];
+    final sortedCats = catSet.where((c) => c != AppStrings.storeCategoriaTodos).toList()..sort();
+    final nextCategories = <String>[AppStrings.storeCategoriaTodos, ...sortedCats];
 
     setState(() {
       _loading = false;
       _error = null;
       _products = rows;
-      // Solo recalculamos pestañas cuando el listado es sin filtro de categoría (evita perder opciones al filtrar).
       if (categoryParam == null) {
         _categories = nextCategories;
         if (_categoryIndex >= _categories.length) {
@@ -123,7 +124,7 @@ class _StoreScreenState extends State<StoreScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Tienda Vetgo'),
+        title: const Text(AppStrings.storeTitle),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -134,7 +135,7 @@ class _StoreScreenState extends State<StoreScreen> {
               controller: _search,
               onSubmitted: (_) => _loadProducts(),
               decoration: InputDecoration(
-                hintText: 'Buscar productos…',
+                hintText: AppStrings.storeBuscarHint,
                 prefixIcon: Icon(Icons.search_rounded, color: ClientPastelColors.mutedOn(context)),
                 filled: true,
                 fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
@@ -143,7 +144,7 @@ class _StoreScreenState extends State<StoreScreen> {
                   borderSide: BorderSide.none,
                 ),
                 suffixIcon: IconButton(
-                  tooltip: 'Buscar',
+                  tooltip: AppStrings.storeBuscarTooltip,
                   icon: const Icon(Icons.arrow_forward_rounded),
                   onPressed: _loadProducts,
                 ),
@@ -184,9 +185,7 @@ class _StoreScreenState extends State<StoreScreen> {
                 : _products.isEmpty
                     ? Center(
                         child: Text(
-                          _error != null
-                              ? 'No se pudo cargar el catálogo.'
-                              : 'No hay productos con estos filtros.',
+                          _error != null ? AppStrings.storeErrorCatalogo : AppStrings.storeSinResultados,
                           style: theme.textTheme.bodyLarge?.copyWith(color: ClientPastelColors.mutedOn(context)),
                           textAlign: TextAlign.center,
                         ),
@@ -211,13 +210,7 @@ class _StoreScreenState extends State<StoreScreen> {
                               onAdd: () async {
                                 await Future<void>.delayed(const Duration(milliseconds: 400));
                                 if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${p.name} a�adido al carrito (demo).'),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  ),
-                                );
+                                VetgoNotice.show(context, message: AppStrings.storeCarritoDemo(p.name));
                               },
                             )
                                 .animate()

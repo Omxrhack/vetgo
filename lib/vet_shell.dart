@@ -133,7 +133,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       symptoms: e['symptoms']?.toString() ?? '',
       status: e['status']?.toString() ?? '',
       petName: pet['name']?.toString() ?? AppStrings.vetMascota,
-      species: pet['species']?.toString() ?? 'Paciente',
+      species: pet['species']?.toString() ?? AppStrings.vetPacienteEspecie,
       distanceKm: dist is num ? dist.toDouble() : null,
     );
   }

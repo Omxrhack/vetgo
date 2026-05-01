@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/auth/auth_storage.dart';
+import '../core/l10n/app_strings.dart';
 import '../core/network/auth_outcomes.dart' show LoginKind;
 import '../core/network/vetgo_api_client.dart';
 import 'widgets/auth_scenic_layer.dart';
@@ -58,22 +59,21 @@ class _LoginScreenState extends State<LoginScreen> {
           widget.onSuccess();
         } else {
           setState(() {
-            _globalError =
-                'No se recibió un token. Intenta de nuevo o contacta soporte.';
+            _globalError = AppStrings.loginSinToken;
           });
         }
       case LoginKind.needsVerification:
         final e = outcome.emailForVerification ?? email;
         if (e.isEmpty) {
           setState(() {
-            _globalError = outcome.message ?? 'Debes verificar tu correo.';
+            _globalError = outcome.message ?? AppStrings.loginDebesVerificar;
           });
         } else {
           widget.onNeedOtp(e);
         }
       case LoginKind.failure:
         setState(() {
-          _globalError = outcome.message ?? 'No se pudo iniciar sesión.';
+          _globalError = outcome.message ?? AppStrings.loginFalloGenerico;
         });
     }
   }

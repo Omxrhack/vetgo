@@ -20,8 +20,8 @@ abstract final class VetgoSupabase {
     _initialized = true;
   }
 
-  /// Restaura la sesi\u00F3n JWT en el cliente Supabase (Realtime respeta RLS).
-  /// Requiere refresh token v\u00E1lido ([GotrueClient.setSession]).
+  /// Restaura la sesion JWT en el cliente Supabase (Realtime respeta RLS).
+  /// Requiere refresh token valido (GotrueClient.setSession).
   static Future<void> syncSession({
     required String? refreshToken,
     required String? accessToken,

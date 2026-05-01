@@ -35,6 +35,12 @@ abstract final class AppStrings {
 
   static const demoEta = 'Llegada estimada: 14 min';
 
+  static const trackingTitulo = 'Tu visita en camino';
+
+  static const trackingLlamadaDemo = 'Iniciando llamada\u2026';
+
+  static const trackingChatDemo = 'Abriendo chat\u2026';
+
   // --- Vet dashboard / shell ---
   static String holaDoctor(String name) {
     final n = name.trim().isEmpty ? 'Doctor(a)' : name.trim();
@@ -60,6 +66,16 @@ abstract final class AppStrings {
   static const vetDireccionPendiente = 'Direcci\u00F3n pendiente';
 
   static const vetMascota = 'Mascota';
+
+  static const vetPacienteEspecie = 'Paciente';
+
+  static const vetDutyOffTitle = 'Fuera de turno';
+
+  static const vetDutyOnTitle = 'Disponible para urgencias';
+
+  static const vetDutyOffSubtitle = 'No recibir\u00E1s alertas de emergencia.';
+
+  static const vetDutyOnSubtitle = 'Podr\u00E1s recibir asignaciones urgentes.';
 
   static const vetRutaEmergencia = 'Ruta de emergencia';
 

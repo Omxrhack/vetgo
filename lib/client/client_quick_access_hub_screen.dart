@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/emergency_sos_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/store_screen.dart';
@@ -24,18 +25,18 @@ class ClientQuickAccessHubScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Servicios'),
+        title: const Text(AppStrings.hubServiciosTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
           Text(
-            'Elige qu\u00E9 necesitas',
+            AppStrings.hubElige,
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            'Te guiamos paso a paso en cada flujo.',
+            AppStrings.hubTeGuiamos,
             style: theme.textTheme.bodyMedium?.copyWith(color: muted),
           ),
           const SizedBox(height: 24),

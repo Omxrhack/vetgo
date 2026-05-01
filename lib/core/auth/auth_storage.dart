@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../storage/vetgo_prefs.dart';
+import '../supabase/vetgo_supabase.dart';
 import 'auth_session.dart';
 
 /// Persistencia de sesión (tokens + snapshot user/profile + caducidad access).
@@ -114,6 +115,7 @@ abstract final class AuthStorage {
   }
 
   static Future<void> clear() async {
+    await VetgoSupabase.signOut();
     final p = await VetgoPrefs.backend;
     await p.remove(_keyAccess);
     await p.remove(_keyRefresh);

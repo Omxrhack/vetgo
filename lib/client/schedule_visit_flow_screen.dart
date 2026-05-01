@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
 /// Flujo progresivo (varios pasos) para solicitar una visita; demo hasta conectar citas API.
 class ScheduleVisitFlowScreen extends StatefulWidget {
@@ -248,9 +250,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               onPressed: () async {
                 await Future<void>.delayed(const Duration(milliseconds: 1200));
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Solicitud registrada (demo).')),
-                );
+                VetgoNotice.show(context, message: AppStrings.scheduleSolicitudDemo);
                 Navigator.of(context).popUntil((r) => r.isFirst);
               },
             ),

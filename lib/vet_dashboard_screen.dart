@@ -109,7 +109,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             surfaceTintColor: Colors.transparent,
             actions: [
               IconButton(
-                tooltip: 'Cerrar sesi?n',
+                tooltip: AppStrings.cerrarSesionTooltip,
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: widget.onLogout,
               ),
@@ -190,6 +190,10 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
           available: onDuty,
           busy: _dutyBusy,
           onChanged: _onDutyChanged,
+          offTitle: AppStrings.vetDutyOffTitle,
+          onTitle: AppStrings.vetDutyOnTitle,
+          offSubtitle: AppStrings.vetDutyOffSubtitle,
+          onSubtitle: AppStrings.vetDutyOnSubtitle,
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(title: AppStrings.vetResumenHoy),
@@ -255,8 +259,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(
-          title: 'Pr?ximas visitas',
-          subtitle: 'Desliza para ver m?s',
+          title: AppStrings.vetProximasVisitas,
+          subtitle: AppStrings.vetDeslizaMas,
         ),
         SizedBox(
           height: 148,
@@ -312,7 +316,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              col.isEmpty ? 'Direcci?n pendiente' : col,
+                              col.isEmpty ? AppStrings.vetDireccionPendiente : col,
                               style: theme.textTheme.bodySmall?.copyWith(color: muted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

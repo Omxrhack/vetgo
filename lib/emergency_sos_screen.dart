@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// SOS Emergencia 24/7: envía `POST /api/emergencies` con ubicación y mascota.
+/// SOS Emergencia 24/7: envia `POST /api/emergencies` con ubicacion y mascota.
 class EmergencySOSScreen extends StatefulWidget {
   const EmergencySOSScreen({super.key, required this.pets});
 
@@ -46,7 +48,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      return (0.0, 0.0, 'Se necesita ubicación para alertar al equipo veterinario.');
+      return (0.0, 0.0, AppStrings.emergencyNecesitaUbicacion);
     }
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
@@ -57,13 +59,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
   Future<void> _submitEmergency({required String defaultSymptoms}) async {
     if (widget.pets.isEmpty || _selectedPet == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Primero registra una mascota en tu cuenta.'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      );
+      VetgoNotice.show(context, message: AppStrings.emergencyRegistraMascota, isError: true);
       return;
     }
 
@@ -73,13 +69,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     final (lat, lng, locErr) = await _resolveLocation();
     if (locErr != null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(locErr),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      );
+      VetgoNotice.show(context, message: locErr, isError: true);
       return;
     }
 
@@ -93,33 +83,20 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     if (!mounted) return;
 
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      );
+      VetgoNotice.show(context, message: err, isError: true);
       return;
     }
 
     final id = data?['id']?.toString() ?? '';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          id.isNotEmpty
-              ? 'Emergencia registrada (ref. $id). Te contactamos en segundos.'
-              : 'Emergencia registrada. Te contactamos en segundos.',
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+    VetgoNotice.show(
+      context,
+      message: id.isNotEmpty ? AppStrings.emergencyRegistradaRef(id) : AppStrings.emergencyRegistrada,
     );
   }
 
   Future<void> _onSosPressed() async {
     setState(() => _searching = true);
-    await _submitEmergency(defaultSymptoms: 'Emergencia SOS  botn principal');
+    await _submitEmergency(defaultSymptoms: AppStrings.emergencyDefaultSosBoton);
     if (mounted) setState(() => _searching = false);
   }
 
@@ -159,13 +136,13 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Emergencia',
+                  AppStrings.emergencyTitulo,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Respuesta prioritaria 24/7',
+                  AppStrings.emergencySubtitulo,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(color: ClientPastelColors.mutedOn(context)),
                 ),
@@ -219,7 +196,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 16),
                                         child: Text(
-                                          'Enviando alerta a veterinarios cercanos',
+                                          AppStrings.emergencyEnviandoAlerta,
                                           textAlign: TextAlign.center,
                                           style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                                         ),
@@ -233,7 +210,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                                       Icon(Icons.sos_rounded, size: 56, color: theme.colorScheme.error.withValues(alpha: 0.88)),
                                       const SizedBox(height: 10),
                                       Text(
-                                        'Solicitar ayuda\nurgente',
+                                        AppStrings.emergencySolicitarAyuda,
                                         textAlign: TextAlign.center,
                                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, height: 1.15),
                                       ),
@@ -247,7 +224,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                 ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOutCubic),
                 const SizedBox(height: 40),
                 Text(
-                  'Detalle rpido (opcional)',
+                  AppStrings.emergencyDetalleRapido,
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 12),
@@ -258,19 +235,20 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                     children: [
                       if (widget.pets.isEmpty)
                         Text(
-                          'No hay mascotas en tu cuenta. Aade una desde la app o espera la sincronizacin.',
+                          AppStrings.emergencySinMascotas,
                           style: theme.textTheme.bodyMedium?.copyWith(color: ClientPastelColors.mutedOn(context)),
                         )
                       else
                         DropdownButtonFormField<ClientPetVm>(
+                          // ignore: deprecated_member_use
                           value: _selectedPet,
                           decoration: const InputDecoration(
-                            labelText: 'Mascota',
+                            labelText: AppStrings.emergencyLabelMascota,
                             border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                           ),
                           items: widget.pets
                               .map(
-                                (p) => DropdownMenuItem(value: p, child: Text(p.name)),
+                                (ClientPetVm p) => DropdownMenuItem(value: p, child: Text(p.name)),
                               )
                               .toList(),
                           onChanged: _searching
@@ -285,17 +263,17 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                         enabled: !_searching,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'Sntomas',
+                          labelText: AppStrings.emergencyLabelSintomas,
                           alignLabelWithHint: true,
-                          hintText: 'Describe lo que observas',
+                          hintText: AppStrings.emergencyHintSintomas,
                           border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                         ),
                       ),
                       const SizedBox(height: 18),
                       AsyncEndpointButton(
-                        label: 'Enviar datos al equipo SOS',
+                        label: AppStrings.emergencyEnviarSos,
                         icon: Icons.send_rounded,
-                        loadingLabel: 'Enviando',
+                        loadingLabel: AppStrings.emergencyEnviando,
                         style: FilledButton.styleFrom(
                           backgroundColor: ClientPastelColors.mintDeep,
                           foregroundColor: Colors.white,
@@ -303,7 +281,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                         onPressed: widget.pets.isEmpty || _searching
                             ? null
                             : () async {
-                                await _submitEmergency(defaultSymptoms: 'Emergencia SOS  formulario');
+                                await _submitEmergency(defaultSymptoms: AppStrings.emergencyDefaultSosForm);
                               },
                       ),
                     ],

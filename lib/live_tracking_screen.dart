@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/widgets/client/live_tracking_bottom_sheet.dart';
 import 'package:vetgo/widgets/client/map_placeholder_box.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
 /// Rastreo de cita activa (cliente): mapa placeholder + panel inferior.
 class LiveTrackingScreen extends StatelessWidget {
@@ -23,7 +25,7 @@ class LiveTrackingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Tu visita en camino'),
+        title: const Text(AppStrings.trackingTitulo),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -41,22 +43,10 @@ class LiveTrackingScreen extends StatelessWidget {
               etaLabel: etaLabel,
               vetPhotoUrl: vetPhotoUrl,
               onCall: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Iniciando llamada…'),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                );
+                VetgoNotice.show(context, message: AppStrings.trackingLlamadaDemo);
               },
               onChat: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Abriendo chat…'),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                );
+                VetgoNotice.show(context, message: AppStrings.trackingChatDemo);
               },
             ),
           ),
