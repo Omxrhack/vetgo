@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/auth/auth_storage.dart';
-import '../core/network/vetgo_api_client.dart';
-import '../client_onboarding_form.dart';
-import '../vet_onboarding_form.dart';
+import 'client_onboarding_form.dart';
+import 'core/auth/auth_storage.dart';
+import 'core/network/vetgo_api_client.dart';
+import 'vet_onboarding_form.dart';
 
 /// Onboarding de perfil (cliente o veterinario) tras verificar correo.
 class ProfileOnboardingFlow extends StatefulWidget {

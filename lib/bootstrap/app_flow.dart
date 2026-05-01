@@ -5,7 +5,7 @@ import '../core/auth/auth_session.dart';
 import '../core/auth/auth_storage.dart';
 import '../core/network/vetgo_api_client.dart';
 import '../home/home_screen.dart';
-import 'profile_onboarding_flow.dart';
+import '../profile_onboarding_flow.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../onboarding/vetgo_onboarding_page.dart';
 
