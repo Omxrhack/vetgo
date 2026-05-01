@@ -83,11 +83,11 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final em = widget.emergency;
     final dist = em.distanceKm != null ? 'A ${em.distanceKm} km' : 'Distancia por confirmar';
 
-    final summary =
-        '¬ùEmergencia! ${em.species} (${em.petName}) ¬ù ${em.symptoms} ¬ù $dist';
+    final summary = '°Emergencia! ${em.species} (${em.petName}) ∑ ${em.symptoms} ∑ $dist';
 
     return SlideTransition(
       position: _slide,
@@ -98,7 +98,10 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
           bottom: MediaQuery.paddingOf(context).bottom + 16,
         ),
         child: VetSoftCard(
-          color: VetOperatorColors.coralSoft.withValues(alpha: 0.92),
+          color: Color.alphaBlend(
+            VetOperatorColors.coralSoft.withValues(alpha: 0.35),
+            scheme.surface,
+          ),
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -106,11 +109,11 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
             children: [
               Row(
                 children: [
-                  Icon(Icons.emergency_rounded, color: VetOperatorColors.coralAccent, size: 30),
+                  Icon(Icons.emergency_rounded, color: scheme.error, size: 30),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Asignaci¬ùn 24/7',
+                      'AsignaciÛn 24/7',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -131,7 +134,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                 Text(
                   _actionError!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
+                    color: scheme.error,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -140,7 +143,6 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
               VetAsyncPrimaryButton(
                 label: 'Aceptar',
                 busy: _acceptBusy,
-                backgroundColor: VetOperatorColors.mintDeep,
                 onPressed: _acceptBusy || _rejectBusy
                     ? null
                     : () async {
@@ -162,13 +164,16 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _rejectBusy
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: scheme.primary,
+                            ),
                           ),
                         ),
                       )
@@ -189,9 +194,12 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                                   if (mounted) setState(() => _rejectBusy = false);
                                 }
                               },
-                        child: const Text(
+                        child: Text(
                           'Rechazar',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ),
               ),

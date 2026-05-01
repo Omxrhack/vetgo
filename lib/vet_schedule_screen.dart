@@ -14,10 +14,12 @@ class VetScheduleScreen extends StatefulWidget {
     super.key,
     required this.api,
     required this.resolveVetCoordinates,
+    required this.onLogout,
   });
 
   final VetgoApiClient api;
   final (double lat, double lng) Function() resolveVetCoordinates;
+  final VoidCallback onLogout;
 
   @override
   State<VetScheduleScreen> createState() => _VetScheduleScreenState();
@@ -78,20 +80,28 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: VetOperatorColors.bone,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _load,
-        color: VetOperatorColors.mintDeep,
+        color: scheme.primary,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: VetOperatorColors.bone,
+              backgroundColor: theme.scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
               title: const Text('Agenda y ruta'),
+              actions: [
+                IconButton(
+                  tooltip: 'Cerrar sesión',
+                  icon: const Icon(Icons.logout_rounded),
+                  onPressed: widget.onLogout,
+                ),
+              ],
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -99,16 +109,16 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 280),
                   child: _loading
-                      ? const SizedBox(
-                          key: ValueKey<String>('l'),
+                      ? SizedBox(
+                          key: const ValueKey<String>('l'),
                           height: 200,
-                          child: Center(child: CircularProgressIndicator()),
+                          child: Center(child: CircularProgressIndicator(color: scheme.primary)),
                         )
                       : _error != null && (_schedule == null)
                           ? Text(
                               key: const ValueKey<String>('e'),
                               _error!,
-                              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.error),
+                              style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
                             )
                           : _buildTimeline(theme),
                 ),
@@ -121,13 +131,15 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
   }
 
   Widget _buildTimeline(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurface.withValues(alpha: 0.58);
     final raw = _schedule?['appointments'];
     final list = raw is List ? raw : const [];
     if (list.isEmpty) {
       return Text(
         key: const ValueKey<String>('empty'),
         'Sin citas para este día. Asigna vet_id en una cita para pruebas.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
+        style: theme.textTheme.bodyMedium?.copyWith(color: muted),
       );
     }
 
@@ -141,7 +153,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
             child: Text(
               _routeError!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.error,
+                color: scheme.error,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -163,6 +175,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
               ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
               : null;
           final busy = _routeBusy[id] == true;
+          final subtitleAddr = addr ?? 'Sin colonia';
 
           return Padding(
             padding: EdgeInsets.only(bottom: i == list.length - 1 ? 24 : 14),
@@ -208,7 +221,6 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                     curve: Curves.easeOutCubic,
                     child: VetSoftCard(
                       padding: EdgeInsets.zero,
-                      color: Colors.white,
                       child: ClipRRect(
                         borderRadius: VetSoftCard.radius,
                         child: ExpansionTile(
@@ -220,8 +232,8 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           subtitle: Text(
-                            '$petName ? ${addr ?? 'Sin colonia'}',
-                            style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
+                            '$petName ? $subtitleAddr',
+                            style: theme.textTheme.bodySmall?.copyWith(color: muted),
                           ),
                           children: [
                             AnimatedSwitcher(

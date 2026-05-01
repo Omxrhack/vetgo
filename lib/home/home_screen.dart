@@ -7,7 +7,6 @@ import 'package:vetgo/core/auth/auth_session.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/config/app_config.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
-import 'package:vetgo/theme/vet_operator_colors.dart';
 import 'package:vetgo/vet_dashboard_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
@@ -348,8 +347,11 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: VetOperatorColors.bone,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: IndexedStack(
         index: _tabIndex,
         children: [
@@ -357,17 +359,20 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
             api: _api,
             profileName: widget.profileFirstName,
             onVetBaseResolved: _onVetBaseResolved,
+            onLogout: widget.onLoggedOut,
           ),
           VetScheduleScreen(
             api: _api,
             resolveVetCoordinates: _resolveVetCoordinates,
+            onLogout: widget.onLoggedOut,
           ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
-        backgroundColor: Colors.white,
-        indicatorColor: VetOperatorColors.mintSoft.withValues(alpha: 0.6),
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.primary.withValues(alpha: 0.22),
+        surfaceTintColor: Colors.transparent,
         onDestinationSelected: (i) => setState(() => _tabIndex = i),
         destinations: const [
           NavigationDestination(
@@ -381,14 +386,6 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
             label: 'Agenda',
           ),
         ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.onLoggedOut,
-        backgroundColor: VetOperatorColors.mintDeep,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.logout_rounded),
-        label: const Text('Salir'),
       ),
     );
   }

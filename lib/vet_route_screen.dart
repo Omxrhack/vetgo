@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'theme/vet_operator_colors.dart';
 import 'widgets/vet/vet_soft_card.dart';
 
 /// Pantalla temporal hasta integrar mapa en vivo (Google Maps u otro SDK).
@@ -17,9 +16,10 @@ class VetRouteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.58);
 
     return Scaffold(
-      backgroundColor: VetOperatorColors.bone,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(title),
       ),
@@ -31,14 +31,14 @@ class VetRouteScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Mapa en construcciÂn',
+                  'Mapa en construcción',
                   style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'SesiÂn de seguimiento creada. El mapa en vivo y actualizaciÂn de ubicaciÂn llegarÂn en una siguiente iteraciÂn.',
+                  'Sesión de seguimiento creada. El mapa en vivo y actualización de ubicación llegarán en una siguiente iteración.',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: VetOperatorColors.textMuted,
+                    color: muted,
                     height: 1.4,
                   ),
                 ),

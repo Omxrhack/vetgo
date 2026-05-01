@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/vet_operator_colors.dart';
-
 /// Tarjeta con borde muy redondeado y sombra suave.
 class VetSoftCard extends StatelessWidget {
   const VetSoftCard({
@@ -21,7 +19,8 @@ class VetSoftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = color ?? Colors.white;
+    final scheme = Theme.of(context).colorScheme;
+    final bg = color ?? scheme.surface;
 
     final decorated = AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -29,10 +28,10 @@ class VetSoftCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: radius,
-        border: Border.all(color: VetOperatorColors.lilacHint.withValues(alpha: 0.35)),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
-            color: VetOperatorColors.mintDeep.withValues(alpha: 0.06),
+            color: scheme.shadow.withValues(alpha: 0.06),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),

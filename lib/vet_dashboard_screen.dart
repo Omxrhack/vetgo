@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
 import 'core/network/vetgo_api_client.dart';
@@ -15,11 +16,13 @@ class VetDashboardScreen extends StatefulWidget {
     super.key,
     required this.api,
     required this.profileName,
+    required this.onLogout,
     this.onVetBaseResolved,
   });
 
   final VetgoApiClient api;
   final String profileName;
+  final VoidCallback onLogout;
   final VetBaseCallback? onVetBaseResolved;
 
   @override
@@ -87,20 +90,29 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurface.withValues(alpha: 0.58);
     final greetingName = widget.profileName.trim().isEmpty ? 'Doctor(a)' : widget.profileName.trim();
     final dateLine = DateFormat("EEEE d 'de' MMMM", 'es').format(DateTime.now());
 
     return RefreshIndicator(
       onRefresh: _refresh,
-      color: VetOperatorColors.mintDeep,
+      color: scheme.primary,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverAppBar(
             pinned: true,
             floating: false,
-            backgroundColor: VetOperatorColors.bone,
+            backgroundColor: theme.scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
+            actions: [
+              IconButton(
+                tooltip: 'Cerrar sesiÛn',
+                icon: const Icon(Icons.logout_rounded),
+                onPressed: widget.onLogout,
+              ),
+            ],
             expandedHeight: 132,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, right: 20, bottom: 14),
@@ -120,7 +132,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   child: Text(
                     dateLine,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: VetOperatorColors.textMuted,
+                      color: muted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -134,18 +146,18 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 320),
                 child: _loading
-                    ? const SizedBox(
-                        key: ValueKey<String>('loading'),
+                    ? SizedBox(
+                        key: const ValueKey<String>('loading'),
                         height: 220,
-                        child: Center(child: CircularProgressIndicator()),
+                        child: Center(child: CircularProgressIndicator(color: scheme.primary)),
                       )
                     : _error != null
                         ? Text(
                             key: const ValueKey<String>('err'),
                             _error!,
-                            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.error),
+                            style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
                           )
-                        : _buildContent(theme),
+                        : _buildContent(theme, muted),
               ),
             ),
           ),
@@ -154,7 +166,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
     );
   }
 
-  Widget _buildContent(ThemeData theme) {
+  Widget _buildContent(ThemeData theme, Color muted) {
     final dash = _dash!;
     final onDuty = dash['on_duty'] == true;
     final pending = (dash['pending_count'] as num?)?.toInt() ?? 0;
@@ -192,7 +204,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     Text(
                       'Citas pendientes',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: VetOperatorColors.textMuted,
+                        color: muted,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -221,7 +233,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     Text(
                       'Ganancias (MXN)',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: VetOperatorColors.textMuted,
+                        color: muted,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -242,8 +254,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(
-          title: 'Pr¬ùximas visitas',
-          subtitle: 'Desliza para ver m¬ùs',
+          title: 'PrÛximas visitas',
+          subtitle: 'Desliza para ver m·s',
         ),
         SizedBox(
           height: 148,
@@ -252,7 +264,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'No hay visitas asignadas para hoy.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                   ),
                 )
               : ListView.separated(
@@ -274,7 +286,6 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                       width: 220,
                       child: VetSoftCard(
                         padding: const EdgeInsets.all(16),
-                        color: Colors.white,
                         onTap: apptId != null && petIdStr != null
                             ? () {
                                 Navigator.of(context).push<void>(
@@ -300,8 +311,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              col.isEmpty ? 'Direcci¬ùn pendiente' : col,
-                              style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
+                              col.isEmpty ? 'DirecciÛn pendiente' : col,
+                              style: theme.textTheme.bodySmall?.copyWith(color: muted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -313,6 +324,9 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                 ),
         ),
       ],
-    );
+    )
+        .animate()
+        .fadeIn(duration: 450.ms, curve: Curves.easeOutCubic)
+        .slideY(begin: 0.04, end: 0, duration: 450.ms, curve: Curves.easeOutCubic);
   }
 }

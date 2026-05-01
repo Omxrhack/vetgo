@@ -6,7 +6,7 @@ import 'widgets/vet/vet_pastel_chip.dart';
 import 'widgets/vet/vet_section_title.dart';
 import 'widgets/vet/vet_soft_card.dart';
 
-/// Expediente r√°pido antes de la visita a domicilio.
+/// Expediente r·pido antes de la visita a domicilio.
 class VetPatientRecordScreen extends StatefulWidget {
   const VetPatientRecordScreen({
     super.key,
@@ -57,22 +57,26 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
       final months = (now.year - bd.year) * 12 + now.month - bd.month;
       return months <= 0 ? 'Cachorro / menor a 1 mes' : '$months mes(es)';
     }
-    return '$years a¬ùo(s)';
+    return '$years a?o(s)';
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: VetOperatorColors.bone,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Expediente del paciente'),
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 280),
         child: _loading
-            ? const Center(key: ValueKey<String>('load'), child: CircularProgressIndicator())
+            ? Center(
+                key: const ValueKey<String>('load'),
+                child: CircularProgressIndicator(color: scheme.primary),
+              )
             : _error != null
                 ? Center(
                     key: const ValueKey<String>('err'),
@@ -81,7 +85,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
                       child: Text(
                         _error!,
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.error),
+                        style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
                       ),
                     ),
                   )
@@ -91,6 +95,8 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
   }
 
   Widget _buildBody(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurface.withValues(alpha: 0.58);
     final pet = _payload?['pet'] is Map<String, dynamic> ? _payload!['pet'] as Map<String, dynamic> : null;
     final owner = _payload?['owner'] is Map<String, dynamic> ? _payload!['owner'] as Map<String, dynamic> : null;
     final cd = _payload?['client_details'] is Map<String, dynamic>
@@ -98,13 +104,16 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         : null;
 
     final name = pet?['name']?.toString() ?? 'Mascota';
-    final species = pet?['species']?.toString() ?? '¬ù';
+    final species = pet?['species']?.toString().trim();
+    final speciesLabel = (species == null || species.isEmpty) ? 'Sin especie' : species;
     final breed = pet?['breed']?.toString();
     final photo = pet?['photo_url']?.toString();
     final temperament = pet?['temperament']?.toString();
     final medical = pet?['medical_notes']?.toString();
 
     final ownerName = owner?['full_name']?.toString();
+
+    final speciesBreed = breed != null && breed.isNotEmpty ? '$speciesLabel ? $breed' : speciesLabel;
 
     return ListView(
       key: const ValueKey<String>('ok'),
@@ -136,8 +145,8 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '$species${breed != null && breed.isNotEmpty ? ' ¬ù $breed' : ''}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
+                      speciesBreed,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -169,7 +178,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
               icon: Icons.pets_rounded,
             ),
             VetPastelChip(
-              label: species,
+              label: speciesLabel,
               backgroundColor: VetOperatorColors.lilacHint.withValues(alpha: 0.75),
             ),
           ],
@@ -179,19 +188,19 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         VetSoftCard(
           color: VetOperatorColors.peach.withValues(alpha: 0.35),
           child: Text(
-            cd?['address_text']?.toString() ?? 'Sin direcci¬ùn registrada',
+            cd?['address_text']?.toString() ?? 'Sin direcciÛn registrada',
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 24),
         const VetSectionTitle(
-          title: 'Notas m¬ùdicas / alergias',
+          title: 'Notas mÈdicas / alergias',
           subtitle: 'Revisa antes de tocar el timbre.',
         ),
         VetSoftCard(
           color: VetOperatorColors.mintSoft.withValues(alpha: 0.4),
           child: Text(
-            medical != null && medical.isNotEmpty ? medical : 'Sin notas m¬ùdicas registradas.',
+            medical != null && medical.isNotEmpty ? medical : 'Sin notas mÈdicas registradas.',
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
           ),
         ),

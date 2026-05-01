@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/vet_operator_colors.dart';
-
 class VetSectionTitle extends StatelessWidget {
   const VetSectionTitle({
     super.key,
@@ -17,6 +15,7 @@ class VetSectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -38,9 +37,7 @@ class VetSectionTitle extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: VetOperatorColors.textMuted,
-                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(color: muted),
                   ),
                 ],
               ],
