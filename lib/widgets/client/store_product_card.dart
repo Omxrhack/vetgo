@@ -53,15 +53,21 @@ class _StoreProductCardState extends State<StoreProductCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: AspectRatio(
-              aspectRatio: 1.05,
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
               child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-                  ? Image.network(widget.imageUrl!, fit: BoxFit.cover)
+                  ? Image.network(
+                      widget.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                    )
                   : ColoredBox(
                       color: ClientPastelColors.skySoft.withValues(alpha: 0.75),
-                      child: Icon(Icons.pets_rounded, size: 42, color: scheme.primary.withValues(alpha: 0.45)),
+                      child: Center(
+                        child: Icon(Icons.pets_rounded, size: 42, color: scheme.primary.withValues(alpha: 0.45)),
+                      ),
                     ),
             ),
           ),
