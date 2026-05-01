@@ -159,6 +159,33 @@ abstract final class AppStrings {
 
   static const vetSesionRutaSinId = 'Sesi\u00F3n de ruta sin id.';
 
+  static const vetRouteErrorCargaSesion =
+      'No se pudo cargar la sesi\u00F3n de seguimiento.';
+
+  static const vetRouteSinCoordenadasDestino =
+      'Sin coordenadas del destino en tu cuenta; solo se muestra tu posici\u00F3n hasta que el tutor las registre.';
+
+  static String vetRouteDistanciaKm(double km) =>
+      'Distancia aprox.: ${km.toStringAsFixed(km >= 10 ? 0 : 1)} km';
+
+  static String vetRouteEtaAproxMinutos(int min) =>
+      'Tiempo estimado (orientativo): ~$min min';
+
+  static String vetRouteEtaServidorMinutos(int min) =>
+      'ETA en servidor: $min min';
+
+  static const vetRouteActualizarUbicacion =
+      'Actualizar mi ubicaci\u00F3n ahora';
+
+  static const vetRouteUbicacionEnviada = 'Ubicaci\u00F3n enviada.';
+
+  static const vetRoutePermisoUbicacion =
+      'Activa el permiso de ubicaci\u00F3n para compartir tu posici\u00F3n en vivo.';
+
+  static const vetRouteEnviandoUbicacion = 'Enviando ubicaci\u00F3n\u2026';
+
+  static const vetRouteContextoDesconocido = 'Ruta en curso';
+
   // --- Store ---
   static const storeTitle = 'Tienda Vetgo';
 

@@ -508,6 +508,31 @@ class VetgoApiClient {
     }
   }
 
+  /// `PATCH /api/tracking/:id/location` — veterinario actualiza posición en vivo.
+  Future<VetJsonResult> patchTrackingSessionLocation({
+    required String sessionId,
+    required double vetLat,
+    required double vetLng,
+    int? etaMinutes,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/tracking/$sessionId/location',
+        data: <String, dynamic>{
+          'vet_lat': vetLat,
+          'vet_lng': vetLng,
+          if (etaMinutes != null) 'eta_minutes': etaMinutes,
+        },
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   Future<Options?> _authorizedOptions() async {
     final token = await AuthStorage.readAccessToken();
     if (token == null || token.isEmpty) return null;
