@@ -16,6 +16,7 @@ class ClientHomeShell extends StatefulWidget {
     this.profilePhotoUrl,
     required this.onLogout,
     this.ownerUserId,
+    this.onProfilePhotoUpdated,
   });
 
   final String userName;
@@ -24,6 +25,9 @@ class ClientHomeShell extends StatefulWidget {
 
   /// `auth.users.id` del dueño (JWT); necesario para `GET /api/pets/:ownerId`.
   final String? ownerUserId;
+
+  /// Tras subir foto de perfil (Storage) recarga sesión en [HomeScreen].
+  final VoidCallback? onProfilePhotoUpdated;
 
   @override
   State<ClientHomeShell> createState() => _ClientHomeShellState();

@@ -11,6 +11,7 @@ import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/client/pastel_quick_action_card.dart';
+import 'package:vetgo/widgets/profile_photo_avatar.dart';
 
 /// Home / dashboard principal del cliente (estetica pastel Vetgo).
 class ClientDashboardScreen extends StatelessWidget {
@@ -24,10 +25,12 @@ class ClientDashboardScreen extends StatelessWidget {
     required this.onRefreshPets,
     required this.onLogout,
     required this.onOpenEmergency,
+    this.onProfilePhotoUpdated,
   });
 
   final String userName;
   final String? profilePhotoUrl;
+  final VoidCallback? onProfilePhotoUpdated;
   final List<ClientPetVm> pets;
   final bool petsLoading;
   final String? petsError;
@@ -76,17 +79,13 @@ class ClientDashboardScreen extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 56, top: 36),
-                  child: Hero(
-                    tag: 'client_avatar',
-                    child: CircleAvatar(
-                      radius: 28,
-                      backgroundColor: ClientPastelColors.mintSoft,
-                      backgroundImage:
-                          profilePhotoUrl != null && profilePhotoUrl!.isNotEmpty ? NetworkImage(profilePhotoUrl!) : null,
-                      child: profilePhotoUrl == null || profilePhotoUrl!.isEmpty
-                          ? Icon(Icons.person_rounded, color: ClientPastelColors.mintDeep, size: 30)
-                          : null,
-                    ),
+                  child: ProfilePhotoAvatar(
+                    heroTag: 'client_avatar',
+                    imageUrl: profilePhotoUrl,
+                    placeholderBackground: ClientPastelColors.mintSoft,
+                    placeholderIconColor: ClientPastelColors.mintDeep,
+                    radius: 28,
+                    onUploaded: onProfilePhotoUpdated,
                   ),
                 ),
               ),
