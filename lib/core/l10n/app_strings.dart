@@ -141,6 +141,11 @@ abstract final class AppStrings {
   // --- Schedule flow ---
   static const scheduleSolicitudDemo = 'Solicitud registrada (demo).';
 
+  static const scheduleIntroBody =
+      'En los siguientes pasos eleg\u00EDs la mascota y una fecha sugerida. '
+      'La solicitud se env\u00EDa al servidor; si elegiste un veterinario en '
+      'Servicios, la cita quedar\u00E1 asignada a esa persona cuando sea posible.';
+
   // --- Login / auth (visible errors) ---
   static const loginSinToken =
       'No se recibi\u00F3 un token. Intenta de nuevo o contacta soporte.';
@@ -155,4 +160,49 @@ abstract final class AppStrings {
   static const hubTeGuiamos = 'Te guiamos paso a paso en cada flujo.';
 
   static const hubServiciosTitle = 'Servicios';
+
+  // --- Elegir veterinario (cliente) ---
+  static const vetElegirTitulo = 'Tu veterinario';
+
+  static const vetElegirSubtitulo =
+      'Eleg\u00ED uno para priorizarlo en emergencias y en citas a domicilio. Si no eliges, usamos asignaci\u00F3n autom\u00E1tica.';
+
+  static const vetReintentar = 'Reintentar';
+
+  static const vetListaVacia =
+      'A\u00FAn no hay veterinarios disponibles en el cat\u00E1logo.';
+
+  static const vetQuitarPreferido = 'Usar asignaci\u00F3n autom\u00E1tica';
+
+  static String vetPreferidoGuardado(String name) =>
+      'Guardado: $name ser\u00E1 tu veterinario preferido.';
+
+  static const vetPreferidoQuitarOk =
+      'Listo: volveremos a asignar autom\u00E1ticamente.';
+
+  static const hubTileVetTitulo = 'Mi veterinario';
+
+  static const hubTileVetSubtitulo =
+      'Elige qui\u00E9n atiende tus urgencias y visitas.';
+
+  static const emergencyVetLineAuto =
+      'Sin preferencia: asignamos al veterinario disponible m\u00E1s cercano.';
+
+  static String emergencyVetLinePref(String name) =>
+      'Preferencia activa: $name';
+
+  static const emergencyVetElegir = 'Elegir o cambiar';
+
+  static const scheduleVetLineAuto = 'Sin veterinario fijo (autom\u00E1tico)';
+
+  static String scheduleVetLinePref(String name) => 'Veterinario: $name';
+
+  static const scheduleVetElegir = 'Elegir veterinario';
+
+  static String scheduleCitaRegistrada(String id) =>
+      'Cita registrada (ref. $id).';
+
+  static const scheduleCitaOkSinRef = 'Cita registrada.';
+
+  static const scheduleCitaError = 'No se pudo registrar la cita.';
 }

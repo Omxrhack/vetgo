@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/emergency_sos_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
@@ -41,6 +42,19 @@ class ClientQuickAccessHubScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _HubTile(
+            icon: Icons.medical_services_rounded,
+            iconColor: ClientPastelColors.skyDeep,
+            title: AppStrings.hubTileVetTitulo,
+            subtitle: AppStrings.hubTileVetSubtitulo,
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ChooseVetScreen(),
+                ),
+              );
+            },
+          ),
+          _HubTile(
             icon: Icons.emergency_rounded,
             iconColor: theme.colorScheme.error,
             title: 'Urgencia 24/7',
@@ -68,7 +82,7 @@ class ClientQuickAccessHubScreen extends StatelessWidget {
           ),
           _HubTile(
             icon: Icons.pets_rounded,
-            iconColor: ClientPastelColors.skyDeep,
+            iconColor: ClientPastelColors.mintDeep,
             title: 'Mis mascotas',
             subtitle: 'Lista completa y expediente por mascota.',
             onTap: () {

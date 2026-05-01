@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/core/storage/preferred_vet_prefs.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
@@ -26,6 +28,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
 
   ClientPetVm? _selectedPet;
   final TextEditingController _symptoms = TextEditingController();
+  String? _preferredVetName;
 
   @override
   void initState() {
@@ -33,6 +36,12 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     if (widget.pets.isNotEmpty) {
       _selectedPet = widget.pets.first;
     }
+    _refreshPreferredVet();
+  }
+
+  Future<void> _refreshPreferredVet() async {
+    final name = await PreferredVetPrefs.readDisplayName();
+    if (mounted) setState(() => _preferredVetName = name);
   }
 
   @override
@@ -73,11 +82,14 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
       return;
     }
 
+    final prefId = await PreferredVetPrefs.readId();
+
     final (data, err) = await _api.createEmergency(
       petId: _selectedPet!.id,
       symptoms: symptoms,
       latitude: lat,
       longitude: lng,
+      preferredVetId: prefId,
     );
 
     if (!mounted) return;
@@ -146,7 +158,31 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(color: ClientPastelColors.mutedOn(context)),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 16),
+                Text(
+                  _preferredVetName != null && _preferredVetName!.isNotEmpty
+                      ? AppStrings.emergencyVetLinePref(_preferredVetName!)
+                      : AppStrings.emergencyVetLineAuto,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: ClientPastelColors.mutedOn(context),
+                    height: 1.35,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _searching
+                      ? null
+                      : () async {
+                          await Navigator.of(context).push<bool>(
+                            MaterialPageRoute<bool>(
+                              builder: (_) => const ChooseVetScreen(),
+                            ),
+                          );
+                          await _refreshPreferredVet();
+                        },
+                  child: const Text(AppStrings.emergencyVetElegir),
+                ),
+                const SizedBox(height: 24),
                 Center(
                   child: AnimatedScale(
                     scale: _searching ? 0.94 : 1,

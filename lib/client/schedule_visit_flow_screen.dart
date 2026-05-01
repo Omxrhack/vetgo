@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/core/storage/preferred_vet_prefs.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
@@ -19,10 +22,12 @@ class ScheduleVisitFlowScreen extends StatefulWidget {
 
 class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   final PageController _page = PageController();
+  final VetgoApiClient _api = VetgoApiClient();
   int _step = 0;
 
   ClientPetVm? _pet;
   DateTime? _suggestedDate;
+  String? _preferredVetName;
 
   @override
   void initState() {
@@ -30,6 +35,12 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     if (widget.pets.isNotEmpty) {
       _pet = widget.pets.first;
     }
+    _refreshPreferredVet();
+  }
+
+  Future<void> _refreshPreferredVet() async {
+    final name = await PreferredVetPrefs.readDisplayName();
+    if (mounted) setState(() => _preferredVetName = name);
   }
 
   @override
@@ -143,8 +154,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'En los siguientes pasos elegir\u00E1s la mascota y una fecha sugerida. '
-              'La confirmaci\u00F3n final llegar\u00E1 cuando conectemos la API de citas.',
+              AppStrings.scheduleIntroBody,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: muted, height: 1.4),
             ),
           ],
@@ -241,18 +251,58 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               'Fecha sugerida: ${_suggestedDate!.toIso8601String().split('T').first}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            Text(
+              _preferredVetName != null && _preferredVetName!.isNotEmpty
+                  ? AppStrings.scheduleVetLinePref(_preferredVetName!)
+                  : AppStrings.scheduleVetLineAuto,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: ClientPastelColors.mutedOn(context),
+                  ),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () async {
+                  await Navigator.of(context).push<bool>(
+                    MaterialPageRoute<bool>(
+                      builder: (_) => const ChooseVetScreen(),
+                    ),
+                  );
+                  await _refreshPreferredVet();
+                },
+                child: const Text(AppStrings.scheduleVetElegir),
+              ),
+            ),
+            const SizedBox(height: 12),
             AsyncEndpointButton(
               label: 'Enviar solicitud',
               icon: Icons.check_rounded,
               loadingLabel: 'Enviando\u2026',
               style: FilledButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary),
-              onPressed: () async {
-                await Future<void>.delayed(const Duration(milliseconds: 1200));
-                if (!context.mounted) return;
-                VetgoNotice.show(context, message: AppStrings.scheduleSolicitudDemo);
-                Navigator.of(context).popUntil((r) => r.isFirst);
-              },
+              onPressed: _pet == null
+                  ? null
+                  : () async {
+                      final d = _suggestedDate!;
+                      final at = DateTime(d.year, d.month, d.day, 10, 0);
+                      final vetId = await PreferredVetPrefs.readId();
+                      final (data, err) = await _api.createAppointment(
+                        petId: _pet!.id,
+                        scheduledAtIso: at.toUtc().toIso8601String(),
+                        vetId: vetId,
+                      );
+                      if (!context.mounted) return;
+                      if (err != null) {
+                        VetgoNotice.show(context, message: err, isError: true);
+                        return;
+                      }
+                      final id = data?['id']?.toString() ?? '';
+                      VetgoNotice.show(
+                        context,
+                        message: id.isNotEmpty ? AppStrings.scheduleCitaRegistrada(id) : AppStrings.scheduleCitaOkSinRef,
+                      );
+                      Navigator.of(context).popUntil((r) => r.isFirst);
+                    },
             ),
           ],
         ),

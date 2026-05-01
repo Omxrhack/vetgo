@@ -314,6 +314,33 @@ class VetgoApiClient {
     }
   }
 
+  /// `GET /api/vets` — catalogo veterinarios (cliente autenticado).
+  Future<(List<Map<String, dynamic>>? list, String? error)> listVetsCatalog() async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vets',
+        options: opts,
+      );
+      final raw = r.data?['vets'];
+      if (raw is! List<dynamic>) {
+        return (null, 'Formato de respuesta inesperado.');
+      }
+      final out = <Map<String, dynamic>>[];
+      for (final e in raw) {
+        if (e is Map<String, dynamic>) {
+          out.add(e);
+        } else if (e is Map) {
+          out.add(Map<String, dynamic>.from(e));
+        }
+      }
+      return (out, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `POST /api/emergencies`
   Future<VetJsonResult> createEmergency({
     required String petId,
@@ -321,6 +348,7 @@ class VetgoApiClient {
     required double latitude,
     required double longitude,
     String? status,
+    String? preferredVetId,
   }) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
@@ -333,6 +361,33 @@ class VetgoApiClient {
           'latitude': latitude,
           'longitude': longitude,
           if (status != null && status.isNotEmpty) 'status': status,
+          if (preferredVetId != null && preferredVetId.isNotEmpty) 'preferred_vet_id': preferredVetId,
+        },
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/appointments`
+  Future<VetJsonResult> createAppointment({
+    required String petId,
+    required String scheduledAtIso,
+    String? notes,
+    String? vetId,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/appointments',
+        data: <String, dynamic>{
+          'pet_id': petId,
+          'scheduled_at': scheduledAtIso,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+          if (vetId != null && vetId.isNotEmpty) 'vet_id': vetId,
         },
         options: opts,
       );
