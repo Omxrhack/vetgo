@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../auth/auth_flow.dart';
-import '../core/auth/auth_storage.dart';
-import '../core/auth/session_bootstrap.dart';
-import '../home/home_screen.dart';
-import '../onboarding/onboarding_prefs.dart';
-import '../onboarding/vetgo_onboarding_page.dart';
-import '../profile_onboarding/profile_onboarding_flow.dart';
-import '../splash/splash_screen.dart';
+import 'package:vetgo/auth/auth_flow.dart';
+import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/auth/session_bootstrap.dart';
+import 'package:vetgo/home/home_screen.dart';
+import 'package:vetgo/onboarding/onboarding_prefs.dart';
+import 'package:vetgo/onboarding/vetgo_onboarding_page.dart';
+import 'package:vetgo/profile_onboarding/profile_onboarding_flow.dart';
+import 'package:vetgo/splash/splash_screen.dart';
 
 /// Orquesta las etapas iniciales con transición animada entre pantallas.
 class AppFlow extends StatefulWidget {

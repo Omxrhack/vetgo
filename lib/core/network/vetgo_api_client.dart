@@ -215,7 +215,7 @@ class VetgoApiClient {
         '/auth/me',
         options: Options(
           headers: <String, dynamic>{
-            Headers.authorizationHeader: 'Bearer $accessToken',
+            'Authorization': 'Bearer $accessToken',
           },
         ),
       );
@@ -242,7 +242,7 @@ class VetgoApiClient {
         data: body,
         options: Options(
           headers: <String, dynamic>{
-            Headers.authorizationHeader: 'Bearer $accessToken',
+            'Authorization': 'Bearer $accessToken',
           },
         ),
       );
