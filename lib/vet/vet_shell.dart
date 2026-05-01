@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../core/network/vetgo_api_client.dart';
-import '../widgets/vet/emergency_alert_sheet.dart';
-import '../widgets/vet/vet_app_colors.dart';
-import 'vet_dashboard_screen.dart';
-import 'vet_route_screen.dart';
-import 'vet_schedule_screen.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/vet/vet_dashboard_screen.dart';
+import 'package:vetgo/vet/vet_route_screen.dart';
+import 'package:vetgo/vet/vet_schedule_screen.dart';
+import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
+import 'package:vetgo/widgets/vet/vet_app_colors.dart';
 
 /// Contenedor principal del veterinario con pestaùas y vigilancia de emergencias.
 class VetShell extends StatefulWidget {

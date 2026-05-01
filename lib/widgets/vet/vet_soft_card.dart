@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'vet_app_colors.dart';
+import 'package:vetgo/widgets/vet/vet_app_colors.dart';
 
 /// Tarjeta con borde muy redondeado y sombra suave.
 class VetSoftCard extends StatelessWidget {

@@ -266,7 +266,7 @@ class VetgoApiClient {
     if (token == null || token.isEmpty) return null;
     return Options(
       headers: <String, dynamic>{
-        Headers.authorizationHeader: 'Bearer $token',
+        'Authorization': 'Bearer $token',
       },
     );
   }

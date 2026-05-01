@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/network/vetgo_api_client.dart';
-import '../widgets/vet/vet_app_colors.dart';
-import '../widgets/vet/vet_async_toggle.dart';
-import '../widgets/vet/vet_soft_card.dart';
-import 'vet_patient_record_screen.dart';
-import 'vet_route_screen.dart';
+import 'package:vetgo/vet/vet_patient_record_screen.dart';
+import 'package:vetgo/vet/vet_route_screen.dart';
+import 'package:vetgo/widgets/vet/vet_app_colors.dart';
+import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
+import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
 /// Agenda del dùa con lùnea de tiempo e ùtems expansibles.
 class VetScheduleScreen extends StatefulWidget {
