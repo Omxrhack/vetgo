@@ -8,7 +8,7 @@ import 'widgets/vet/vet_soft_card.dart';
 import 'vet_patient_record_screen.dart';
 import 'vet_route_screen.dart';
 
-/// Agenda del dÃ­a con lÃ­nea de tiempo e Ã­tems expansibles.
+/// Agenda del día con línea de tiempo e ítems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,
@@ -56,8 +56,8 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
     final coords = widget.resolveVetCoordinates();
     final (data, err) = await widget.api.createTrackingSession(
       appointmentId: appointmentId,
-      vetLat: coords.lat,
-      vetLng: coords.lng,
+      vetLat: coords.$1,
+      vetLng: coords.$2,
     );
     if (!mounted) return;
     setState(() => _routeBusy[appointmentId] = false);
@@ -126,7 +126,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
     if (list.isEmpty) {
       return Text(
         key: const ValueKey<String>('empty'),
-        'Sin citas para este d?a. Asigna vet_id en una cita para pruebas.',
+        'Sin citas para este día. Asigna vet_id en una cita para pruebas.',
         style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
       );
     }
@@ -147,7 +147,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
             ),
           ),
         Text(
-          'L?nea del d?a',
+          'Línea del día',
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 14),
