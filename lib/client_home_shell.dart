@@ -84,9 +84,57 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
     });
   }
 
+  void _openSos() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => EmergencySOSScreen(pets: _pets),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final muted = scheme.onSurfaceVariant;
+
+    Widget tabEntry({
+      required int index,
+      required IconData iconOutlined,
+      required IconData iconFilled,
+      required String label,
+    }) {
+      final selected = _tab == index;
+      final color = selected ? scheme.primary : muted;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => setState(() => _tab = index),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  selected ? iconFilled : iconOutlined,
+                  size: 26,
+                  color: color,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -101,51 +149,47 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
             petsError: _petsError,
             onRefreshPets: _loadPets,
             onLogout: widget.onLogout,
-            onOpenEmergency: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => EmergencySOSScreen(pets: _pets),
-                ),
-              );
-            },
+            onOpenEmergency: _openSos,
             onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
           ),
           const StoreScreen(),
         ],
       ),
       floatingActionButton: FloatingActionButton.large(
-        onPressed: () {
-          Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (_) => EmergencySOSScreen(pets: _pets),
-            ),
-          );
-        },
-        backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.95),
-        foregroundColor: scheme.error.withValues(alpha: 0.88),
-        elevation: 4,
+        onPressed: _openSos,
+        backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.98),
+        foregroundColor: scheme.error.withValues(alpha: 0.9),
+        elevation: 6,
+        highlightElevation: 10,
         child: const Icon(Icons.sos_rounded, size: 36),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        padding: EdgeInsets.zero,
         height: 64,
-        backgroundColor: scheme.surface,
-        indicatorColor: scheme.primary.withValues(alpha: 0.2),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
+        color: scheme.surface,
         surfaceTintColor: Colors.transparent,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Inicio',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront_rounded),
-            label: 'Tienda',
-          ),
-        ],
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 9,
+        child: Row(
+          children: [
+            tabEntry(
+              index: 0,
+              iconOutlined: Icons.home_outlined,
+              iconFilled: Icons.home_rounded,
+              label: 'Inicio',
+            ),
+            const SizedBox(width: 104),
+            tabEntry(
+              index: 1,
+              iconOutlined: Icons.storefront_outlined,
+              iconFilled: Icons.storefront_rounded,
+              label: 'Tienda',
+            ),
+          ],
+        ),
       ),
     );
   }
