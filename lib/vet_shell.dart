@@ -12,7 +12,7 @@ import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
 import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
 
-/// Contenedor principal del veterinario con pestaÒas y vigilancia de emergencias.
+/// Contenedor principal del veterinario con pestaùas y vigilancia de emergencias.
 class VetShell extends StatefulWidget {
   const VetShell({
     super.key,
@@ -30,6 +30,12 @@ class VetShell extends StatefulWidget {
 class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   static const double _defaultLat = 19.432608;
   static const double _defaultLng = -99.133209;
+
+  /// Sin WebSocket de Supabase, la lista solo se actualiza por polling (intervalo corto).
+  static const int _pollSecondsNoRealtime = 8;
+
+  /// Con Realtime activo, igual hacemos polling de respaldo por si falla la red o el canal.
+  static const int _pollSecondsRealtimeFallback = 45;
 
   final VetgoApiClient _api = VetgoApiClient();
   int _tabIndex = 0;
@@ -55,11 +61,11 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
     );
 
     final vetId = session?.user?['id']?.toString();
-    var pollSeconds = 25;
+    var pollSeconds = _pollSecondsNoRealtime;
     if (vetId != null && vetId.isNotEmpty && VetgoSupabase.isInitialized) {
       final subscribed = await _subscribeEmergencyRealtime(vetId);
       if (subscribed) {
-        pollSeconds = 180;
+        pollSeconds = _pollSecondsRealtimeFallback;
       }
     }
 
