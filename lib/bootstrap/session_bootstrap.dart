@@ -1,6 +1,6 @@
-import '../network/vetgo_api_client.dart';
-import 'auth_session.dart';
-import 'auth_storage.dart';
+import '../core/auth/auth_session.dart';
+import '../core/auth/auth_storage.dart';
+import '../core/network/vetgo_api_client.dart';
 
 /// Destino tras validar tokens en el arranque (`GET /auth/me` + refresh si hace falta).
 enum SessionBootstrapResult {

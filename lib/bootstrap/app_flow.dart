@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'package:vetgo/auth/auth_flow.dart';
-import 'package:vetgo/core/auth/auth_storage.dart';
-import 'package:vetgo/core/auth/session_bootstrap.dart';
-import 'package:vetgo/home/home_screen.dart';
-import 'package:vetgo/onboarding/onboarding_prefs.dart';
-import 'package:vetgo/onboarding/vetgo_onboarding_page.dart';
-import 'package:vetgo/profile_onboarding/profile_onboarding_flow.dart';
-import 'package:vetgo/splash/splash_screen.dart';
+import '../auth/auth_flow.dart';
+import '../core/auth/auth_storage.dart';
+import 'session_bootstrap.dart';
+import '../home/home_screen.dart';
+import '../onboarding/onboarding_prefs.dart';
+import '../onboarding/vetgo_onboarding_page.dart';
+
+import '../splash/splash_screen.dart';
 
 /// Orquesta las etapas iniciales con transición animada entre pantallas.
 class AppFlow extends StatefulWidget {
@@ -124,13 +124,16 @@ class _AppFlowState extends State<AppFlow> {
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.04),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0, 0.04),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           ),
         );
@@ -153,7 +156,9 @@ class _AppFlowState extends State<AppFlow> {
         );
       case _AppStage.auth:
         return KeyedSubtree(
-          key: ValueKey<String>('auth_${_authStartAtOtp}_${_authOtpEmail ?? ''}'),
+          key: ValueKey<String>(
+            'auth_${_authStartAtOtp}_${_authOtpEmail ?? ''}',
+          ),
           child: AuthFlow(
             onAuthenticated: _onSessionUpdated,
             startAtOtp: _authStartAtOtp,
