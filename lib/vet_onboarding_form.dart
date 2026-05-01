@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'auth/widgets/auth_screen_shell.dart';
+import 'package:vetgo/auth/widgets/auth_screen_shell.dart';
+import 'package:vetgo/auth/widgets/onboarding_profile_photo_field.dart';
+import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 
 /// Formulario alineado con `vetOnboardingSchema` del backend.
 class VetOnboardingForm extends StatefulWidget {
@@ -29,7 +33,6 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
 
   final _fullName = TextEditingController();
   final _phone = TextEditingController();
-  final _avatarUrl = TextEditingController(text: 'https://placehold.co/128/png');
   final _cedula = TextEditingController();
   final _university = TextEditingController();
   final _radius = TextEditingController(text: '15');
@@ -44,12 +47,25 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
   String _specialty = 'medicina_general';
   bool _acceptsEmergencies = false;
 
+  String? _profileAvatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    AuthStorage.loadSession().then((s) {
+      if (!mounted) return;
+      final u = s?.profile?['avatar_url']?.toString().trim();
+      if (u != null && u.isNotEmpty) {
+        setState(() => _profileAvatarUrl = u);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _fullName.dispose();
     _phone.dispose();
-    _avatarUrl.dispose();
     _cedula.dispose();
     _university.dispose();
     _radius.dispose();
@@ -74,7 +90,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
       'role': 'vet',
       'full_name': _fullName.text.trim(),
       'phone': _phone.text.trim(),
-      'avatar_url': _avatarUrl.text.trim(),
+      'avatar_url': _profileAvatarUrl?.trim() ?? '',
       'vet_details': <String, dynamic>{
         'cedula': _cedula.text.trim(),
         'university': _university.text.trim(),
@@ -116,6 +132,14 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
 
   Future<void> _next() async {
     if (!_validateStep(_step)) return;
+    if (_step == 0) {
+      final u = _profileAvatarUrl?.trim() ?? '';
+      if (u.isEmpty) {
+        if (!mounted) return;
+        VetgoNotice.show(context, message: AppStrings.onboardingVetFotoRequerida, isError: true);
+        return;
+      }
+    }
     if (_step < 3) {
       await _goToStep(_step + 1);
       return;
@@ -203,20 +227,11 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _avatarUrl,
-                      keyboardType: TextInputType.url,
-                      decoration: authInputDecoration(
-                        context,
-                        label: 'URL de foto de perfil',
-                      ),
-                      validator: (v) {
-                        final s = v?.trim() ?? '';
-                        if (s.isEmpty) return 'Requerido';
-                        final uri = Uri.tryParse(s);
-                        if (uri == null || !uri.hasScheme) return 'URL no válida';
-                        return null;
-                      },
+                    OnboardingProfilePhotoField(
+                      imageUrl: _profileAvatarUrl,
+                      allowClear: false,
+                      busy: widget.loading,
+                      onUrlChanged: (url) => setState(() => _profileAvatarUrl = url),
                     ),
                   ],
                 ),

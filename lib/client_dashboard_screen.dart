@@ -65,47 +65,49 @@ class ClientDashboardScreen extends StatelessWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, right: 72, bottom: 12),
-              title: Column(
-                mainAxisSize: MainAxisSize.min,
+              titlePadding: const EdgeInsets.only(left: 20, right: 52, bottom: 12),
+              title: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    AppStrings.holaNombre(displayName),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      height: 1.1,
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppStrings.holaNombre(displayName),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                            height: 1.1,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          AppStrings.dashboardClienteTagline,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: muted,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppStrings.dashboardClienteTagline,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: muted,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-              background: Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 56, top: 36),
-                  child: ProfilePhotoAvatar(
+                  const SizedBox(width: 12),
+                  ProfilePhotoAvatar(
                     heroTag: 'client_avatar',
                     imageUrl: profilePhotoUrl,
                     placeholderBackground: ClientPastelColors.mintSoft,
                     placeholderIconColor: ClientPastelColors.mintDeep,
-                    radius: 28,
+                    radius: 26,
                     onUploaded: onProfilePhotoUpdated,
                   ),
-                ),
+                ],
               ),
             ),
           ),

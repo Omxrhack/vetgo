@@ -226,6 +226,20 @@ abstract final class AppStrings {
   /// Foto de perfil (Storage Supabase + dashboard).
   static const profilePhotoCambiarTooltip = 'Cambiar foto de perfil';
 
+  /// Onboarding: selector de galería en lugar de URL manual.
+  static const onboardingFotoPerfilTitulo = 'Foto de perfil';
+
+  static const onboardingFotoPerfilSubtitulo =
+      'Toca para elegir una imagen en la galer\u00EDa.';
+
+  static const onboardingFotoPerfilSubtituloOpcional =
+      'Opcional. Toca para elegir en la galer\u00EDa.';
+
+  static const onboardingFotoPerfilQuitar = 'Quitar foto';
+
+  static const onboardingVetFotoRequerida =
+      'Sube una foto de perfil desde la galer\u00EDa para continuar.';
+
   static const petPhotoCambiarTooltip = 'Cambiar foto de la mascota';
 
   static const petPhotoActualizada = 'Foto de la mascota actualizada.';

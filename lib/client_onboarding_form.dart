@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'auth/widgets/auth_screen_shell.dart';
+import 'package:vetgo/auth/widgets/auth_screen_shell.dart';
+import 'package:vetgo/auth/widgets/onboarding_profile_photo_field.dart';
+import 'package:vetgo/core/auth/auth_storage.dart';
 
 /// Formulario alineado con `clientOnboardingSchema` del backend.
 class ClientOnboardingForm extends StatefulWidget {
@@ -29,7 +31,6 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
 
   final _fullName = TextEditingController();
   final _phone = TextEditingController();
-  final _avatarUrl = TextEditingController();
   final _address = TextEditingController();
   final _addressNotes = TextEditingController();
   final _petName = TextEditingController();
@@ -44,12 +45,25 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
   String _vaccines = 'unsure';
   String _temperament = 'friendly';
 
+  String? _profileAvatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    AuthStorage.loadSession().then((s) {
+      if (!mounted) return;
+      final u = s?.profile?['avatar_url']?.toString().trim();
+      if (u != null && u.isNotEmpty) {
+        setState(() => _profileAvatarUrl = u);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _fullName.dispose();
     _phone.dispose();
-    _avatarUrl.dispose();
     _address.dispose();
     _addressNotes.dispose();
     _petName.dispose();
@@ -65,7 +79,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
       'role': 'client',
       'full_name': _fullName.text.trim(),
       'phone': _phone.text.trim(),
-      'avatar_url': _avatarUrl.text.trim(),
+      'avatar_url': _profileAvatarUrl?.trim() ?? '',
       'client_details': <String, dynamic>{
         'address_text': _address.text.trim(),
         'address_notes': _addressNotes.text.trim(),
@@ -217,13 +231,11 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _avatarUrl,
-                      keyboardType: TextInputType.url,
-                      decoration: authInputDecoration(
-                        context,
-                        label: 'URL de foto de perfil (opcional)',
-                      ),
+                    OnboardingProfilePhotoField(
+                      imageUrl: _profileAvatarUrl,
+                      allowClear: true,
+                      busy: widget.loading,
+                      onUrlChanged: (url) => setState(() => _profileAvatarUrl = url),
                     ),
                   ],
                 ),
