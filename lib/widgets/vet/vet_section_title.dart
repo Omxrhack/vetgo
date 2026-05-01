@@ -43,7 +43,7 @@ class VetSectionTitle extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );
