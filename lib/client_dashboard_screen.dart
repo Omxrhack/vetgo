@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:vetgo/client/client_quick_access_hub_screen.dart';
-import 'package:vetgo/client/client_strings.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/live_tracking_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
@@ -56,7 +56,7 @@ class ClientDashboardScreen extends StatelessWidget {
             expandedHeight: 118,
             actions: [
               IconButton(
-                tooltip: ClientStrings.cerrarSesionTooltip,
+                tooltip: AppStrings.cerrarSesionTooltip,
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: onLogout,
               ),
@@ -64,7 +64,7 @@ class ClientDashboardScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, right: 56, bottom: 14),
               title: Text(
-                ClientStrings.holaNombre(displayName),
+                AppStrings.holaNombre(displayName),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -110,7 +110,7 @@ class ClientDashboardScreen extends StatelessWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '${ClientStrings.mascotasErrorParcial} ($petsError)',
+                                '${AppStrings.mascotasErrorParcial} ($petsError)',
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                               ),
                             ),
@@ -130,12 +130,12 @@ class ClientDashboardScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                ClientStrings.recordatoriosTitulo,
+                                AppStrings.recordatoriosTitulo,
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                ClientStrings.recordatoriosCuerpo,
+                                AppStrings.recordatoriosCuerpo,
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                               ),
                             ],
@@ -149,7 +149,7 @@ class ClientDashboardScreen extends StatelessWidget {
                       .slideY(begin: 0.04, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
                   const SizedBox(height: 22),
                   Text(
-                    ClientStrings.accesosRapidos,
+                    AppStrings.accesosRapidos,
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 12),
@@ -180,12 +180,12 @@ class ClientDashboardScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    ClientStrings.accesosHubTitulo,
+                                    AppStrings.accesosHubTitulo,
                                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    ClientStrings.accesosHubSubtitulo,
+                                    AppStrings.accesosHubSubtitulo,
                                     style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
                                   ),
                                 ],
@@ -234,7 +234,7 @@ class ClientDashboardScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        ClientStrings.tusMascotas,
+                        AppStrings.tusMascotas,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       TextButton(
@@ -247,7 +247,7 @@ class ClientDashboardScreen extends StatelessWidget {
                                   ),
                                 );
                               },
-                        child: const Text(ClientStrings.verExpediente),
+                        child: const Text(AppStrings.verExpediente),
                       ),
                     ],
                   ),
@@ -258,7 +258,7 @@ class ClientDashboardScreen extends StatelessWidget {
                         ? const Center(child: CircularProgressIndicator())
                         : pets.isEmpty
                             ? Text(
-                                ClientStrings.carouselSinMascotas,
+                                AppStrings.carouselSinMascotas,
                                 style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                               )
                             : ListView.separated(
@@ -280,9 +280,9 @@ class ClientDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   AsyncEndpointButton(
-                    label: ClientStrings.simularCitaEnCamino,
+                    label: AppStrings.simularCitaEnCamino,
                     icon: Icons.location_searching_rounded,
-                    loadingLabel: ClientStrings.conectando,
+                    loadingLabel: AppStrings.conectando,
                     style: FilledButton.styleFrom(
                       backgroundColor: ClientPastelColors.skyDeep.withValues(alpha: 0.88),
                       foregroundColor: Colors.white,
@@ -293,8 +293,8 @@ class ClientDashboardScreen extends StatelessWidget {
                       await Navigator.of(context).push<void>(
                         MaterialPageRoute<void>(
                           builder: (_) => const LiveTrackingScreen(
-                            vetName: ClientStrings.demoVetNombre,
-                            etaLabel: ClientStrings.demoEta,
+                            vetName: AppStrings.demoVetNombre,
+                            etaLabel: AppStrings.demoEta,
                           ),
                         ),
                       );

@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/core/supabase/vetgo_supabase.dart';
 import 'package:vetgo/vet_dashboard_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
@@ -30,6 +34,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   final VetgoApiClient _api = VetgoApiClient();
   int _tabIndex = 0;
   Timer? _emergencyPoll;
+  RealtimeChannel? _emergencyRealtimeChannel;
 
   double? _vetLat;
   double? _vetLng;
@@ -39,13 +44,65 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _emergencyPoll = Timer.periodic(const Duration(seconds: 25), (_) => _pollEmergencies());
+    _bootstrapEmergencyWatch();
+  }
+
+  Future<void> _bootstrapEmergencyWatch() async {
+    final session = await AuthStorage.loadSession();
+    await VetgoSupabase.syncSession(
+      refreshToken: session?.refreshToken,
+      accessToken: session?.accessToken,
+    );
+
+    final vetId = session?.user?['id']?.toString();
+    var pollSeconds = 25;
+    if (vetId != null && vetId.isNotEmpty && VetgoSupabase.isInitialized) {
+      final subscribed = await _subscribeEmergencyRealtime(vetId);
+      if (subscribed) {
+        pollSeconds = 180;
+      }
+    }
+
+    _emergencyPoll?.cancel();
+    _emergencyPoll = Timer.periodic(Duration(seconds: pollSeconds), (_) => _pollEmergencies());
     WidgetsBinding.instance.addPostFrameCallback((_) => _pollEmergencies());
+  }
+
+  Future<bool> _subscribeEmergencyRealtime(String vetUserId) async {
+    try {
+      await _emergencyRealtimeChannel?.unsubscribe();
+      _emergencyRealtimeChannel = null;
+
+      final channel = VetgoSupabase.client
+          .channel('public_emergencies_$vetUserId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'emergencies',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'assigned_vet_id',
+              value: vetUserId,
+            ),
+            callback: (_) {
+              if (!mounted) return;
+              _pollEmergencies();
+            },
+          )
+          .subscribe();
+
+      _emergencyRealtimeChannel = channel;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
   void dispose() {
     _emergencyPoll?.cancel();
+    unawaited(_emergencyRealtimeChannel?.unsubscribe());
+    _emergencyRealtimeChannel = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -75,7 +132,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       id: e['id']?.toString() ?? '',
       symptoms: e['symptoms']?.toString() ?? '',
       status: e['status']?.toString() ?? '',
-      petName: pet['name']?.toString() ?? 'Mascota',
+      petName: pet['name']?.toString() ?? AppStrings.vetMascota,
       species: pet['species']?.toString() ?? 'Paciente',
       distanceKm: dist is num ? dist.toDouble() : null,
     );
@@ -127,7 +184,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
         }
         final sid = track?['id']?.toString();
         if (sid == null || sid.isEmpty) {
-          throw Exception('Sesión de ruta sin id.');
+          throw Exception(AppStrings.vetSesionRutaSinId);
         }
         routeSessionAfterSheet = sid;
       },
@@ -148,7 +205,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
         MaterialPageRoute<void>(
           builder: (_) => VetRouteScreen(
             trackingSessionId: sid,
-            title: 'Ruta de emergencia',
+            title: AppStrings.vetRutaEmergencia,
           ),
         ),
       );
@@ -188,12 +245,12 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home_rounded),
-            label: 'Inicio',
+            label: AppStrings.vetNavInicio,
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month_rounded),
-            label: 'Agenda',
+            label: AppStrings.vetNavAgenda,
           ),
         ],
       ),

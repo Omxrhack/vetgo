@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:vetgo/client_home_shell.dart';
 import 'package:vetgo/core/auth/auth_session.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/supabase/vetgo_supabase.dart';
 import 'package:vetgo/vet_shell.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return VetShell(
         profileFirstName: vetName,
         onLoggedOut: () async {
+          await VetgoSupabase.signOut();
           await AuthStorage.clear();
           widget.onLoggedOut?.call();
         },
@@ -62,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null,
       ownerUserId: _session?.user?['id']?.toString(),
       onLogout: () async {
+        await VetgoSupabase.signOut();
         await AuthStorage.clear();
         widget.onLoggedOut?.call();
       },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
+import 'core/l10n/app_strings.dart';
 import 'core/network/vetgo_api_client.dart';
 import 'theme/vet_operator_colors.dart';
 import 'widgets/vet/vet_async_toggle.dart';
@@ -92,7 +93,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final muted = scheme.onSurface.withValues(alpha: 0.58);
-    final greetingName = widget.profileName.trim().isEmpty ? 'Doctor(a)' : widget.profileName.trim();
+    final greetingName = widget.profileName.trim();
     final dateLine = DateFormat("EEEE d 'de' MMMM", 'es').format(DateTime.now());
 
     return RefreshIndicator(
@@ -108,7 +109,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             surfaceTintColor: Colors.transparent,
             actions: [
               IconButton(
-                tooltip: 'Cerrar sesión',
+                tooltip: 'Cerrar sesi?n',
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: widget.onLogout,
               ),
@@ -117,7 +118,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, right: 20, bottom: 14),
               title: Text(
-                'Hola, Dr. $greetingName',
+                AppStrings.holaDoctor(greetingName),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -191,7 +192,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
           onChanged: _onDutyChanged,
         ),
         const SizedBox(height: 22),
-        const VetSectionTitle(title: 'Resumen de hoy'),
+        const VetSectionTitle(title: AppStrings.vetResumenHoy),
         Row(
           children: [
             Expanded(
@@ -202,7 +203,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Citas pendientes',
+                      AppStrings.vetCitasPendientes,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: muted,
                         fontWeight: FontWeight.w600,
@@ -231,7 +232,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ganancias (MXN)',
+                      AppStrings.vetGananciasMxn,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: muted,
                         fontWeight: FontWeight.w600,
@@ -254,8 +255,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(
-          title: 'Próximas visitas',
-          subtitle: 'Desliza para ver más',
+          title: 'Pr?ximas visitas',
+          subtitle: 'Desliza para ver m?s',
         ),
         SizedBox(
           height: 148,
@@ -263,7 +264,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
               ? Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'No hay visitas asignadas para hoy.',
+                    AppStrings.vetSinVisitasHoy,
                     style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                   ),
                 )
@@ -276,7 +277,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     final timeRaw = v['scheduled_at']?.toString();
                     final dt = timeRaw != null ? DateTime.tryParse(timeRaw)?.toLocal() : null;
                     final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
-                    final pet = v['pet_name']?.toString() ?? 'Mascota';
+                    final pet = v['pet_name']?.toString() ?? AppStrings.vetMascota;
                     final col = v['neighborhood']?.toString() ?? '';
                     final apptId = v['appointment_id']?.toString();
                     final petId = v['pet_id'];
@@ -311,7 +312,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              col.isEmpty ? 'Dirección pendiente' : col,
+                              col.isEmpty ? 'Direcci?n pendiente' : col,
                               style: theme.textTheme.bodySmall?.copyWith(color: muted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

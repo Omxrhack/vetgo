@@ -30,4 +30,32 @@ abstract final class AppConfig {
     }
     return value;
   }
+
+  /// Opcional: necesario para Supabase Realtime (vet). Vacío si no se usa.
+  static String get supabaseUrl {
+    const fromDefine = String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: '',
+    );
+    if (fromDefine.trim().isNotEmpty) {
+      return _stripTrailingSlash(fromDefine.trim());
+    }
+    final fromFile = dotenv.env['SUPABASE_URL']?.trim() ?? '';
+    if (fromFile.isNotEmpty) {
+      return _stripTrailingSlash(fromFile);
+    }
+    return '';
+  }
+
+  /// Clave anónima del proyecto (segura en cliente con RLS).
+  static String get supabaseAnonKey {
+    const fromDefine = String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: '',
+    );
+    if (fromDefine.trim().isNotEmpty) {
+      return fromDefine.trim();
+    }
+    return dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
+  }
 }
