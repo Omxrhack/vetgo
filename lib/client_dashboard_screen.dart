@@ -102,6 +102,40 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     ]);
   }
 
+  Future<void> _openVisitTracking(BuildContext context) async {
+    final upcoming = _upcomingAppointments();
+    Map<String, dynamic>? first = upcoming.isNotEmpty ? upcoming.first : null;
+    var vetName = AppStrings.demoVetNombre;
+    var etaLabel = AppStrings.demoEta;
+    String? vetPhotoUrl;
+    if (first != null) {
+      final vet = first['vet'];
+      if (vet is Map<String, dynamic>) {
+        final n = vet['full_name']?.toString().trim();
+        if (n != null && n.isNotEmpty) vetName = n;
+        final av = vet['avatar_url']?.toString().trim();
+        if (av != null && av.isNotEmpty) vetPhotoUrl = av;
+      }
+      final rawT = first['scheduled_at']?.toString();
+      final dt = rawT != null ? DateTime.tryParse(rawT)?.toLocal() : null;
+      if (dt != null) {
+        final when =
+            '${DateFormat('EEEE d MMM', 'es').format(dt)} ${DateFormat.Hm('es').format(dt)}';
+        etaLabel = AppStrings.clienteVisitaProgramadaPara(when);
+      }
+    }
+    if (!context.mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LiveTrackingScreen(
+          vetName: vetName,
+          etaLabel: etaLabel,
+          vetPhotoUrl: vetPhotoUrl,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -305,18 +339,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                                 label: AppStrings.quickActionTrackingLabel,
                                 backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.75),
                                 iconColor: ClientPastelColors.skyDeep,
-                                onTap: () async {
-                                  await Future<void>.delayed(const Duration(milliseconds: 420));
-                                  if (!context.mounted) return;
-                                  await Navigator.of(context).push<void>(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const LiveTrackingScreen(
-                                        vetName: AppStrings.demoVetNombre,
-                                        etaLabel: AppStrings.demoEta,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onTap: () => _openVisitTracking(context),
                               ),
                             ),
                           ],

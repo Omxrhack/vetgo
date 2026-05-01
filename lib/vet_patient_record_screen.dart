@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/theme/vet_operator_colors.dart';
+import 'package:vetgo/vet_book_appointment_screen.dart';
 import 'package:vetgo/widgets/vet/vet_pastel_chip.dart';
 import 'package:vetgo/widgets/vet/vet_section_title.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
@@ -148,7 +149,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
 
     final ownerName = owner?['full_name']?.toString();
 
-    final speciesBreed = breed != null && breed.isNotEmpty ? '$speciesLabel ? $breed' : speciesLabel;
+    final speciesBreed = breed != null && breed.isNotEmpty ? '$speciesLabel \u00B7 $breed' : speciesLabel;
 
     return ListView(
       key: const ValueKey<String>('ok'),
@@ -234,6 +235,22 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: () async {
+            final ok = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(
+                builder: (_) => VetBookAppointmentScreen(
+                  petId: widget.petId,
+                  petName: name,
+                ),
+              ),
+            );
+            if (ok == true && mounted) await _load();
+          },
+          icon: const Icon(Icons.calendar_month_rounded),
+          label: const Text(AppStrings.vetBookAppointmentTitulo),
         ),
         const SizedBox(height: 20),
         const VetSectionTitle(title: 'Alertas y temperamento'),

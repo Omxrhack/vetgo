@@ -21,7 +21,7 @@ abstract final class AppStrings {
 
   static const quickActionEmergenciaLabel = 'Emergencia';
 
-  static const quickActionTrackingLabel = 'Simular\nvisita';
+  static const quickActionTrackingLabel = 'Visita';
 
   static const quickActionTiendaLabel = 'Tienda';
 
@@ -51,10 +51,13 @@ abstract final class AppStrings {
   static const clienteCitaVeterinarioPendiente =
       'Veterinario por confirmar';
 
+  static String clienteVisitaProgramadaPara(String fechaHora) =>
+      'Visita programada: $fechaHora';
+
   static String clienteCitaLineaVeterinario(String nombre) =>
       'Veterinario: $nombre';
 
-  static const simularCitaEnCamino = 'Simular cita en camino';
+  static const simularCitaEnCamino = 'Visita en camino';
 
   static const conectando = 'Conectando\u2026';
 
@@ -94,6 +97,24 @@ abstract final class AppStrings {
 
   static const vetScheduleRutaRequiereAsignacion =
       'La ruta en vivo estar\u00E1 disponible cuando la cita te est\u00E9 asignada.';
+
+  static const vetScheduleTomarCita = 'Asignarme esta cita';
+
+  static const vetScheduleCitaAsignadaOk =
+      'Listo: la cita qued\u00F3 asignada a ti.';
+
+  static const vetBookAppointmentTitulo = 'Programar visita';
+
+  static const vetBookAppointmentEnviar = 'Registrar en agenda';
+
+  static const vetBookAppointmentGuardada = 'Visita registrada en tu agenda.';
+
+  static const vetBookAppointmentCuandoTitulo = 'Fecha y hora de la visita';
+
+  static const hubTileAgendarVisitaTitulo = 'Agendar visita';
+
+  static const hubTileAgendarVisitaSubtitulo =
+      'Varios pasos: mascota, fecha sugerida y confirmaci\u00F3n.';
 
   static const vetScheduleSinColonia = 'Sin direcci\u00F3n registrada';
 

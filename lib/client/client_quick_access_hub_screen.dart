@@ -70,8 +70,8 @@ class ClientQuickAccessHubScreen extends StatelessWidget {
           _HubTile(
             icon: Icons.calendar_month_rounded,
             iconColor: ClientPastelColors.mintDeep,
-            title: 'Agendar visita',
-            subtitle: 'Varios pasos: mascota, fecha sugerida y confirmaci\u00F3n.',
+            title: AppStrings.hubTileAgendarVisitaTitulo,
+            subtitle: AppStrings.hubTileAgendarVisitaSubtitulo,
             onTap: () {
               Navigator.of(context).push<void>(
                 MaterialPageRoute<void>(

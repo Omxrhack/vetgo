@@ -485,6 +485,8 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                         scheduledAtIso: at.toIso8601String(),
                         vetId: vetId,
                         notes: notes.isEmpty ? null : notes,
+                        visitLatitude: _visitLocation.latitude,
+                        visitLongitude: _visitLocation.longitude,
                       );
                       if (!context.mounted) return;
                       if (err != null) {

@@ -6,10 +6,11 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/theme/vet_operator_colors.dart';
 import 'package:vetgo/vet_patient_record_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
+import 'package:vetgo/widgets/vetgo_notice.dart';
 import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
-/// Agenda del dÔøΩa con lÔøΩnea de tiempo e ÔøΩtems expansibles.
+/// Agenda del dùa con lùnea de tiempo e ùtems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,
@@ -32,6 +33,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
   String? _routeError;
   bool _loading = true;
   final Map<String, bool> _routeBusy = {};
+  final Map<String, bool> _claimBusy = {};
 
   @override
   void initState() {
@@ -76,6 +78,19 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
         builder: (_) => VetRouteScreen(trackingSessionId: sessionId),
       ),
     );
+  }
+
+  Future<void> _claimAppointment(String appointmentId) async {
+    setState(() => _claimBusy[appointmentId] = true);
+    final (_, err) = await widget.api.claimVetAppointment(appointmentId: appointmentId);
+    if (!mounted) return;
+    setState(() => _claimBusy[appointmentId] = false);
+    if (err != null) {
+      VetgoNotice.show(context, message: err, isError: true);
+      return;
+    }
+    VetgoNotice.show(context, message: AppStrings.vetScheduleCitaAsignadaOk);
+    await _load();
   }
 
   @override
@@ -176,7 +191,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
           final petName = petMap['name']?.toString() ?? AppStrings.vetMascota;
           final species = petMap['species']?.toString() ?? '';
           final breed = petMap['breed']?.toString() ?? '';
-          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' ¬∑ ');
+          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' \u00B7 ');
           final addr = row['client_address'] is Map<String, dynamic>
               ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
               : null;
@@ -363,12 +378,19 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                     label: Text(AppStrings.vetScheduleVerExpediente),
                                   ),
                                   const SizedBox(height: 6),
-                                  if (isPoolAppointment)
+                                  if (isPoolAppointment) ...[
                                     Text(
                                       AppStrings.vetScheduleRutaRequiereAsignacion,
                                       style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
-                                    )
-                                  else
+                                    ),
+                                    const SizedBox(height: 10),
+                                    VetAsyncPrimaryButton(
+                                      label: AppStrings.vetScheduleTomarCita,
+                                      busy: _claimBusy[id] == true,
+                                      onPressed:
+                                          _claimBusy[id] == true ? null : () => _claimAppointment(id),
+                                    ),
+                                  ] else
                                     VetAsyncPrimaryButton(
                                       label: AppStrings.vetScheduleIniciarRuta,
                                       busy: busy,

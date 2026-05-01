@@ -412,6 +412,8 @@ class VetgoApiClient {
     required String scheduledAtIso,
     String? notes,
     String? vetId,
+    double? visitLatitude,
+    double? visitLongitude,
   }) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
@@ -423,6 +425,50 @@ class VetgoApiClient {
           'scheduled_at': scheduledAtIso,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
           if (vetId != null && vetId.isNotEmpty) 'vet_id': vetId,
+          if (visitLatitude != null && visitLongitude != null) ...<String, dynamic>{
+            'visit_latitude': visitLatitude,
+            'visit_longitude': visitLongitude,
+          },
+        },
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/vet/appointments/:id/claim` — asignar al veterinario una cita del pool.
+  Future<VetJsonResult> claimVetAppointment({required String appointmentId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/appointments/$appointmentId/claim',
+        data: <String, dynamic>{},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/vet/appointments` — nueva cita confirmada (mascota vinculada al vet).
+  Future<VetJsonResult> createVetAppointment({
+    required String petId,
+    required String scheduledAtIso,
+    String? notes,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/vet/appointments',
+        data: <String, dynamic>{
+          'pet_id': petId,
+          'scheduled_at': scheduledAtIso,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
         },
         options: opts,
       );
