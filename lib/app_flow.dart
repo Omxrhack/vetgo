@@ -4,13 +4,14 @@ import 'auth/auth_flow.dart';
 import 'core/auth/auth_session.dart';
 import 'core/auth/auth_storage.dart';
 import 'core/network/vetgo_api_client.dart';
+import 'core/supabase/vetgo_supabase.dart';
 import 'home_screen.dart';
 import 'onboarding/onboarding_prefs.dart';
 import 'onboarding/vetgo_onboarding_page.dart';
 import 'profile_onboarding_flow.dart';
 import 'splash/splash_screen.dart';
 
-/// Orquesta las etapas iniciales con transiciÛn animada entre pantallas.
+/// Orquesta las etapas iniciales con transiciùn animada entre pantallas.
 class AppFlow extends StatefulWidget {
   const AppFlow({super.key});
 
@@ -188,7 +189,7 @@ enum SessionBootstrapResult {
   home,
 }
 
-/// Resuelve sesiÛn persistida: renueva access si expirÛ, obtiene estado fresco del servidor.
+/// Resuelve sesiùn persistida: renueva access si expirù, obtiene estado fresco del servidor.
 abstract final class SessionBootstrap {
   static Future<SessionBootstrapResult> resolve() async {
     final api = VetgoApiClient();
@@ -220,6 +221,10 @@ abstract final class SessionBootstrap {
         profile: fresh.profile ?? session!.profile,
       );
       await AuthStorage.saveSession(session!);
+      await VetgoSupabase.syncSession(
+        refreshToken: session!.refreshToken,
+        accessToken: session!.accessToken,
+      );
       return true;
     }
 
@@ -252,6 +257,10 @@ abstract final class SessionBootstrap {
     if (me?.user != null) {
       session = session!.merge(user: me!.user, profile: me.profile);
       await AuthStorage.saveSession(session!);
+      await VetgoSupabase.syncSession(
+        refreshToken: session!.refreshToken,
+        accessToken: session!.accessToken,
+      );
     } else {
       return _fallbackFromCache();
     }
