@@ -84,148 +84,166 @@ class _LoginScreenState extends State<LoginScreen> {
     final scheme = theme.colorScheme;
 
     final primaryBtnStyle = FilledButton.styleFrom(
-      minimumSize: const Size.fromHeight(54),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 0,
+      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
     );
 
     return AuthPageShell(
       variant: AuthScenicVariant.login,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 8),
-                const AuthHeroHeader(
-                  title: 'Hola de nuevo',
-                  subtitle:
-                      'Inicia sesión para seguir cuidando a tus mascotas con Vetgo.',
-                  icon: Icons.pets_rounded,
-                ),
-                const SizedBox(height: 28),
-                AuthFormCard(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_globalError != null) ...[
-                          AuthErrorBanner(
-                            message: _globalError!,
-                            onDismiss: () =>
-                                setState(() => _globalError = null),
-                          ),
-                          const SizedBox(height: 18),
-                        ],
-                        TextFormField(
-                          controller: _emailCtrl,
-                          keyboardType: TextInputType.emailAddress,
-                          autocorrect: false,
-                          autofillHints: const [AutofillHints.email],
-                          textInputAction: TextInputAction.next,
-                          decoration: authInputDecoration(
-                            context,
-                            label: 'Correo electrónico',
-                            hintText: 'nombre@ejemplo.com',
-                            prefixIcon: Icon(
-                              Icons.mail_outline_rounded,
-                              color: scheme.primary.withValues(alpha: 0.85),
+            child: Form(
+              key: _formKey,
+              child: AuthStagger(
+                children: [
+                  const AuthBrandHeader(
+                    title: 'Bienvenido de nuevo',
+                    subtitle: 'Inicia sesion para seguir cuidando a tus mascotas.',
+                  ),
+                  const SizedBox(height: 32),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: _globalError == null
+                        ? const SizedBox.shrink(key: ValueKey('no_error'))
+                        : Padding(
+                            key: const ValueKey('error'),
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: AuthErrorBanner(
+                              message: _globalError!,
+                              onDismiss: () =>
+                                  setState(() => _globalError = null),
                             ),
                           ),
-                          validator: (v) {
-                            final s = v?.trim() ?? '';
-                            if (s.isEmpty) return 'Ingresa tu correo.';
-                            if (!_looksLikeEmail(s)) return 'Correo no válido.';
-                            return null;
-                          },
+                  ),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
+                    decoration: authInputDecoration(
+                      context,
+                      label: 'Correo electronico',
+                      hintText: 'nombre@ejemplo.com',
+                      prefixIcon: Icon(
+                        Icons.mail_outline_rounded,
+                        size: 20,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    validator: (v) {
+                      final s = v?.trim() ?? '';
+                      if (s.isEmpty) return 'Ingresa tu correo.';
+                      if (!_looksLikeEmail(s)) return 'Correo no valido.';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    obscureText: _obscure,
+                    autofillHints: const [AutofillHints.password],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    decoration: authInputDecoration(
+                      context,
+                      label: 'Contrasena',
+                      prefixIcon: Icon(
+                        Icons.lock_outline_rounded,
+                        size: 20,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                      suffixIcon: IconButton(
+                        tooltip: _obscure ? 'Mostrar' : 'Ocultar',
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          transitionBuilder: (child, anim) => ScaleTransition(
+                            scale: anim,
+                            child: FadeTransition(opacity: anim, child: child),
+                          ),
+                          child: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            key: ValueKey(_obscure),
+                            size: 20,
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordCtrl,
-                          obscureText: _obscure,
-                          autofillHints: const [AutofillHints.password],
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => _submit(),
-                          decoration: authInputDecoration(
-                            context,
-                            label: 'Contraseña',
-                            prefixIcon: Icon(
-                              Icons.lock_outline_rounded,
-                              color: scheme.primary.withValues(alpha: 0.85),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Ingresa tu contrasena.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton(
+                    style: primaryBtnStyle,
+                    onPressed: _loading ? null : _submit,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      child: _loading
+                          ? SizedBox(
+                              key: const ValueKey('loading'),
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.onPrimary,
+                              ),
+                            )
+                          : const Text(
+                              'Iniciar sesion',
+                              key: ValueKey('label'),
                             ),
-                            suffixIcon: IconButton(
-                              tooltip: _obscure ? 'Mostrar' : 'Ocultar',
-                              onPressed: () =>
-                                  setState(() => _obscure = !_obscure),
-                              icon: Icon(
-                                _obscure
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: scheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: TextButton(
+                      onPressed: _loading ? null : widget.onRegister,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: Text.rich(
+                        TextSpan(
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                          children: [
+                            const TextSpan(text: 'Primera vez aqui? '),
+                            TextSpan(
+                              text: 'Crear cuenta',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.primary,
                               ),
                             ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty)
-                              return 'Ingresa tu contraseña.';
-                            return null;
-                          },
+                          ],
                         ),
-                        const SizedBox(height: 26),
-                        FilledButton(
-                          style: primaryBtnStyle,
-                          onPressed: _loading ? null : _submit,
-                          child: _loading
-                              ? SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: scheme.onPrimary,
-                                  ),
-                                )
-                              : const Text(
-                                  'Iniciar sesión',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 22),
-                TextButton(
-                  onPressed: _loading ? null : widget.onRegister,
-                  style: TextButton.styleFrom(
-                    foregroundColor: scheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.78),
                       ),
-                      children: [
-                        const TextSpan(text: '¿Primera vez aquí? '),
-                        TextSpan(
-                          text: 'Crear cuenta',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: scheme.primary,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

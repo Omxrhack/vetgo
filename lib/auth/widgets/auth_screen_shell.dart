@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'auth_scenic_layer.dart';
 
-/// Fondo con [AuthScenicLayer] y area segura para formularios de auth.
+/// Shell minimal flat: scaffold de superficie plana + patron sutil + safe area.
 class AuthPageShell extends StatelessWidget {
   const AuthPageShell({
     super.key,
@@ -15,17 +15,19 @@ class AuthPageShell extends StatelessWidget {
   final AuthScenicVariant variant;
   final Widget child;
 
-  /// Barra superior opcional (por ejemplo volver en registro).
+  /// Barra superior opcional (cuando una pantalla quiere algo encima del padding lateral).
   final Widget? topBar;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: scheme.surface,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          AuthScenicLayer(variant: variant),
+          AuthQuietBackground(variant: variant),
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,54 +43,19 @@ class AuthPageShell extends StatelessWidget {
   }
 }
 
-/// Tarjeta principal del formulario (vidrio ligero sobre el gradiente).
-class AuthFormCard extends StatelessWidget {
-  const AuthFormCard({
-    super.key,
-    required this.child,
-  });
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      color: scheme.surface.withValues(alpha: isDark ? 0.88 : 0.94),
-      elevation: isDark ? 0 : 3,
-      shadowColor: scheme.shadow.withValues(alpha: isDark ? 0 : 0.12),
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-        side: BorderSide(
-          color: scheme.outline.withValues(alpha: isDark ? 0.22 : 0.14),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
-        child: child,
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 380.ms, curve: Curves.easeOutCubic)
-        .slideY(begin: 0.04, end: 0, duration: 380.ms, curve: Curves.easeOutCubic);
-  }
-}
-
-/// Cabecera con marca: icono, titulo y subtitulo.
-class AuthHeroHeader extends StatelessWidget {
-  const AuthHeroHeader({
+/// Marca minimal (icono pequeno + nombre uppercase + titulo grande + subtitulo).
+class AuthBrandHeader extends StatelessWidget {
+  const AuthBrandHeader({
     super.key,
     required this.title,
     required this.subtitle,
+    this.eyebrow = 'VETGO',
     this.icon = Icons.pets_rounded,
   });
 
   final String title;
   final String subtitle;
+  final String eyebrow;
   final IconData icon;
 
   @override
@@ -97,53 +64,62 @@ class AuthHeroHeader extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                scheme.primaryContainer,
-                scheme.primary.withValues(alpha: 0.22),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.primary.withValues(alpha: 0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: scheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              eyebrow,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.8,
               ),
-            ],
-          ),
-          child: Icon(icon, size: 36, color: scheme.primary),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         Text(
           title,
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-            height: 1.15,
+            letterSpacing: -0.6,
+            height: 1.1,
+            color: scheme.onSurface,
           ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         Text(
           subtitle,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurface.withValues(alpha: 0.72),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.6),
             height: 1.45,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
 
+/// Bloque "tarjeta" minimal: solo padding (sin chrome, sin sombra, sin borde).
+class AuthFormCard extends StatelessWidget {
+  const AuthFormCard({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: child,
+    );
+  }
+}
+
+/// Decoracion plana para `TextFormField`: sin fill, borde fino, label siempre visible.
 InputDecoration authInputDecoration(
   BuildContext context, {
   required String label,
@@ -152,21 +128,32 @@ InputDecoration authInputDecoration(
   String? hintText,
 }) {
   final scheme = Theme.of(context).colorScheme;
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  final radius = BorderRadius.circular(18);
+  final radius = BorderRadius.circular(14);
 
   return InputDecoration(
     labelText: label,
     hintText: hintText,
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
-    filled: true,
-    fillColor: scheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.55 : 0.65),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+    floatingLabelBehavior: FloatingLabelBehavior.always,
+    isDense: false,
+    filled: false,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    labelStyle: TextStyle(
+      color: scheme.onSurface.withValues(alpha: 0.7),
+      fontWeight: FontWeight.w500,
+    ),
+    floatingLabelStyle: TextStyle(
+      color: scheme.primary,
+      fontWeight: FontWeight.w600,
+    ),
+    hintStyle: TextStyle(
+      color: scheme.onSurface.withValues(alpha: 0.35),
+    ),
     border: OutlineInputBorder(borderRadius: radius),
     enabledBorder: OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.28)),
+      borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.35)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: radius,
@@ -183,7 +170,7 @@ InputDecoration authInputDecoration(
   );
 }
 
-/// Banner de error reutilizable en login / registro.
+/// Banner de error en superficie de error contenida (sin transparencia).
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({
     super.key,
@@ -198,25 +185,67 @@ class AuthErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.errorContainer.withValues(alpha: 0.95),
-      borderRadius: BorderRadius.circular(16),
+      color: scheme.errorContainer,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded, color: scheme.error, size: 22),
+            Icon(Icons.error_outline_rounded, color: scheme.error, size: 20),
             const SizedBox(width: 10),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: scheme.onErrorContainer, height: 1.35),
+              ),
+            ),
             IconButton(
               onPressed: onDismiss,
-              icon: const Icon(Icons.close_rounded, size: 20),
+              icon: const Icon(Icons.close_rounded, size: 18),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              color: scheme.onErrorContainer,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Aplica entrada en cascada (fade + slideY) a una lista de hijos.
+class AuthStagger extends StatelessWidget {
+  const AuthStagger({
+    super.key,
+    required this.children,
+    this.delayStep = const Duration(milliseconds: 60),
+    this.fadeDuration = const Duration(milliseconds: 240),
+    this.slideDuration = const Duration(milliseconds: 320),
+  });
+
+  final List<Widget> children;
+  final Duration delayStep;
+  final Duration fadeDuration;
+  final Duration slideDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: List<Widget>.generate(children.length, (i) {
+        final delay = delayStep * i;
+        return children[i]
+            .animate()
+            .fadeIn(duration: fadeDuration, delay: delay, curve: Curves.easeOutCubic)
+            .slideY(
+              begin: 0.06,
+              end: 0,
+              duration: slideDuration,
+              delay: delay,
+              curve: Curves.easeOutCubic,
+            );
+      }),
     );
   }
 }
