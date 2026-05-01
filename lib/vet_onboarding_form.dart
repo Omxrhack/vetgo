@@ -179,7 +179,8 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final title = switch (_step) {
       0 => 'Datos personales',
       1 => 'Datos profesionales',
