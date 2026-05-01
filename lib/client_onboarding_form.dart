@@ -122,14 +122,14 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             controller: _phone,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
-              labelText: 'Telùfono (con lada, ej. +521234567890)',
+              labelText: 'Telefono (con lada, ej. +521234567890)',
               border: OutlineInputBorder(),
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
               if (s.isEmpty) return 'Requerido';
               if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) {
-                return 'Telùfono no vùlido';
+                return 'Telefono no valido';
               }
               return null;
             },
@@ -144,16 +144,16 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Direcciùn', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text('Direccion', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           TextFormField(
             controller: _address,
             maxLines: 2,
             decoration: const InputDecoration(
-              labelText: 'Direcciùn completa',
+              labelText: 'Direccion completa',
               border: OutlineInputBorder(),
             ),
-            validator: (v) => (v == null || v.trim().length < 5) ? 'Mùnimo 5 caracteres' : null,
+            validator: (v) => (v == null || v.trim().length < 5) ? 'Minimo 5 caracteres' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -195,7 +195,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _sex,
+            initialValue: _sex,
             decoration: const InputDecoration(
               labelText: 'Sexo',
               border: OutlineInputBorder(),
@@ -230,20 +230,20 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             onChanged: (v) => setState(() => _neutered = v),
           ),
           DropdownButtonFormField<String>(
-            value: _vaccines,
+            initialValue: _vaccines,
             decoration: const InputDecoration(
-              labelText: 'Vacunas al dùa',
+              labelText: 'Vacunas al dia',
               border: OutlineInputBorder(),
             ),
             items: const [
-              DropdownMenuItem(value: 'yes', child: Text('Sù')),
+              DropdownMenuItem(value: 'yes', child: Text('Si')),
               DropdownMenuItem(value: 'no', child: Text('No')),
               DropdownMenuItem(value: 'unsure', child: Text('No estoy seguro')),
             ],
             onChanged: (v) => setState(() => _vaccines = v ?? 'unsure'),
           ),
           DropdownButtonFormField<String>(
-            value: _temperament,
+            initialValue: _temperament,
             decoration: const InputDecoration(
               labelText: 'Temperamento',
               border: OutlineInputBorder(),
@@ -260,7 +260,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             controller: _medicalNotes,
             maxLines: 3,
             decoration: const InputDecoration(
-              labelText: 'Notas mùdicas (opcional)',
+              labelText: 'Notas medicas (opcional)',
               border: OutlineInputBorder(),
             ),
           ),
