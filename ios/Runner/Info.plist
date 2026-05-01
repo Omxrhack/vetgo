@@ -60,9 +60,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Necesitamos tu ubicación para enviar la emergencia al equipo veterinario más cercano.</string>
+	<string>Necesitamos tu ubicación para emergencias, visitas a domicilio con mapa y funciones según tu zona.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Permite elegir una foto para tu perfil en Vetgo.</string>
+	<string>Permite elegir fotos para tu perfil, mascotas y documentación en Vetgo.</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

@@ -4,6 +4,7 @@ import 'auth/auth_flow.dart';
 import 'core/auth/auth_session.dart';
 import 'core/auth/auth_storage.dart';
 import 'core/network/vetgo_api_client.dart';
+import 'core/permissions/app_startup_permissions.dart';
 import 'home_screen.dart';
 import 'onboarding/onboarding_prefs.dart';
 import 'onboarding/vetgo_onboarding_page.dart';
@@ -36,6 +37,7 @@ class _AppFlowState extends State<AppFlow> {
 
   Future<void> _prepareApp() async {
     final startedAt = DateTime.now();
+    await AppStartupPermissions.requestAll();
     await Future<void>.delayed(const Duration(milliseconds: 700));
     final elapsed = DateTime.now().difference(startedAt);
     if (elapsed < _minSplashTime) {
