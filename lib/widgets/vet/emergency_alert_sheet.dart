@@ -66,6 +66,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
 
   bool _acceptBusy = false;
   bool _rejectBusy = false;
+  String? _actionError;
 
   @override
   void initState() {
@@ -86,7 +87,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
     final dist = em.distanceKm != null ? 'A ${em.distanceKm} km' : 'Distancia por confirmar';
 
     final summary =
-        '°Emergencia! ${em.species} (${em.petName}) ó ${em.symptoms} ó $dist';
+        'ùEmergencia! ${em.species} (${em.petName}) ù ${em.symptoms} ù $dist';
 
     return SlideTransition(
       position: _slide,
@@ -109,7 +110,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'AsignaciÛn 24/7',
+                      'Asignaciùn 24/7',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -125,6 +126,16 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (_actionError != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _actionError!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
               const SizedBox(height: 22),
               VetAsyncPrimaryButton(
                 label: 'Aceptar',
@@ -133,10 +144,15 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                 onPressed: _acceptBusy || _rejectBusy
                     ? null
                     : () async {
-                        setState(() => _acceptBusy = true);
+                        setState(() {
+                          _acceptBusy = true;
+                          _actionError = null;
+                        });
                         try {
                           await widget.onAccept();
                           if (context.mounted) Navigator.of(context).pop();
+                        } catch (e) {
+                          if (mounted) setState(() => _actionError = e.toString());
                         } finally {
                           if (mounted) setState(() => _acceptBusy = false);
                         }
@@ -160,10 +176,15 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                         onPressed: _acceptBusy
                             ? null
                             : () async {
-                                setState(() => _rejectBusy = true);
+                                setState(() {
+                                  _rejectBusy = true;
+                                  _actionError = null;
+                                });
                                 try {
                                   await widget.onReject();
                                   if (context.mounted) Navigator.of(context).pop();
+                                } catch (e) {
+                                  if (mounted) setState(() => _actionError = e.toString());
                                 } finally {
                                   if (mounted) setState(() => _rejectBusy = false);
                                 }

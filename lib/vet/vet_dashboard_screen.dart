@@ -16,13 +16,11 @@ class VetDashboardScreen extends StatefulWidget {
     required this.api,
     required this.profileName,
     this.onVetBaseResolved,
-    this.onVisitTap,
   });
 
   final VetgoApiClient api;
   final String profileName;
   final VetBaseCallback? onVetBaseResolved;
-  final void Function(String appointmentId, String petId)? onVisitTap;
 
   @override
   State<VetDashboardScreen> createState() => _VetDashboardScreenState();
@@ -244,8 +242,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(
-          title: 'PrÛximas visitas',
-          subtitle: 'Desliza para ver m·s',
+          title: 'Prùximas visitas',
+          subtitle: 'Desliza para ver mùs',
         ),
         SizedBox(
           height: 148,
@@ -265,8 +263,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                     final v = visits[i] is Map<String, dynamic> ? visits[i] as Map<String, dynamic> : {};
                     final timeRaw = v['scheduled_at']?.toString();
                     final dt = timeRaw != null ? DateTime.tryParse(timeRaw)?.toLocal() : null;
-                    final timeLabel =
-                        dt != null ? DateFormat.Hm('es').format(dt) : '--:--';
+                    final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
                     final pet = v['pet_name']?.toString() ?? 'Mascota';
                     final col = v['neighborhood']?.toString() ?? '';
                     final apptId = v['appointment_id']?.toString();
@@ -280,7 +277,6 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                         color: Colors.white,
                         onTap: apptId != null && petIdStr != null
                             ? () {
-                                widget.onVisitTap?.call(apptId, petIdStr);
                                 Navigator.of(context).push<void>(
                                   MaterialPageRoute<void>(
                                     builder: (_) => VetPatientRecordScreen(petId: petIdStr),
@@ -304,7 +300,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              col.isEmpty ? 'DirecciÛn pendiente' : col,
+                              col.isEmpty ? 'Direcciùn pendiente' : col,
                               style: theme.textTheme.bodySmall?.copyWith(color: VetAppColors.textMuted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

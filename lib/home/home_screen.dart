@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../core/auth/auth_session.dart';
 import '../core/auth/auth_storage.dart';
 import '../core/config/app_config.dart';
 import '../core/network/vetgo_api_client.dart';
+import '../vet/vet_shell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onLoggedOut});
@@ -17,16 +19,46 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final Future<HealthCheckResult> _healthFuture;
+  AuthSession? _session;
+  bool _sessionReady = false;
 
   @override
   void initState() {
     super.initState();
     _healthFuture = VetgoApiClient().checkHealth();
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    final s = await AuthStorage.loadSession();
+    if (!mounted) return;
+    setState(() {
+      _session = s;
+      _sessionReady = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (!_sessionReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final role = _session?.profile?['role']?.toString();
+    if (role == 'vet') {
+      final vetName = _session?.profile?['full_name']?.toString() ?? '';
+      return VetShell(
+        profileFirstName: vetName,
+        onLoggedOut: () async {
+          await AuthStorage.clear();
+          widget.onLoggedOut?.call();
+        },
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
