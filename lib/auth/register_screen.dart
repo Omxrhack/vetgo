@@ -130,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const AuthBrandHeader(
                     title: 'Crear cuenta',
                     subtitle:
-                        'Te enviaremos un codigo de 6 digitos por correo para activar tu cuenta.',
+                        'Te enviaremos un código de 6 dígitos por correo para activar tu cuenta.',
                   ),
                   const SizedBox(height: 32),
                   AnimatedSwitcher(
@@ -160,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.next,
                     decoration: authInputDecoration(
                       context,
-                      label: 'Correo electronico',
+                      label: 'Correo electrónico',
                       hintText: 'nombre@ejemplo.com',
                       prefixIcon: Icon(
                         Icons.mail_outline_rounded,
@@ -171,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (v) {
                       final s = v?.trim() ?? '';
                       if (s.isEmpty) return 'Ingresa tu correo.';
-                      if (!_looksLikeEmail(s)) return 'Correo no valido.';
+                      if (!_looksLikeEmail(s)) return 'Correo no válido.';
                       return null;
                     },
                   ),

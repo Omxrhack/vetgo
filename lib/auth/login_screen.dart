@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const AuthBrandHeader(
                     title: 'Bienvenido de nuevo',
-                    subtitle: 'Inicia sesion para seguir cuidando a tus mascotas.',
+                    subtitle: 'Inicia sesión para seguir cuidando a tus mascotas.',
                   ),
                   const SizedBox(height: 32),
                   AnimatedSwitcher(
@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textInputAction: TextInputAction.next,
                     decoration: authInputDecoration(
                       context,
-                      label: 'Correo electronico',
+                      label: 'Correo electrónico',
                       hintText: 'nombre@ejemplo.com',
                       prefixIcon: Icon(
                         Icons.mail_outline_rounded,
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (v) {
                       final s = v?.trim() ?? '';
                       if (s.isEmpty) return 'Ingresa tu correo.';
-                      if (!_looksLikeEmail(s)) return 'Correo no valido.';
+                      if (!_looksLikeEmail(s)) return 'Correo no válido.';
                       return null;
                     },
                   ),
@@ -157,7 +157,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onFieldSubmitted: (_) => _submit(),
                     decoration: authInputDecoration(
                       context,
-                      label: 'Contrasena',
+                      label: 'Contraseña',
+                      hintText: 'Tu contraseña',
                       prefixIcon: Icon(
                         Icons.lock_outline_rounded,
                         size: 20,
@@ -185,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Ingresa tu contrasena.';
+                        return 'Ingresa tu contraseña.';
                       }
                       return null;
                     },
@@ -207,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             )
                           : const Text(
-                              'Iniciar sesion',
+                              'Iniciar sesión',
                               key: ValueKey('label'),
                             ),
                     ),
@@ -229,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: scheme.onSurface.withValues(alpha: 0.7),
                           ),
                           children: [
-                            const TextSpan(text: 'Primera vez aqui? '),
+                            const TextSpan(text: '¿Primera vez aquí? '),
                             TextSpan(
                               text: 'Crear cuenta',
                               style: TextStyle(
