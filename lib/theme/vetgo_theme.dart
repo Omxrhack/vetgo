@@ -36,14 +36,19 @@ abstract final class VetgoTheme {
       scaffoldBackgroundColor: const Color(0xFFF7FAF8),
       appBarTheme: AppBarTheme(
         centerTitle: true,
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
           fontFamily: VetgoTypography.family,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           fontSize: 18,
-          color: Colors.white,
+          color: colorScheme.onSurface,
+          letterSpacing: -0.2,
         ),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
     );
 
@@ -78,14 +83,19 @@ abstract final class VetgoTheme {
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: AppBarTheme(
         centerTitle: true,
-        backgroundColor: const Color(0xFF1E1E1E),
-        foregroundColor: accent,
-        titleTextStyle: const TextStyle(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
           fontFamily: VetgoTypography.family,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           fontSize: 18,
-          color: accent,
+          color: colorScheme.onSurface,
+          letterSpacing: -0.2,
         ),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
     );
 

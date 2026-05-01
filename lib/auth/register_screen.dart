@@ -61,12 +61,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             title: const Text('Correo ya registrado'),
             content: Text(
               outcome.message ??
-                  'Este correo ya está verificado. Inicia sesión.',
+                  'Este correo ya esta verificado. Inicia sesion.',
             ),
             actions: [
               TextButton(
@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Navigator.pop(ctx);
                   widget.onLogin();
                 },
-                child: const Text('Ir a iniciar sesión'),
+                child: const Text('Ir a iniciar sesion'),
               ),
             ],
           ),
@@ -96,205 +96,216 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final scheme = theme.colorScheme;
 
     final primaryBtnStyle = FilledButton.styleFrom(
-      minimumSize: const Size.fromHeight(54),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 0,
+      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
     );
 
     return AuthPageShell(
       variant: AuthScenicVariant.register,
       topBar: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 16, 8),
-        child: Row(
-          children: [
-            Material(
-              color: scheme.surface.withValues(alpha: 0.92),
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: IconButton(
-                tooltip: 'Volver',
-                onPressed: _loading ? null : widget.onLogin,
-                icon: Icon(Icons.arrow_back_rounded, color: scheme.onSurface),
-              ),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            tooltip: 'Volver',
+            onPressed: _loading ? null : widget.onLogin,
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: scheme.onSurface,
             ),
-            Expanded(
-              child: Text(
-                'Crear cuenta',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(width: 48),
-          ],
+          ),
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AuthHeroHeader(
-                  title: 'Únete a Vetgo',
-                  subtitle:
-                      'Te enviaremos un código de 8 dígitos por correo para activar tu cuenta.',
-                  icon: Icons.celebration_rounded,
-                ),
-                const SizedBox(height: 24),
-                AuthFormCard(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_globalError != null) ...[
-                          AuthErrorBanner(
-                            message: _globalError!,
-                            onDismiss: () =>
-                                setState(() => _globalError = null),
-                          ),
-                          const SizedBox(height: 18),
-                        ],
-                        TextFormField(
-                          controller: _emailCtrl,
-                          keyboardType: TextInputType.emailAddress,
-                          autocorrect: false,
-                          autofillHints: const [AutofillHints.email],
-                          textInputAction: TextInputAction.next,
-                          decoration: authInputDecoration(
-                            context,
-                            label: 'Correo electrónico',
-                            hintText: 'nombre@ejemplo.com',
-                            prefixIcon: Icon(
-                              Icons.mail_outline_rounded,
-                              color: scheme.primary.withValues(alpha: 0.85),
-                            ),
-                          ),
-                          validator: (v) {
-                            final s = v?.trim() ?? '';
-                            if (s.isEmpty) return 'Ingresa tu correo.';
-                            if (!_looksLikeEmail(s)) return 'Correo no válido.';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordCtrl,
-                          obscureText: _obscure,
-                          textInputAction: TextInputAction.next,
-                          decoration: authInputDecoration(
-                            context,
-                            label: 'Contraseña',
-                            hintText: 'Mínimo 8 caracteres',
-                            prefixIcon: Icon(
-                              Icons.lock_outline_rounded,
-                              color: scheme.primary.withValues(alpha: 0.85),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () =>
-                                  setState(() => _obscure = !_obscure),
-                              icon: Icon(
-                                _obscure
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: scheme.onSurface.withValues(alpha: 0.55),
-                              ),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.length < 8) {
-                              return 'La contraseña debe tener al menos 8 caracteres.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _confirmCtrl,
-                          obscureText: _obscure2,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => _submit(),
-                          decoration: authInputDecoration(
-                            context,
-                            label: 'Confirmar contraseña',
-                            prefixIcon: Icon(
-                              Icons.verified_user_outlined,
-                              color: scheme.primary.withValues(alpha: 0.85),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () =>
-                                  setState(() => _obscure2 = !_obscure2),
-                              icon: Icon(
-                                _obscure2
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: scheme.onSurface.withValues(alpha: 0.55),
-                              ),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v != _passwordCtrl.text) {
-                              return 'Las contraseñas no coinciden.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 26),
-                        FilledButton(
-                          style: primaryBtnStyle,
-                          onPressed: _loading ? null : _submit,
-                          child: _loading
-                              ? SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: scheme.onPrimary,
-                                  ),
-                                )
-                              : const Text(
-                                  'Continuar',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                        ),
-                      ],
+            child: Form(
+              key: _formKey,
+              child: AuthStagger(
+                children: [
+                  const AuthBrandHeader(
+                    title: 'Crear cuenta',
+                    subtitle:
+                        'Te enviaremos un codigo de 8 digitos por correo para activar tu cuenta.',
+                  ),
+                  const SizedBox(height: 32),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
                     ),
+                    child: _globalError == null
+                        ? const SizedBox.shrink(key: ValueKey('no_error'))
+                        : Padding(
+                            key: const ValueKey('error'),
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: AuthErrorBanner(
+                              message: _globalError!,
+                              onDismiss: () =>
+                                  setState(() => _globalError = null),
+                            ),
+                          ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                TextButton(
-                  onPressed: _loading ? null : widget.onLogin,
-                  style: TextButton.styleFrom(
-                    foregroundColor: scheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.78),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
+                    decoration: authInputDecoration(
+                      context,
+                      label: 'Correo electronico',
+                      hintText: 'nombre@ejemplo.com',
+                      prefixIcon: Icon(
+                        Icons.mail_outline_rounded,
+                        size: 20,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
                       ),
-                      children: [
-                        const TextSpan(text: '¿Ya tienes cuenta? '),
-                        TextSpan(
-                          text: 'Iniciar sesión',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: scheme.primary,
+                    ),
+                    validator: (v) {
+                      final s = v?.trim() ?? '';
+                      if (s.isEmpty) return 'Ingresa tu correo.';
+                      if (!_looksLikeEmail(s)) return 'Correo no valido.';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.next,
+                    decoration: authInputDecoration(
+                      context,
+                      label: 'Contrasena',
+                      hintText: 'Minimo 8 caracteres',
+                      prefixIcon: Icon(
+                        Icons.lock_outline_rounded,
+                        size: 20,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          transitionBuilder: (child, anim) => ScaleTransition(
+                            scale: anim,
+                            child: FadeTransition(opacity: anim, child: child),
+                          ),
+                          child: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            key: ValueKey(_obscure),
+                            size: 20,
+                            color: scheme.onSurface.withValues(alpha: 0.55),
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.length < 8) {
+                        return 'La contrasena debe tener al menos 8 caracteres.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _confirmCtrl,
+                    obscureText: _obscure2,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    decoration: authInputDecoration(
+                      context,
+                      label: 'Confirmar contrasena',
+                      prefixIcon: Icon(
+                        Icons.verified_user_outlined,
+                        size: 20,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure2 = !_obscure2),
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          transitionBuilder: (child, anim) => ScaleTransition(
+                            scale: anim,
+                            child: FadeTransition(opacity: anim, child: child),
+                          ),
+                          child: Icon(
+                            _obscure2
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            key: ValueKey(_obscure2),
+                            size: 20,
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v != _passwordCtrl.text) {
+                        return 'Las contrasenas no coinciden.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton(
+                    style: primaryBtnStyle,
+                    onPressed: _loading ? null : _submit,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      child: _loading
+                          ? SizedBox(
+                              key: const ValueKey('loading'),
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.onPrimary,
+                              ),
+                            )
+                          : const Text('Continuar', key: ValueKey('label')),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton(
+                      onPressed: _loading ? null : widget.onLogin,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: Text.rich(
+                        TextSpan(
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                          children: [
+                            const TextSpan(text: 'Ya tienes cuenta? '),
+                            TextSpan(
+                              text: 'Iniciar sesion',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'auth/widgets/auth_screen_shell.dart';
+
 /// Formulario alineado con `vetOnboardingSchema` del backend.
 class VetOnboardingForm extends StatefulWidget {
   const VetOnboardingForm({super.key});
@@ -88,36 +90,38 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
         children: [
-          Text('Datos profesionales', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          const AuthSectionHeader(
+            eyebrow: 'PROFESIONAL',
+            title: 'Datos profesionales',
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _fullName,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Nombre completo',
-              border: OutlineInputBorder(),
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+            decoration: authInputDecoration(context, label: 'Nombre completo'),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _phone,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Telefono (con lada)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Telefono',
+              hintText: 'con lada',
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
               if (s.isEmpty) return 'Requerido';
-              if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) return 'Telefono no valido';
+              if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) {
+                return 'Telefono no valido';
+              }
               return null;
             },
           ),
@@ -125,9 +129,9 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           TextFormField(
             controller: _avatarUrl,
             keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              labelText: 'URL de foto de perfil',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'URL de foto de perfil',
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
@@ -140,26 +144,27 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _cedula,
-            decoration: const InputDecoration(
-              labelText: 'Cedula profesional',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Cedula profesional',
             ),
-            validator: (v) => (v == null || v.trim().length < 5) ? 'Requerido (min 5)' : null,
+            validator: (v) =>
+                (v == null || v.trim().length < 5) ? 'Requerido (min 5)' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _university,
-            decoration: const InputDecoration(
-              labelText: 'Universidad (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Universidad (opcional)',
             ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _experience,
-            decoration: const InputDecoration(
-              labelText: 'Anos de experiencia',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Anos de experiencia',
             ),
             items: const [
               DropdownMenuItem(value: '1-3', child: Text('1-3')),
@@ -168,14 +173,20 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             ],
             onChanged: (v) => setState(() => _experience = v ?? '1-3'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          const AuthSectionHeader(
+            eyebrow: 'COBERTURA',
+            title: 'Como atiendes',
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _radius,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Radio de cobertura (km, 1-100)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Radio de cobertura (km)',
+              hintText: '1 a 100',
             ),
             validator: (v) {
               final n = int.tryParse(v?.trim() ?? '');
@@ -183,64 +194,85 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
               return null;
             },
           ),
-          SwitchListTile(
-            title: const Text('Tengo vehiculo propio'),
-            value: _hasVehicle,
-            onChanged: (v) => setState(() => _hasVehicle = v),
+          const SizedBox(height: 12),
+          AuthOutlinedTile(
+            child: SwitchListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              title: const Text('Tengo vehiculo propio'),
+              value: _hasVehicle,
+              onChanged: (v) => setState(() => _hasVehicle = v),
+            ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _specialty,
-            decoration: const InputDecoration(
-              labelText: 'Especialidad',
-              border: OutlineInputBorder(),
-            ),
+            decoration: authInputDecoration(context, label: 'Especialidad'),
             items: const [
-              DropdownMenuItem(value: 'medicina_general', child: Text('Medicina general')),
+              DropdownMenuItem(
+                value: 'medicina_general',
+                child: Text('Medicina general'),
+              ),
               DropdownMenuItem(value: 'urgencias', child: Text('Urgencias')),
               DropdownMenuItem(value: 'exoticos', child: Text('Exoticos')),
               DropdownMenuItem(value: 'nutricion', child: Text('Nutricion')),
-              DropdownMenuItem(value: 'fisioterapia', child: Text('Fisioterapia')),
+              DropdownMenuItem(
+                value: 'fisioterapia',
+                child: Text('Fisioterapia'),
+              ),
             ],
-            onChanged: (v) => setState(() => _specialty = v ?? 'medicina_general'),
+            onChanged: (v) =>
+                setState(() => _specialty = v ?? 'medicina_general'),
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _offeredServices,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Servicios ofrecidos (separados por coma)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Servicios ofrecidos',
+              hintText: 'separados por coma',
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Al menos un servicio' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Al menos un servicio' : null,
           ),
-          SwitchListTile(
-            title: const Text('Acepto emergencias'),
-            value: _acceptsEmergencies,
-            onChanged: (v) => setState(() => _acceptsEmergencies = v),
+          const SizedBox(height: 12),
+          AuthOutlinedTile(
+            child: SwitchListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              title: const Text('Acepto emergencias'),
+              value: _acceptsEmergencies,
+              onChanged: (v) => setState(() => _acceptsEmergencies = v),
+            ),
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _scheduleLabel,
-            decoration: const InputDecoration(
-              labelText: 'Horario (etiqueta)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Horario',
+              hintText: 'etiqueta breve',
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
-          const SizedBox(height: 20),
-          Text('Datos bancarios', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          const AuthSectionHeader(
+            eyebrow: 'BANCO',
+            title: 'Datos bancarios',
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _clabe,
             keyboardType: TextInputType.number,
             maxLength: 18,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'CLABE (18 digitos)',
-              border: OutlineInputBorder(),
-              counterText: '',
-            ),
+            decoration: authInputDecoration(
+              context,
+              label: 'CLABE',
+              hintText: '18 digitos',
+            ).copyWith(counterText: ''),
             validator: (v) {
               final s = v?.trim() ?? '';
               if (s.length != 18) return 'Deben ser 18 digitos';
@@ -250,18 +282,19 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _bankName,
-            decoration: const InputDecoration(
-              labelText: 'Nombre del banco',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Nombre del banco',
             ),
-            validator: (v) => (v == null || v.trim().length < 2) ? 'Requerido' : null,
+            validator: (v) =>
+                (v == null || v.trim().length < 2) ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _rfc,
-            decoration: const InputDecoration(
-              labelText: 'RFC (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'RFC (opcional)',
             ),
           ),
         ],

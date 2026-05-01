@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'auth/widgets/auth_screen_shell.dart';
+
 /// Formulario alineado con `clientOnboardingSchema` del backend.
 class ClientOnboardingForm extends StatefulWidget {
   const ClientOnboardingForm({super.key});
@@ -99,31 +101,30 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
 
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
         children: [
-          Text('Tus datos', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          const AuthSectionHeader(eyebrow: 'TUS DATOS', title: 'Sobre ti'),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _fullName,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Nombre completo',
-              border: OutlineInputBorder(),
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+            decoration: authInputDecoration(context, label: 'Nombre completo'),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _phone,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Telefono (con lada, ej. +521234567890)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Telefono',
+              hintText: '+521234567890',
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
@@ -138,68 +139,75 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           TextFormField(
             controller: _avatarUrl,
             keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              labelText: 'URL de foto de perfil (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'URL de foto de perfil (opcional)',
             ),
           ),
-          const SizedBox(height: 20),
-          Text('Direccion', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          const AuthSectionHeader(
+            eyebrow: 'DIRECCION',
+            title: 'Donde te encontramos',
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _address,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Direccion completa',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Direccion completa',
             ),
-            validator: (v) => (v == null || v.trim().length < 5) ? 'Minimo 5 caracteres' : null,
+            validator: (v) =>
+                (v == null || v.trim().length < 5) ? 'Minimo 5 caracteres' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _addressNotes,
-            decoration: const InputDecoration(
-              labelText: 'Referencias (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Referencias (opcional)',
             ),
           ),
-          const SizedBox(height: 20),
-          Text('Mascota', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
+          const AuthSectionHeader(
+            eyebrow: 'MASCOTA',
+            title: 'Datos de tu companero',
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _petName,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Nombre de la mascota',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Nombre de la mascota',
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _species,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Especie (ej. perro, gato)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Especie',
+              hintText: 'perro, gato',
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _breed,
-            decoration: const InputDecoration(
-              labelText: 'Raza (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Raza (opcional)',
             ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _sex,
-            decoration: const InputDecoration(
-              labelText: 'Sexo',
-              border: OutlineInputBorder(),
-            ),
+            decoration: authInputDecoration(context, label: 'Sexo'),
             items: const [
               DropdownMenuItem(value: 'male', child: Text('Macho')),
               DropdownMenuItem(value: 'female', child: Text('Hembra')),
@@ -207,34 +215,55 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             onChanged: (v) => setState(() => _sex = v ?? 'male'),
           ),
           const SizedBox(height: 12),
-          ListTile(
-            title: Text(_birthDate == null
-                ? 'Fecha de nacimiento (opcional)'
-                : 'Nacimiento: ${_birthDate!.toString().split(' ').first}'),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: _pickBirthDate,
+          AuthOutlinedTile(
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              title: Text(
+                _birthDate == null
+                    ? 'Fecha de nacimiento (opcional)'
+                    : 'Nacimiento: ${_birthDate!.toString().split(' ').first}',
+                style: TextStyle(
+                  color: scheme.onSurface.withValues(
+                    alpha: _birthDate == null ? 0.7 : 0.95,
+                  ),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              trailing: Icon(
+                Icons.calendar_today_rounded,
+                color: scheme.primary,
+                size: 20,
+              ),
+              onTap: _pickBirthDate,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _weightText,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-            decoration: const InputDecoration(
-              labelText: 'Peso kg (opcional)',
-              border: OutlineInputBorder(),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+            decoration: authInputDecoration(
+              context,
+              label: 'Peso kg (opcional)',
             ),
           ),
-          SwitchListTile(
-            title: const Text('Castrado / esterilizado'),
-            value: _neutered,
-            onChanged: (v) => setState(() => _neutered = v),
+          const SizedBox(height: 12),
+          AuthOutlinedTile(
+            child: SwitchListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              title: const Text('Castrado / esterilizado'),
+              value: _neutered,
+              onChanged: (v) => setState(() => _neutered = v),
+            ),
           ),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _vaccines,
-            decoration: const InputDecoration(
-              labelText: 'Vacunas al dia',
-              border: OutlineInputBorder(),
-            ),
+            decoration: authInputDecoration(context, label: 'Vacunas al dia'),
             items: const [
               DropdownMenuItem(value: 'yes', child: Text('Si')),
               DropdownMenuItem(value: 'no', child: Text('No')),
@@ -242,12 +271,10 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             ],
             onChanged: (v) => setState(() => _vaccines = v ?? 'unsure'),
           ),
+          const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _temperament,
-            decoration: const InputDecoration(
-              labelText: 'Temperamento',
-              border: OutlineInputBorder(),
-            ),
+            decoration: authInputDecoration(context, label: 'Temperamento'),
             items: const [
               DropdownMenuItem(value: 'friendly', child: Text('Amistoso')),
               DropdownMenuItem(value: 'nervous', child: Text('Nervioso')),
@@ -259,9 +286,9 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           TextFormField(
             controller: _medicalNotes,
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Notas medicas (opcional)',
-              border: OutlineInputBorder(),
+            decoration: authInputDecoration(
+              context,
+              label: 'Notas medicas (opcional)',
             ),
           ),
         ],

@@ -4,8 +4,10 @@ import 'package:pinput/pinput.dart';
 
 import '../core/auth/auth_storage.dart';
 import '../core/network/vetgo_api_client.dart';
+import 'widgets/auth_scenic_layer.dart';
+import 'widgets/auth_screen_shell.dart';
 
-/// Código de verificación de 8 dígitos (Supabase + backend).
+/// Codigo de verificacion de 8 digitos (Supabase + backend).
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({
     super.key,
@@ -57,13 +59,13 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       }
       setState(() {
         _error =
-            'Cuenta verificada pero sin sesión automática. Inicia sesión con tu contraseña.';
+            'Cuenta verificada pero sin sesion automatica. Inicia sesion con tu contrasena.';
       });
       return;
     }
 
     setState(() {
-      _error = outcome.message ?? 'Código incorrecto.';
+      _error = outcome.message ?? 'Codigo incorrecto.';
       _pinController.clear();
       _focusNode.requestFocus();
     });
@@ -94,105 +96,103 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final scheme = theme.colorScheme;
 
     final defaultPinTheme = PinTheme(
-      width: 46,
-      height: 52,
-      textStyle: theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
+      width: 38,
+      height: 48,
+      textStyle: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+        color: scheme.onSurface,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: scheme.outline),
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(10),
         color: scheme.surface,
+      ),
+    );
+
+    final focusedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: scheme.primary, width: 2),
+      ),
+    );
+
+    final submittedPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        color: scheme.primary.withValues(alpha: 0.06),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.45)),
+      ),
+    );
+
+    final errorPinTheme = defaultPinTheme.copyWith(
+      decoration: defaultPinTheme.decoration!.copyWith(
+        border: Border.all(color: scheme.error, width: 2),
       ),
     );
 
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: const Text('Verificar correo'),
+      child: AuthPageShell(
+        variant: AuthScenicVariant.otp,
+        topBar: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Text(
+            'PASO 2 DE 2',
+            style: theme.textTheme.labelSmall?.copyWith(
+              letterSpacing: 1.6,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
         ),
-        body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Ingresa el código enviado a',
-                      style: theme.textTheme.titleMedium,
-                      textAlign: TextAlign.center,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: AuthStagger(
+                children: [
+                  AuthBrandHeader(
+                    title: 'Verifica tu correo',
+                    subtitle: widget.hint ??
+                        'Ingresa el codigo de 8 digitos que enviamos a tu correo.',
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    widget.email,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.primary,
                     ),
-                    const SizedBox(height: 6),
-                    SelectableText(
-                      widget.email,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: scheme.primary,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 28),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
                     ),
-                    if (widget.hint != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.hint!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.8),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    Text(
-                      'El código tiene 8 dígitos. Revísalo en tu correo.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.65),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Material(
-                          color: scheme.errorContainer,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(Icons.error_outline, color: scheme.error),
-                                const SizedBox(width: 10),
-                                Expanded(child: Text(_error!)),
-                              ],
+                    child: _error == null
+                        ? const SizedBox.shrink(key: ValueKey('no_error'))
+                        : Padding(
+                            key: const ValueKey('error'),
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: AuthErrorBanner(
+                              message: _error!,
+                              onDismiss: () => setState(() => _error = null),
                             ),
                           ),
-                        ),
-                      ),
-                    Pinput(
+                  ),
+                  Center(
+                    child: Pinput(
                       length: 8,
                       controller: _pinController,
                       focusNode: _focusNode,
                       autofocus: true,
+                      separatorBuilder: (_) => const SizedBox(width: 6),
                       defaultPinTheme: defaultPinTheme,
-                      focusedPinTheme: defaultPinTheme.copyWith(
-                        decoration: defaultPinTheme.decoration!.copyWith(
-                          border: Border.all(color: scheme.primary, width: 2),
-                        ),
-                      ),
-                      submittedPinTheme: defaultPinTheme.copyWith(
-                        decoration: defaultPinTheme.decoration!.copyWith(
-                          color: scheme.surfaceContainerHighest,
-                        ),
-                      ),
-                      errorPinTheme: defaultPinTheme.copyBorderWith(
-                        border: Border.all(color: scheme.error),
-                      ),
+                      focusedPinTheme: focusedPinTheme,
+                      submittedPinTheme: submittedPinTheme,
+                      errorPinTheme: errorPinTheme,
                       pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
                       forceErrorState: _error != null,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -204,26 +204,63 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         if (_error != null) setState(() => _error = null);
                       },
                     ),
-                    const SizedBox(height: 24),
-                    if (_loading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: CircularProgressIndicator(),
+                  ),
+                  const SizedBox(height: 24),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: _loading
+                        ? Padding(
+                            key: const ValueKey('loading'),
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Center(
+                              child: SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: scheme.primary,
+                                ),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(key: ValueKey('idle')),
+                  ),
+                  Center(
+                    child: TextButton(
+                      onPressed: (_loading || _resending) ? null : _resend,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
                       ),
-                    TextButton(
-                      onPressed: (_loading || _resending) ? null : _resend,
-                      child: _resending
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Reenviar código'),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: _resending
+                            ? SizedBox(
+                                key: const ValueKey('resending'),
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: scheme.primary,
+                                ),
+                              )
+                            : const Text(
+                                'Reenviar codigo',
+                                key: ValueKey('resend'),
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

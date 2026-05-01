@@ -32,7 +32,7 @@ class AuthPageShell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (topBar != null) topBar!,
+                ?topBar,
                 Expanded(child: child),
               ],
             ),
@@ -210,6 +210,74 @@ class AuthErrorBanner extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Encabezado de seccion para formularios largos (eyebrow + titulo discreto).
+class AuthSectionHeader extends StatelessWidget {
+  const AuthSectionHeader({
+    super.key,
+    required this.title,
+    this.eyebrow,
+  });
+
+  final String title;
+  final String? eyebrow;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (eyebrow != null)
+          Text(
+            eyebrow!,
+            style: theme.textTheme.labelSmall?.copyWith(
+              letterSpacing: 1.4,
+              fontWeight: FontWeight.w700,
+              color: scheme.primary,
+            ),
+          ),
+        if (eyebrow != null) const SizedBox(height: 6),
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            color: scheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tarjeta plana con borde fino que envuelve un hijo (ListTile, Switch, etc.).
+class AuthOutlinedTile extends StatelessWidget {
+  const AuthOutlinedTile({
+    super.key,
+    required this.child,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.35)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      padding: padding,
+      child: child,
     );
   }
 }

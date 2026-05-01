@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'auth/widgets/auth_scenic_layer.dart';
+import 'auth/widgets/auth_screen_shell.dart';
 import 'client_onboarding_form.dart';
 import 'core/auth/auth_storage.dart';
 import 'core/network/vetgo_api_client.dart';
@@ -77,123 +79,195 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Completa tu perfil')),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AuthPageShell(
+      variant: AuthScenicVariant.register,
+      topBar: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        child: Row(
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 220),
-              transitionBuilder: (c, a) =>
-                  SizeTransition(sizeFactor: a, child: FadeTransition(opacity: a, child: c)),
-              child: _error == null
-                  ? const SizedBox.shrink(key: ValueKey('err_none'))
-                  : Material(
-                      key: const ValueKey('err_msg'),
-                      color: scheme.errorContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(color: scheme.onErrorContainer),
-                        ),
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
+              ),
+              child: _role == null
+                  ? const SizedBox.shrink(key: ValueKey('no_back'))
+                  : IconButton(
+                      key: const ValueKey('back'),
+                      tooltip: 'Cambiar rol',
+                      onPressed: _loading
+                          ? null
+                          : () => setState(() {
+                                _role = null;
+                                _error = null;
+                              }),
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        color: scheme.onSurface,
                       ),
                     ),
             ),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 380),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  final isPicker = child.key == const ValueKey('role_picker');
-                  final beginX = isPicker ? -0.15 : 0.15;
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: Offset(beginX, 0),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
-                        ),
-                      ),
-                      child: child,
-                    ),
-                  );
-                },
-                layoutBuilder: (currentChild, previousChildren) {
-                  return Stack(
-                    alignment: Alignment.topCenter,
-                    children: <Widget>[
-                      ...previousChildren,
-                      if (currentChild != null) currentChild,
-                    ],
-                  );
-                },
-                child: _role == null
-                    ? KeyedSubtree(
-                        key: const ValueKey('role_picker'),
-                        child: _RolePicker(
-                          onPick: (r) => setState(() {
-                            _role = r;
-                            _error = null;
-                          }),
-                        ),
-                      )
-                    : _role == 'client'
-                        ? KeyedSubtree(
-                            key: const ValueKey('role_client'),
-                            child: ClientOnboardingForm(key: _clientKey),
-                          )
-                        : KeyedSubtree(
-                            key: const ValueKey('role_vet'),
-                            child: VetOnboardingForm(key: _vetKey),
-                          ),
+              child: Center(
+                child: Text(
+                  'PASO FINAL',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.6,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                ),
               ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
+            const SizedBox(width: 48),
+          ],
+        ),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 380),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                final isPicker = child.key == const ValueKey('role_picker');
+                final beginX = isPicker ? -0.15 : 0.15;
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: Offset(beginX, 0),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      ),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    ...previousChildren,
+                    ?currentChild,
+                  ],
+                );
+              },
               child: _role == null
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      child: Row(
-                        children: [
-                          IconButton.filledTonal(
-                            tooltip: 'Cambiar rol',
-                            onPressed: _loading
-                                ? null
-                                : () => setState(() => _role = null),
-                            icon: const Icon(Icons.arrow_back_rounded),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: _loading ? null : _submit,
-                              child: _loading
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Guardar y continuar'),
-                            ),
-                          ),
-                        ],
+                  ? KeyedSubtree(
+                      key: const ValueKey('role_picker'),
+                      child: _RolePicker(
+                        onPick: (r) => setState(() {
+                          _role = r;
+                          _error = null;
+                        }),
+                      ),
+                    )
+                  : KeyedSubtree(
+                      key: ValueKey('role_$_role'),
+                      child: _OnboardingFormPanel(
+                        error: _error,
+                        onDismissError: () => setState(() => _error = null),
+                        form: _role == 'client'
+                            ? ClientOnboardingForm(key: _clientKey)
+                            : VetOnboardingForm(key: _vetKey),
                       ),
                     ),
             ),
-          ],
-        ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeOutCubic,
+            child: _role == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                    child: FilledButton(
+                      onPressed: _loading ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: _loading
+                            ? SizedBox(
+                                key: const ValueKey('loading'),
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: scheme.onPrimary,
+                                ),
+                              )
+                            : const Text(
+                                'Guardar y continuar',
+                                key: ValueKey('label'),
+                              ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingFormPanel extends StatelessWidget {
+  const _OnboardingFormPanel({
+    required this.error,
+    required this.onDismissError,
+    required this.form,
+  });
+
+  final String? error;
+  final VoidCallback onDismissError;
+  final Widget form;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            transitionBuilder: (child, anim) => SizeTransition(
+              sizeFactor: anim,
+              axisAlignment: -1,
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: error == null
+                ? const SizedBox.shrink(key: ValueKey('no_error'))
+                : Padding(
+                    key: const ValueKey('error'),
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: AuthErrorBanner(
+                      message: error!,
+                      onDismiss: onDismissError,
+                    ),
+                  ),
+          ),
+          Expanded(child: form),
+        ],
       ),
     );
   }
@@ -206,36 +280,33 @@ class _RolePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text(
-          'Como quieres usar Vetgo?',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: SingleChildScrollView(
+        child: AuthStagger(
+          delayStep: const Duration(milliseconds: 70),
+          children: [
+            const AuthBrandHeader(
+              title: 'Completa tu perfil',
+              subtitle: 'Cuentanos como vas a usar Vetgo para personalizar tu experiencia.',
+            ),
+            const SizedBox(height: 28),
+            _RoleCard(
+              title: 'Soy dueno de mascota',
+              subtitle: 'Busco veterinarios y servicios para mis mascotas.',
+              icon: Icons.pets_rounded,
+              onTap: () => onPick('client'),
+            ),
+            const SizedBox(height: 14),
+            _RoleCard(
+              title: 'Soy veterinario',
+              subtitle: 'Ofrezco consultas y servicios a domicilio o en linea.',
+              icon: Icons.medical_services_outlined,
+              onTap: () => onPick('vet'),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        _RoleCard(
-          title: 'Soy dueno de mascota',
-          subtitle: 'Busco veterinarios y servicios para mis mascotas.',
-          icon: Icons.pets,
-          onTap: () => onPick('client'),
-          scheme: scheme,
-        ),
-        const SizedBox(height: 16),
-        _RoleCard(
-          title: 'Soy veterinario',
-          subtitle: 'Ofrezco consultas y servicios a domicilio o en linea.',
-          icon: Icons.medical_services_outlined,
-          onTap: () => onPick('vet'),
-          scheme: scheme,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -246,49 +317,76 @@ class _RoleCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.onTap,
-    required this.scheme,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
-  final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Material(
-      color: scheme.surfaceContainerHighest,
+      color: scheme.surface,
       borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Icon(icon, size: 40, color: scheme.primary),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: scheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(icon, size: 22, color: scheme.primary),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: scheme.outline),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurface.withValues(alpha: 0.45),
+                ),
+              ],
+            ),
           ),
         ),
       ),

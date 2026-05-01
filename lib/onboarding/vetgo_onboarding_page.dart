@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 
-import '../theme/vetgo_typography.dart';
+import '../auth/widgets/auth_scenic_layer.dart';
+import '../auth/widgets/auth_screen_shell.dart';
 import 'onboarding_assets.dart';
 
-class VetgoOnboardingPage extends StatelessWidget {
+class VetgoOnboardingPage extends StatefulWidget {
   const VetgoOnboardingPage({
     super.key,
     required this.onFinished,
@@ -15,37 +15,52 @@ class VetgoOnboardingPage extends StatelessWidget {
   final VoidCallback onFinished;
   final VoidCallback? onSignIn;
 
-  static const Color _onImageText = Colors.white;
-  static const Color _onImageSubtle = Color(0xF2FFFFFF);
+  @override
+  State<VetgoOnboardingPage> createState() => _VetgoOnboardingPageState();
+}
 
-  static final Curve _curve = Curves.easeOutCubic;
+class _VetgoOnboardingPageState extends State<VetgoOnboardingPage> {
+  static const _pages = <_OnboardingSlide>[
+    _OnboardingSlide(
+      eyebrow: 'PASO 1 DE 3',
+      title: 'Tu mascota, siempre acompanada',
+      body:
+          'Encuentra veterinarios, emergencias y seguimiento del cuidado en un solo lugar.',
+      asset: OnboardingAssets.page1,
+    ),
+    _OnboardingSlide(
+      eyebrow: 'PASO 2 DE 3',
+      title: 'Cuidado que se adapta a ti',
+      body:
+          'Guarda historial, citas y recordatorios pensados para la salud de tu companero.',
+      asset: OnboardingAssets.page2,
+    ),
+    _OnboardingSlide(
+      eyebrow: 'PASO 3 DE 3',
+      title: 'Empieza en segundos',
+      body:
+          'Sin complicaciones: agenda, consulta y actua cuando mas importa.',
+      asset: OnboardingAssets.page3,
+    ),
+  ];
 
-  /// Tipografía más grande y legible sobre la foto.
-  static TextStyle _titleStyle() {
-    return const TextStyle(
-      fontFamily: VetgoTypography.family,
-      fontSize: 31,
-      fontWeight: FontWeight.w700,
-      height: 1.12,
-      letterSpacing: -0.6,
-      color: _onImageText,
-      shadows: [
-        Shadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 3)),
-      ],
-    );
+  final _controller = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  static TextStyle _bodyStyle() {
-    return const TextStyle(
-      fontFamily: VetgoTypography.family,
-      fontSize: 18,
-      fontWeight: FontWeight.w400,
-      height: 1.48,
-      letterSpacing: 0.15,
-      color: _onImageSubtle,
-      shadows: [
-        Shadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 2)),
-      ],
+  void _goNext() {
+    if (_index >= _pages.length - 1) {
+      widget.onFinished();
+      return;
+    }
+    _controller.nextPage(
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -53,427 +68,332 @@ class VetgoOnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final titleStyle = _titleStyle();
-    final bodyStyle = _bodyStyle();
+    final isLast = _index == _pages.length - 1;
 
-    final pageDecoration = PageDecoration(
-      fullScreen: true,
-      imageFlex: 5,
-      bodyFlex: 5,
-      footerFlex: 0,
-      // Aire bajo el texto para que no quede pegado a Omitir / puntos / flecha.
-      safeArea: 56,
-      bodyAlignment: Alignment.bottomCenter,
-      imageAlignment: Alignment.center,
-      contentMargin: const EdgeInsets.fromLTRB(28, 0, 28, 20),
-      titlePadding: const EdgeInsets.only(bottom: 16),
-      bodyPadding: const EdgeInsets.only(bottom: 24),
-      titleTextStyle: titleStyle,
-      bodyTextStyle: bodyStyle,
+    return AuthPageShell(
+      variant: AuthScenicVariant.login,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: _pages.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (context, i) => _OnboardingSlideView(
+                  key: ValueKey('slide_$i'),
+                  slide: _pages[i],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+              child: Column(
+                children: [
+                  _DotsIndicator(
+                    count: _pages.length,
+                    index: _index,
+                    activeColor: scheme.primary,
+                    inactiveColor: scheme.outline.withValues(alpha: 0.35),
+                  ),
+                  const SizedBox(height: 20),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    transitionBuilder: (child, anim) => SizeTransition(
+                      sizeFactor: anim,
+                      axisAlignment: -1,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: isLast
+                        ? _FinalCtaBlock(
+                            key: const ValueKey('cta_final'),
+                            onCreate: widget.onFinished,
+                            onSignIn: widget.onSignIn ?? widget.onFinished,
+                          )
+                        : _PagerControls(
+                            key: const ValueKey('cta_pager'),
+                            onSkip: widget.onFinished,
+                            onNext: _goNext,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+}
 
-    return IntroductionScreen(
-      animationDuration: 480,
-      globalBackgroundColor: Colors.black,
-      showSkipButton: true,
-      showNextButton: true,
-      skipOrBackFlex: 1,
-      nextFlex: 1,
-      dotsFlex: 2,
-      showDoneButton: false,
-      onSkip: onFinished,
-      overrideSkip: (context, onPressed) => Align(
-        alignment: Alignment.centerLeft,
-        child: _OnboardingSkipButton(onPressed: onPressed),
-      ),
-      overrideNext: (context, onPressed) => Align(
-        alignment: Alignment.centerRight,
-        child: _OnboardingNextButton(onPressed: onPressed),
-      ),
-      showBackButton: false,
-      pages: [
-        PageViewModel(
-          titleWidget: _OnboardingTitle(
-            text: 'Tu mascota, siempre acompañada',
-            style: titleStyle,
-          ),
-          bodyWidget: _OnboardingBody(
-            text:
-                'Encuentra veterinarios, emergencias y seguimiento del cuidado en un solo lugar.',
-            style: bodyStyle,
-          ),
-          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page1),
-          decoration: pageDecoration,
+class _OnboardingSlide {
+  const _OnboardingSlide({
+    required this.eyebrow,
+    required this.title,
+    required this.body,
+    required this.asset,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String body;
+  final String asset;
+}
+
+class _OnboardingSlideView extends StatelessWidget {
+  const _OnboardingSlideView({super.key, required this.slide});
+
+  final _OnboardingSlide slide;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        child: AuthStagger(
+          delayStep: const Duration(milliseconds: 70),
+          children: [
+            Text(
+              slide.eyebrow,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.8,
+              ),
+            ),
+            const SizedBox(height: 18),
+            _SlideHero(asset: slide.asset),
+            const SizedBox(height: 28),
+            Text(
+              slide.title,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.6,
+                height: 1.1,
+                color: scheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              slide.body,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.65),
+                height: 1.45,
+              ),
+            ),
+          ],
         ),
-        PageViewModel(
-          titleWidget: _OnboardingTitle(
-            text: 'Cuidado que se adapta a ti',
-            style: titleStyle,
+      ),
+    );
+  }
+}
+
+class _SlideHero extends StatelessWidget {
+  const _SlideHero({required this.asset});
+
+  final String asset;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxWidth * 0.95;
+        return Container(
+          height: h.clamp(220.0, 360.0),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: scheme.primary.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: scheme.outline.withValues(alpha: 0.18),
+            ),
           ),
-          bodyWidget: _OnboardingBody(
-            text:
-                'Guarda historial, citas y recordatorios pensados para la salud de tu compañero.',
-            style: bodyStyle,
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            asset,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Icon(
+                  Icons.pets_rounded,
+                  size: 72,
+                  color: scheme.primary.withValues(alpha: 0.55),
+                ),
+              );
+            },
           ),
-          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page2),
-          decoration: pageDecoration,
+        )
+            .animate()
+            .fadeIn(duration: 380.ms, curve: Curves.easeOutCubic)
+            .scale(
+              begin: const Offset(0.98, 0.98),
+              end: const Offset(1, 1),
+              duration: 480.ms,
+              curve: Curves.easeOutCubic,
+            );
+      },
+    );
+  }
+}
+
+class _DotsIndicator extends StatelessWidget {
+  const _DotsIndicator({
+    required this.count,
+    required this.index,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  final int count;
+  final int index;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List<Widget>.generate(count, (i) {
+        final isActive = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          height: 6,
+          width: isActive ? 22 : 6,
+          decoration: BoxDecoration(
+            color: isActive ? activeColor : inactiveColor,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _PagerControls extends StatelessWidget {
+  const _PagerControls({
+    super.key,
+    required this.onSkip,
+    required this.onNext,
+  });
+
+  final VoidCallback onSkip;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        TextButton(
+          onPressed: onSkip,
+          style: TextButton.styleFrom(
+            foregroundColor: scheme.onSurface.withValues(alpha: 0.7),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          ),
+          child: const Text(
+            'Omitir',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
-        PageViewModel(
-          titleWidget: _OnboardingTitle(
-            text: 'Empieza en segundos',
-            style: titleStyle,
+        const Spacer(),
+        FilledButton(
+          onPressed: onNext,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(140, 52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
-          bodyWidget: _OnboardingBody(
-            text:
-                'Sin complicaciones: agenda, consulta y actúa cuando más importa.',
-            style: bodyStyle,
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Siguiente'),
+              SizedBox(width: 6),
+              Icon(Icons.arrow_forward_rounded, size: 18),
+            ],
           ),
-          image: _FullBleedOnboardingImage(assetPath: OnboardingAssets.page3),
-          decoration: pageDecoration.copyWith(
-            // Más zona superior → el copy queda más abajo; CTA sigue en ~30 %.
-            imageFlex: 5,
-            bodyFlex: 2,
-            footerFlex: 3,
-            safeArea: 25,
-            // Título / cuerpo: separación media (no tan amplia como en 1–2).
-            titlePadding: const EdgeInsets.only(bottom: 12),
-            descriptionPadding: const EdgeInsets.only(bottom: 14),
+        ),
+      ],
+    );
+  }
+}
+
+class _FinalCtaBlock extends StatelessWidget {
+  const _FinalCtaBlock({
+    super.key,
+    required this.onCreate,
+    required this.onSignIn,
+  });
+
+  final VoidCallback onCreate;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton(
+          onPressed: onCreate,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
           ),
-          footer: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
-            child: _OnboardingCtaFooter(
-              scheme: scheme,
-              theme: theme,
-              onFinished: onFinished,
-              onSignIn: onSignIn,
+          child: const Text('Crear cuenta gratis'),
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: TextButton(
+            onPressed: onSignIn,
+            style: TextButton.styleFrom(
+              foregroundColor: scheme.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+            child: Text.rich(
+              TextSpan(
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface.withValues(alpha: 0.7),
+                ),
+                children: [
+                  const TextSpan(text: 'Ya tienes cuenta? '),
+                  TextSpan(
+                    text: 'Iniciar sesion',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ],
-      dotsDecorator: DotsDecorator(
-        size: const Size(7, 7),
-        activeSize: const Size(24, 8),
-        activeColor: Colors.white,
-        color: Colors.white.withValues(alpha: 0.4),
-        activeShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
-        spacing: const EdgeInsets.symmetric(horizontal: 5),
-      ),
-      dotsContainerDecorator: null,
-      controlsMargin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-      controlsPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      curve: Curves.easeInOutCubic,
-    );
-  }
-}
-
-/// "Omitir" sin caja: solo texto + feedback al tocar.
-class _OnboardingSkipButton extends StatelessWidget {
-  const _OnboardingSkipButton({required this.onPressed});
-
-  final void Function() onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Omitir',
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(24),
-          splashColor: Colors.white24,
-          highlightColor: Colors.white10,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(
-              'Omitir',
-              style: TextStyle(
-                fontFamily: VetgoTypography.family,
-                fontSize: 16.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-                color: Colors.white,
-                decoration: TextDecoration.underline,
-                decorationColor: Colors.white.withValues(alpha: 0.5),
-                decorationThickness: 1.2,
-              ),
-            ),
-          ),
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms, curve: VetgoOnboardingPage._curve);
-  }
-}
-
-/// Flecha en círculo solo con borde, sin relleno.
-class _OnboardingNextButton extends StatelessWidget {
-  const _OnboardingNextButton({required this.onPressed});
-
-  final void Function()? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Siguiente',
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          splashColor: Colors.white30,
-          highlightColor: Colors.white12,
-          child: Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-            ),
-            child: const Icon(
-              Icons.arrow_forward_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms, curve: VetgoOnboardingPage._curve)
-        .scale(
-          begin: const Offset(0.9, 0.9),
-          end: const Offset(1, 1),
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
-        );
-  }
-}
-
-class _OnboardingTitle extends StatelessWidget {
-  const _OnboardingTitle({required this.text, required this.style});
-
-  final String text;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: style,
-      textAlign: TextAlign.center,
-    )
-        .animate()
-        .fadeIn(duration: 480.ms, curve: VetgoOnboardingPage._curve)
-        .slideY(
-          begin: 0.12,
-          end: 0,
-          duration: 480.ms,
-          curve: VetgoOnboardingPage._curve,
-        );
-  }
-}
-
-class _OnboardingBody extends StatelessWidget {
-  const _OnboardingBody({required this.text, required this.style});
-
-  final String text;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: style,
-      textAlign: TextAlign.center,
-    )
-        .animate()
-        .fadeIn(
-          duration: 520.ms,
-          delay: 90.ms,
-          curve: VetgoOnboardingPage._curve,
-        )
-        .slideY(
-          begin: 0.08,
-          end: 0,
-          duration: 520.ms,
-          delay: 90.ms,
-          curve: VetgoOnboardingPage._curve,
-        );
-  }
-}
-
-class _OnboardingCtaFooter extends StatelessWidget {
-  const _OnboardingCtaFooter({
-    required this.scheme,
-    required this.theme,
-    required this.onFinished,
-    required this.onSignIn,
-  });
-
-  final ColorScheme scheme;
-  final ThemeData theme;
-  final VoidCallback onFinished;
-  final VoidCallback? onSignIn;
-
-  static const Color _onImageSubtle = Color(0xE6FFFFFF);
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: onFinished,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: scheme.primary,
-                      foregroundColor: scheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      minimumSize: const Size(0, 44),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(
-                      'Crear cuenta gratis',
-                      style: TextStyle(
-                        fontFamily: VetgoTypography.family,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text.rich(
-                  TextSpan(
-                    text: '¿Ya tienes cuenta? ',
-                    style: TextStyle(
-                      fontFamily: VetgoTypography.family,
-                      fontSize: 15,
-                      height: 1.3,
-                      color: _onImageSubtle,
-                    ),
-                    children: [
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.baseline,
-                        baseline: TextBaseline.alphabetic,
-                        child: GestureDetector(
-                          onTap: () => (onSignIn ?? onFinished)(),
-                          child: Text(
-                            'Iniciar sesión',
-                            style: TextStyle(
-                              fontFamily: VetgoTypography.family,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: scheme.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    )
-        .animate()
-        .fadeIn(duration: 450.ms, delay: 100.ms, curve: Curves.easeOutCubic)
-        .slideY(
-          begin: 0.06,
-          end: 0,
-          duration: 450.ms,
-          delay: 100.ms,
-          curve: Curves.easeOutCubic,
-        );
-  }
-}
-
-class _FullBleedOnboardingImage extends StatelessWidget {
-  const _FullBleedOnboardingImage({required this.assetPath});
-
-  final String assetPath;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Positioned.fill(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            assetPath,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            alignment: Alignment.center,
-            errorBuilder: (context, error, stackTrace) {
-              return ColoredBox(
-                color: primary.withValues(alpha: 0.25),
-                child: Center(
-                  child: Icon(
-                    Icons.pets_rounded,
-                    size: 96,
-                    color: primary.withValues(alpha: 0.6),
-                  ),
-                ),
-              );
-            },
-          )
-              .animate()
-              .fadeIn(duration: 700.ms, curve: Curves.easeOutCubic)
-              .scale(
-                begin: const Offset(1.06, 1.06),
-                end: const Offset(1.0, 1.0),
-                duration: 1200.ms,
-                curve: Curves.easeOutCubic,
-              ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.88),
-                      Colors.black.withValues(alpha: 0.5),
-                      Colors.black.withValues(alpha: 0.12),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.28, 0.52, 0.78],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
