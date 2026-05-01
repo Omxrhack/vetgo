@@ -10,7 +10,20 @@ abstract final class AppStrings {
 
   static const accesosRapidos = 'Accesos r\u00E1pidos';
 
+  static const dashboardClienteTagline =
+      'Servicios, mascotas y urgencias cuando los necesites.';
+
+  static const dashboardClienteSeccionAcciones = 'Acciones';
+
+  static const quickActionServiciosLabel = 'Servicios';
+
   static const cerrarSesionTooltip = 'Cerrar sesi\u00F3n';
+
+  static const quickActionEmergenciaLabel = 'Emergencia';
+
+  static const quickActionTrackingLabel = 'Simular\nvisita';
+
+  static const quickActionTiendaLabel = 'Tienda';
 
   static const mascotasErrorParcial =
       'No se pudieron cargar tus mascotas. Mostramos datos temporales si est\u00E1n disponibles.';
@@ -76,6 +89,10 @@ abstract final class AppStrings {
   static const vetDutyOffSubtitle = 'No recibir\u00E1s alertas de emergencia.';
 
   static const vetDutyOnSubtitle = 'Podr\u00E1s recibir asignaciones urgentes.';
+
+  static const vetDisponibilidadSection = 'Disponibilidad';
+
+  static const vetDashboardErrorTitulo = 'No se pudo cargar el panel';
 
   static const vetRutaEmergencia = 'Ruta de emergencia';
 

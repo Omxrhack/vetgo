@@ -6,9 +6,9 @@ import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/theme/vet_operator_colors.dart';
 import 'package:vetgo/vet_patient_record_screen.dart';
+import 'package:vetgo/widgets/dashboard/dashboard_section.dart';
 import 'package:vetgo/widgets/profile_photo_avatar.dart';
 import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
-import 'package:vetgo/widgets/vet/vet_section_title.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
 typedef VetBaseCallback = void Function(double? lat, double? lng);
@@ -121,48 +121,48 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             ],
             expandedHeight: 132,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, right: 20, bottom: 14),
-              title: Text(
-                AppStrings.holaDoctor(greetingName),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              background: Stack(
-                fit: StackFit.expand,
+              titlePadding: const EdgeInsets.only(left: 20, right: 72, bottom: 12),
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 52),
-                      child: Text(
-                        dateLine,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                  Text(
+                    AppStrings.holaDoctor(greetingName),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      height: 1.1,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 56, top: 36),
-                      child: ProfilePhotoAvatar(
-                        heroTag: 'vet_avatar',
-                        imageUrl: widget.profilePhotoUrl,
-                        placeholderBackground: VetOperatorColors.mintSoft,
-                        placeholderIconColor: VetOperatorColors.mintDeep,
-                        radius: 28,
-                        icon: Icons.person_rounded,
-                        onUploaded: widget.onProfilePhotoUpdated,
-                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    dateLine,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: muted,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
+              ),
+              background: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 56, top: 36),
+                  child: ProfilePhotoAvatar(
+                    heroTag: 'vet_avatar',
+                    imageUrl: widget.profilePhotoUrl,
+                    placeholderBackground: VetOperatorColors.mintSoft,
+                    placeholderIconColor: VetOperatorColors.mintDeep,
+                    radius: 28,
+                    icon: Icons.person_rounded,
+                    onUploaded: widget.onProfilePhotoUpdated,
+                  ),
+                ),
               ),
             ),
           ),
@@ -172,16 +172,40 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 320),
                 child: _loading
-                    ? SizedBox(
+                    ? VetSoftCard(
                         key: const ValueKey<String>('loading'),
-                        height: 220,
+                        padding: const EdgeInsets.symmetric(vertical: 48),
+                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
                         child: Center(child: CircularProgressIndicator(color: scheme.primary)),
                       )
                     : _error != null
-                        ? Text(
+                        ? VetSoftCard(
                             key: const ValueKey<String>('err'),
-                            _error!,
-                            style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
+                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                            color: scheme.errorContainer.withValues(alpha: 0.35),
+                            child: Column(
+                              children: [
+                                Icon(Icons.cloud_off_rounded, size: 36, color: scheme.error),
+                                const SizedBox(height: 12),
+                                Text(
+                                  AppStrings.vetDashboardErrorTitulo,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: scheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: muted,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
                           )
                         : _buildContent(theme, muted),
               ),
@@ -199,159 +223,238 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
     final earnings = (dash['earnings_mxn_today'] as num?)?.toDouble() ?? 0;
     final visits = dash['visits'] is List ? dash['visits'] as List<dynamic> : const [];
 
+    const kpiHeight = 118.0;
+
     return Column(
       key: const ValueKey<String>('content'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_dutyError != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              _dutyError!,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-            ),
-          ),
-        VetDutyToggleCard(
-          available: onDuty,
-          busy: _dutyBusy,
-          onChanged: _onDutyChanged,
-          offTitle: AppStrings.vetDutyOffTitle,
-          onTitle: AppStrings.vetDutyOnTitle,
-          offSubtitle: AppStrings.vetDutyOffSubtitle,
-          onSubtitle: AppStrings.vetDutyOnSubtitle,
-        ),
-        const SizedBox(height: 22),
-        const VetSectionTitle(title: AppStrings.vetResumenHoy),
-        Row(
-          children: [
-            Expanded(
-              child: VetSoftCard(
-                color: VetOperatorColors.mintSoft.withValues(alpha: 0.45),
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.vetCitasPendientes,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+        DashboardSection(
+          title: AppStrings.vetDisponibilidadSection,
+          spacingBeforeChild: 14,
+          bottomSpacing: 22,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_dutyError != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: VetSoftCard(
+                    padding: const EdgeInsets.all(14),
+                    color: VetOperatorColors.coralSoft.withValues(alpha: 0.48),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded, color: theme.colorScheme.error, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _dutyError!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
-                      child: Text(
-                        '$pending',
-                        key: ValueKey<int>(pending),
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: VetSoftCard(
-                color: VetOperatorColors.amberSoft.withValues(alpha: 0.55),
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.vetGananciasMxn,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: Text(
-                        earnings.toStringAsFixed(0),
-                        key: ValueKey<double>(earnings),
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 22),
-        const VetSectionTitle(
-          title: AppStrings.vetProximasVisitas,
-          subtitle: AppStrings.vetDeslizaMas,
-        ),
-        SizedBox(
-          height: 148,
-          child: visits.isEmpty
-              ? Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    AppStrings.vetSinVisitasHoy,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
                   ),
-                )
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: visits.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
-                  itemBuilder: (context, i) {
-                    final v = visits[i] is Map<String, dynamic> ? visits[i] as Map<String, dynamic> : {};
-                    final timeRaw = v['scheduled_at']?.toString();
-                    final dt = timeRaw != null ? DateTime.tryParse(timeRaw)?.toLocal() : null;
-                    final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
-                    final pet = v['pet_name']?.toString() ?? AppStrings.vetMascota;
-                    final col = v['neighborhood']?.toString() ?? '';
-                    final apptId = v['appointment_id']?.toString();
-                    final petId = v['pet_id'];
-                    final petIdStr = petId?.toString();
-
-                    return SizedBox(
-                      width: 220,
-                      child: VetSoftCard(
-                        padding: const EdgeInsets.all(16),
-                        onTap: apptId != null && petIdStr != null
-                            ? () {
-                                Navigator.of(context).push<void>(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => VetPatientRecordScreen(petId: petIdStr),
-                                  ),
-                                );
-                              }
-                            : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              VetDutyToggleCard(
+                available: onDuty,
+                busy: _dutyBusy,
+                onChanged: _onDutyChanged,
+                offTitle: AppStrings.vetDutyOffTitle,
+                onTitle: AppStrings.vetDutyOnTitle,
+                offSubtitle: AppStrings.vetDutyOffSubtitle,
+                onSubtitle: AppStrings.vetDutyOnSubtitle,
+              ),
+            ],
+          ),
+        ),
+        DashboardSection(
+          title: AppStrings.vetResumenHoy,
+          spacingBeforeChild: 14,
+          bottomSpacing: 22,
+          child: SizedBox(
+            height: kpiHeight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: VetSoftCard(
+                    color: VetOperatorColors.mintSoft.withValues(alpha: 0.48),
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              timeLabel,
-                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            Icon(
+                              Icons.event_available_rounded,
+                              size: 18,
+                              color: VetOperatorColors.mintDeep,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              pet,
-                              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              col.isEmpty ? AppStrings.vetDireccionPendiente : col,
-                              style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                AppStrings.vetCitasPendientes,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: muted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
+                        const Spacer(),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                          child: Text(
+                            '$pending',
+                            key: ValueKey<int>(pending),
+                            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: VetSoftCard(
+                    color: VetOperatorColors.amberSoft.withValues(alpha: 0.52),
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.payments_rounded,
+                              size: 18,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                AppStrings.vetGananciasMxn,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: muted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          child: Text(
+                            earnings.toStringAsFixed(0),
+                            key: ValueKey<double>(earnings),
+                            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        DashboardSection(
+          title: AppStrings.vetProximasVisitas,
+          subtitle: AppStrings.vetDeslizaMas,
+          subtitleColor: muted,
+          spacingBeforeChild: 14,
+          bottomSpacing: 8,
+          child: SizedBox(
+            height: 168,
+            child: visits.isEmpty
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      AppStrings.vetSinVisitasHoy,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                    ),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: visits.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    itemBuilder: (context, i) {
+                      final v = visits[i] is Map<String, dynamic> ? visits[i] as Map<String, dynamic> : {};
+                      final timeRaw = v['scheduled_at']?.toString();
+                      final dt = timeRaw != null ? DateTime.tryParse(timeRaw)?.toLocal() : null;
+                      final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
+                      final pet = v['pet_name']?.toString() ?? AppStrings.vetMascota;
+                      final col = v['neighborhood']?.toString() ?? '';
+                      final apptId = v['appointment_id']?.toString();
+                      final petId = v['pet_id'];
+                      final petIdStr = petId?.toString();
+                      final chipMint = i.isEven;
+
+                      return SizedBox(
+                        width: 226,
+                        child: VetSoftCard(
+                          padding: const EdgeInsets.all(14),
+                          onTap: apptId != null && petIdStr != null
+                              ? () {
+                                  Navigator.of(context).push<void>(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => VetPatientRecordScreen(petId: petIdStr),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: chipMint
+                                      ? VetOperatorColors.mintSoft.withValues(alpha: 0.65)
+                                      : VetOperatorColors.peach.withValues(alpha: 0.75),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  timeLabel,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                pet,
+                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Expanded(
+                                child: Text(
+                                  col.isEmpty ? AppStrings.vetDireccionPendiente : col,
+                                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     )
