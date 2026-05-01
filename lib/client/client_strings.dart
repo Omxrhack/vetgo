@@ -1,4 +1,4 @@
-/// Spanish UI strings using \\u escapes so source file encoding cannot break glyphs on device.
+/// Spanish UI strings via Unicode escapes so corrupt source encoding cannot break glyphs on device.
 abstract final class ClientStrings {
   static String holaNombre(String name) => '\u00A1Hola, $name!';
 

@@ -174,7 +174,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
         ),
         const SizedBox(height: 16),
         ...widget.pets.map(
-          (p) => Padding(
+          (ClientPetVm p) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Material(
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
