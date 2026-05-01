@@ -9,7 +9,7 @@ import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/widgets/vet/vet_async_toggle.dart';
 import 'package:vetgo/widgets/vet/vet_soft_card.dart';
 
-/// Agenda del día con línea de tiempo e ítems expansibles.
+/// Agenda del dï¿½a con lï¿½nea de tiempo e ï¿½tems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,
@@ -176,7 +176,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
           final petName = petMap['name']?.toString() ?? AppStrings.vetMascota;
           final species = petMap['species']?.toString() ?? '';
           final breed = petMap['breed']?.toString() ?? '';
-          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' · ');
+          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' Â· ');
           final addr = row['client_address'] is Map<String, dynamic>
               ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
               : null;
@@ -272,6 +272,41 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                 speciesLine.isNotEmpty ? '$petName \u00B7 $speciesLine' : petName,
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                               ),
+                              if (!isPoolAppointment) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.medical_information_outlined,
+                                      size: 17,
+                                      color: VetOperatorColors.mintDeep.withValues(alpha: 0.9),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            AppStrings.vetScheduleVeterinarioTitulo,
+                                            style: theme.textTheme.labelSmall?.copyWith(
+                                              color: muted,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            vetName.isNotEmpty ? vetName : AppStrings.clienteCitaVeterinarioPendiente,
+                                            style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                               Text(
                                 subtitleAddr,
                                 style: theme.textTheme.bodySmall?.copyWith(color: muted),

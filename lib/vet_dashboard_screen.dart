@@ -375,7 +375,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
           spacingBeforeChild: 14,
           bottomSpacing: 8,
           child: SizedBox(
-            height: 168,
+            height: 192,
             child: visits.isEmpty
                 ? Align(
                     alignment: Alignment.centerLeft,
@@ -399,6 +399,10 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                       final petId = v['pet_id'];
                       final petIdStr = petId?.toString();
                       final chipMint = i.isEven;
+                      final vetIdRaw = v['vet_id'];
+                      final hasAssignedVet =
+                          vetIdRaw != null && vetIdRaw.toString().trim().isNotEmpty;
+                      final vetAssignedName = v['vet_name']?.toString().trim() ?? '';
 
                       return SizedBox(
                         width: 226,
@@ -437,6 +441,21 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                                 pet,
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                                 maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                !hasAssignedVet
+                                    ? AppStrings.vetProximaVisitaSinVeterinario
+                                    : (vetAssignedName.isNotEmpty
+                                        ? vetAssignedName
+                                        : AppStrings.clienteCitaVeterinarioPendiente),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: muted,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 6),
