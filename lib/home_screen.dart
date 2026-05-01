@@ -7,7 +7,6 @@ import 'package:vetgo/core/auth/auth_session.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/config/app_config.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
-import 'package:vetgo/client_onboarding_form.dart';
 import 'package:vetgo/vet_dashboard_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
