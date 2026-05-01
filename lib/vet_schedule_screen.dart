@@ -8,7 +8,7 @@ import 'widgets/vet/vet_soft_card.dart';
 import 'vet_patient_record_screen.dart';
 import 'vet_route_screen.dart';
 
-/// Agenda del día con línea de tiempo e ítems expansibles.
+/// Agenda del dÃ­a con lÃ­nea de tiempo e Ã­tems expansibles.
 class VetScheduleScreen extends StatefulWidget {
   const VetScheduleScreen({
     super.key,

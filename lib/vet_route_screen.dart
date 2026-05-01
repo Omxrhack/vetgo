@@ -31,12 +31,12 @@ class VetRouteScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Mapa en construccin',
+                  'Mapa en construcciÂn',
                   style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Sesin de seguimiento creada. El mapa en vivo y actualizacin de ubicacin llegarn en una siguiente iteracin.',
+                  'SesiÂn de seguimiento creada. El mapa en vivo y actualizaciÂn de ubicaciÂn llegarÂn en una siguiente iteraciÂn.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: VetOperatorColors.textMuted,
                     height: 1.4,

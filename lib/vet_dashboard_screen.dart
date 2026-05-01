@@ -242,8 +242,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
         ),
         const SizedBox(height: 22),
         const VetSectionTitle(
-          title: 'Prùximas visitas',
-          subtitle: 'Desliza para ver mùs',
+          title: 'Pr¬ùximas visitas',
+          subtitle: 'Desliza para ver m¬ùs',
         ),
         SizedBox(
           height: 148,
@@ -300,7 +300,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              col.isEmpty ? 'Direcciùn pendiente' : col,
+                              col.isEmpty ? 'Direcci¬ùn pendiente' : col,
                               style: theme.textTheme.bodySmall?.copyWith(color: VetOperatorColors.textMuted),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

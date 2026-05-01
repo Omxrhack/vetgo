@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'app_flow.dart';
-import 'theme/vetgo_theme.dart';
+import 'package:vetgo/app_flow.dart';
+import 'package:vetgo/theme/vetgo_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

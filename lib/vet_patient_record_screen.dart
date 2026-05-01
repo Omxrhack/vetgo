@@ -6,7 +6,7 @@ import 'widgets/vet/vet_pastel_chip.dart';
 import 'widgets/vet/vet_section_title.dart';
 import 'widgets/vet/vet_soft_card.dart';
 
-/// Expediente r·pido antes de la visita a domicilio.
+/// Expediente r√°pido antes de la visita a domicilio.
 class VetPatientRecordScreen extends StatefulWidget {
   const VetPatientRecordScreen({
     super.key,
@@ -57,7 +57,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
       final months = (now.year - bd.year) * 12 + now.month - bd.month;
       return months <= 0 ? 'Cachorro / menor a 1 mes' : '$months mes(es)';
     }
-    return '$years aùo(s)';
+    return '$years a¬ùo(s)';
   }
 
   @override
@@ -98,7 +98,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         : null;
 
     final name = pet?['name']?.toString() ?? 'Mascota';
-    final species = pet?['species']?.toString() ?? 'ù';
+    final species = pet?['species']?.toString() ?? '¬ù';
     final breed = pet?['breed']?.toString();
     final photo = pet?['photo_url']?.toString();
     final temperament = pet?['temperament']?.toString();
@@ -136,7 +136,7 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '$species${breed != null && breed.isNotEmpty ? ' ù $breed' : ''}',
+                      '$species${breed != null && breed.isNotEmpty ? ' ¬ù $breed' : ''}',
                       style: theme.textTheme.bodyMedium?.copyWith(color: VetOperatorColors.textMuted),
                     ),
                     const SizedBox(height: 4),
@@ -179,19 +179,19 @@ class _VetPatientRecordScreenState extends State<VetPatientRecordScreen> {
         VetSoftCard(
           color: VetOperatorColors.peach.withValues(alpha: 0.35),
           child: Text(
-            cd?['address_text']?.toString() ?? 'Sin direcciùn registrada',
+            cd?['address_text']?.toString() ?? 'Sin direcci¬ùn registrada',
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 24),
         const VetSectionTitle(
-          title: 'Notas mùdicas / alergias',
+          title: 'Notas m¬ùdicas / alergias',
           subtitle: 'Revisa antes de tocar el timbre.',
         ),
         VetSoftCard(
           color: VetOperatorColors.mintSoft.withValues(alpha: 0.4),
           child: Text(
-            medical != null && medical.isNotEmpty ? medical : 'Sin notas mùdicas registradas.',
+            medical != null && medical.isNotEmpty ? medical : 'Sin notas m¬ùdicas registradas.',
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
           ),
         ),

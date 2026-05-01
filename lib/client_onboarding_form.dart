@@ -144,7 +144,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
     final scheme = Theme.of(context).colorScheme;
     final title = switch (_step) {
       0 => 'Datos personales',
-      1 => 'Ubicación',
+      1 => 'UbicaciÃ³n',
       2 => 'Perfil de mascota',
       _ => 'Salud y comportamiento',
     };
@@ -204,14 +204,14 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                       keyboardType: TextInputType.phone,
                       decoration: authInputDecoration(
                         context,
-                        label: 'Teléfono',
+                        label: 'TelÃ©fono',
                         hintText: '+521234567890',
                       ),
                       validator: (v) {
                         final s = v?.trim() ?? '';
                         if (s.isEmpty) return 'Requerido';
                         if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) {
-                          return 'Teléfono no válido';
+                          return 'TelÃ©fono no vÃ¡lido';
                         }
                         return null;
                       },
@@ -233,8 +233,8 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                 child: ListView(
                   children: [
                     const AuthSectionHeader(
-                      eyebrow: 'DIRECCIÓN',
-                      title: 'Dónde te encontramos',
+                      eyebrow: 'DIRECCIÃ“N',
+                      title: 'DÃ³nde te encontramos',
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
@@ -242,10 +242,10 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                       maxLines: 2,
                       decoration: authInputDecoration(
                         context,
-                        label: 'Dirección completa',
+                        label: 'DirecciÃ³n completa',
                       ),
                       validator: (v) =>
-                          (v == null || v.trim().length < 5) ? 'Mínimo 5 caracteres' : null,
+                          (v == null || v.trim().length < 5) ? 'MÃ­nimo 5 caracteres' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -353,9 +353,9 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _vaccines,
-                      decoration: authInputDecoration(context, label: 'Vacunas al día'),
+                      decoration: authInputDecoration(context, label: 'Vacunas al dÃ­a'),
                       items: const [
-                        DropdownMenuItem(value: 'yes', child: Text('Sí')),
+                        DropdownMenuItem(value: 'yes', child: Text('SÃ­')),
                         DropdownMenuItem(value: 'no', child: Text('No')),
                         DropdownMenuItem(value: 'unsure', child: Text('No estoy seguro')),
                       ],
@@ -378,7 +378,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                       maxLines: 3,
                       decoration: authInputDecoration(
                         context,
-                        label: 'Notas médicas (opcional)',
+                        label: 'Notas mÃ©dicas (opcional)',
                       ),
                     ),
                   ],
@@ -398,7 +398,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
                     minimumSize: const Size.fromHeight(52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Atrás'),
+                  child: const Text('AtrÃ¡s'),
                 ),
               ),
             if (_step > 0) const SizedBox(width: 10),

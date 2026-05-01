@@ -87,7 +87,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
     final dist = em.distanceKm != null ? 'A ${em.distanceKm} km' : 'Distancia por confirmar';
 
     final summary =
-        'ùEmergencia! ${em.species} (${em.petName}) ù ${em.symptoms} ù $dist';
+        '¬ùEmergencia! ${em.species} (${em.petName}) ¬ù ${em.symptoms} ¬ù $dist';
 
     return SlideTransition(
       position: _slide,
@@ -110,7 +110,7 @@ class _EmergencySheetBodyState extends State<_EmergencySheetBody> with SingleTic
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Asignaciùn 24/7',
+                      'Asignaci¬ùn 24/7',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),

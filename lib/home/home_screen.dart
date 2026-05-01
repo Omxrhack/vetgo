@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../core/auth/auth_session.dart';
-import '../core/auth/auth_storage.dart';
-import '../core/config/app_config.dart';
-import '../core/network/vetgo_api_client.dart';
-import '../theme/vet_operator_colors.dart';
-import '../vet_dashboard_screen.dart';
-import '../vet_route_screen.dart';
-import '../vet_schedule_screen.dart';
-import '../widgets/vet/emergency_alert_sheet.dart';
+import 'package:vetgo/core/auth/auth_session.dart';
+import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/config/app_config.dart';
+import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/theme/vet_operator_colors.dart';
+import 'package:vetgo/vet_dashboard_screen.dart';
+import 'package:vetgo/vet_route_screen.dart';
+import 'package:vetgo/vet_schedule_screen.dart';
+import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onLoggedOut});

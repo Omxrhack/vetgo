@@ -12,8 +12,8 @@ class VetDutyToggleCard extends StatelessWidget {
     required this.onChanged,
     this.offTitle = 'Fuera de turno',
     this.onTitle = 'Disponible para urgencias',
-    this.offSubtitle = 'No recibirùs alertas de emergencia.',
-    this.onSubtitle = 'Podrùs recibir asignaciones urgentes.',
+    this.offSubtitle = 'No recibir¬ùs alertas de emergencia.',
+    this.onSubtitle = 'Podr¬ùs recibir asignaciones urgentes.',
   });
 
   final bool available;
@@ -92,7 +92,7 @@ class VetDutyToggleCard extends StatelessWidget {
   }
 }
 
-/// Botùn primario con sustituciùn por indicador de carga.
+/// Bot¬ùn primario con sustituci¬ùn por indicador de carga.
 class VetAsyncPrimaryButton extends StatelessWidget {
   const VetAsyncPrimaryButton({
     super.key,
