@@ -61,6 +61,8 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Necesitamos tu ubicación para enviar la emergencia al equipo veterinario más cercano.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Permite elegir una foto para tu perfil en Vetgo.</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

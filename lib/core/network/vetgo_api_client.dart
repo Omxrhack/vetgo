@@ -211,6 +211,30 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/auth/upload-photo` — multipart campo `photo`; actualiza `profiles.avatar_url`.
+  Future<(Map<String, dynamic>? profile, String? error)> uploadProfilePhoto({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final formData = FormData.fromMap({
+        'photo': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      final r = await _api.post<Map<String, dynamic>>(
+        '/auth/upload-photo',
+        data: formData,
+        options: opts,
+      );
+      final data = r.data;
+      if (data == null) return (null, 'Respuesta vacía del servidor.');
+      return (data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/auth/me`
   Future<AuthSession?> fetchMe({required String accessToken}) async {
     try {

@@ -205,4 +205,7 @@ abstract final class AppStrings {
   static const scheduleCitaOkSinRef = 'Cita registrada.';
 
   static const scheduleCitaError = 'No se pudo registrar la cita.';
+
+  /// Foto de perfil (Storage Supabase + dashboard).
+  static const profilePhotoCambiarTooltip = 'Cambiar foto de perfil';
 }
