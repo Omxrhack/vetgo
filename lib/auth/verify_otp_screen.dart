@@ -7,7 +7,7 @@ import '../core/network/vetgo_api_client.dart';
 import 'widgets/auth_scenic_layer.dart';
 import 'widgets/auth_screen_shell.dart';
 
-/// Codigo de verificacion de 6 digitos (Supabase + backend).
+/// Código de verificación de 6 dígitos (Supabase + backend).
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({
     super.key,
@@ -59,13 +59,13 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       }
       setState(() {
         _error =
-            'Cuenta verificada pero sin sesion automatica. Inicia sesion con tu contrasena.';
+            'Cuenta verificada pero sin sesión automática. Inicia sesión con tu contraseña.';
       });
       return;
     }
 
     setState(() {
-      _error = outcome.message ?? 'Codigo incorrecto.';
+      _error = outcome.message ?? 'Código incorrecto.';
       _pinController.clear();
       _focusNode.requestFocus();
     });
@@ -153,7 +153,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   AuthBrandHeader(
                     title: 'Verifica tu correo',
                     subtitle: widget.hint ??
-                        'Ingresa el codigo de 6 digitos que enviamos a tu correo.',
+                        'Ingresa el código de 6 dígitos que enviamos a tu correo.',
                   ),
                   const SizedBox(height: 8),
                   SelectableText(
@@ -253,7 +253,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                 ),
                               )
                             : const Text(
-                                'Reenviar codigo',
+                                'Reenviar código',
                                 key: ValueKey('resend'),
                                 style: TextStyle(fontWeight: FontWeight.w600),
                               ),

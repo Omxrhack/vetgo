@@ -66,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             title: const Text('Correo ya registrado'),
             content: Text(
               outcome.message ??
-                  'Este correo ya esta verificado. Inicia sesion.',
+                  'Este correo ya está verificado. Inicia sesión.',
             ),
             actions: [
               TextButton(
@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Navigator.pop(ctx);
                   widget.onLogin();
                 },
-                child: const Text('Ir a iniciar sesion'),
+                child: const Text('Ir a iniciar sesión'),
               ),
             ],
           ),
@@ -182,8 +182,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.next,
                     decoration: authInputDecoration(
                       context,
-                      label: 'Contrasena',
-                      hintText: 'Minimo 8 caracteres',
+                      label: 'Contraseña',
+                      hintText: 'Mínimo 8 caracteres',
                       prefixIcon: Icon(
                         Icons.lock_outline_rounded,
                         size: 20,
@@ -210,7 +210,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.length < 8) {
-                        return 'La contrasena debe tener al menos 8 caracteres.';
+                        return 'La contraseña debe tener al menos 8 caracteres.';
                       }
                       return null;
                     },
@@ -223,7 +223,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onFieldSubmitted: (_) => _submit(),
                     decoration: authInputDecoration(
                       context,
-                      label: 'Confirmar contrasena',
+                      label: 'Confirmar contraseña',
+                      hintText: 'Repite tu contraseña',
                       prefixIcon: Icon(
                         Icons.verified_user_outlined,
                         size: 20,
@@ -250,7 +251,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (v) {
                       if (v != _passwordCtrl.text) {
-                        return 'Las contrasenas no coinciden.';
+                        return 'Las contraseñas no coinciden.';
                       }
                       return null;
                     },
@@ -291,9 +292,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             color: scheme.onSurface.withValues(alpha: 0.7),
                           ),
                           children: [
-                            const TextSpan(text: 'Ya tienes cuenta? '),
+                            const TextSpan(text: '¿Ya tienes cuenta? '),
                             TextSpan(
-                              text: 'Iniciar sesion',
+                              text: 'Iniciar sesión',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: scheme.primary,

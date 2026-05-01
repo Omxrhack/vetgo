@@ -123,14 +123,14 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             keyboardType: TextInputType.phone,
             decoration: authInputDecoration(
               context,
-              label: 'Telefono',
+              label: 'Tel?fono',
               hintText: '+521234567890',
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
               if (s.isEmpty) return 'Requerido';
               if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) {
-                return 'Telefono no valido';
+                return 'Tel?fono no v?lido';
               }
               return null;
             },
@@ -146,8 +146,8 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           ),
           const SizedBox(height: 24),
           const AuthSectionHeader(
-            eyebrow: 'DIRECCION',
-            title: 'Donde te encontramos',
+            eyebrow: 'DIRECCI?N',
+            title: 'D?nde te encontramos',
           ),
           const SizedBox(height: 14),
           TextFormField(
@@ -155,10 +155,10 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             maxLines: 2,
             decoration: authInputDecoration(
               context,
-              label: 'Direccion completa',
+              label: 'Direcci?n completa',
             ),
             validator: (v) =>
-                (v == null || v.trim().length < 5) ? 'Minimo 5 caracteres' : null,
+                (v == null || v.trim().length < 5) ? 'M?nimo 5 caracteres' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -171,7 +171,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           const SizedBox(height: 24),
           const AuthSectionHeader(
             eyebrow: 'MASCOTA',
-            title: 'Datos de tu companero',
+            title: 'Datos de tu compa?ero',
           ),
           const SizedBox(height: 14),
           TextFormField(
@@ -263,9 +263,9 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _vaccines,
-            decoration: authInputDecoration(context, label: 'Vacunas al dia'),
+            decoration: authInputDecoration(context, label: 'Vacunas al d?a'),
             items: const [
-              DropdownMenuItem(value: 'yes', child: Text('Si')),
+              DropdownMenuItem(value: 'yes', child: Text('S?')),
               DropdownMenuItem(value: 'no', child: Text('No')),
               DropdownMenuItem(value: 'unsure', child: Text('No estoy seguro')),
             ],
@@ -288,7 +288,7 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
             maxLines: 3,
             decoration: authInputDecoration(
               context,
-              label: 'Notas medicas (opcional)',
+              label: 'Notas médicas (opcional)',
             ),
           ),
         ],

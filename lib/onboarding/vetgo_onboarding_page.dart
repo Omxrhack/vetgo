@@ -23,7 +23,7 @@ class _VetgoOnboardingPageState extends State<VetgoOnboardingPage> {
   static const _pages = <_OnboardingSlide>[
     _OnboardingSlide(
       eyebrow: 'PASO 1 DE 3',
-      title: 'Tu mascota, siempre acompanada',
+      title: 'Tu mascota, siempre acompañada',
       body:
           'Encuentra veterinarios, emergencias y seguimiento del cuidado en un solo lugar.',
       asset: OnboardingAssets.page1,
@@ -32,14 +32,14 @@ class _VetgoOnboardingPageState extends State<VetgoOnboardingPage> {
       eyebrow: 'PASO 2 DE 3',
       title: 'Cuidado que se adapta a ti',
       body:
-          'Guarda historial, citas y recordatorios pensados para la salud de tu companero.',
+          'Guarda historial, citas y recordatorios pensados para la salud de tu compañero.',
       asset: OnboardingAssets.page2,
     ),
     _OnboardingSlide(
       eyebrow: 'PASO 3 DE 3',
       title: 'Empieza en segundos',
       body:
-          'Sin complicaciones: agenda, consulta y actua cuando mas importa.',
+          'Sin complicaciones: agenda, consulta y actúa cuando más importa.',
       asset: OnboardingAssets.page3,
     ),
   ];
@@ -380,9 +380,9 @@ class _FinalCtaBlock extends StatelessWidget {
                   color: scheme.onSurface.withValues(alpha: 0.7),
                 ),
                 children: [
-                  const TextSpan(text: 'Ya tienes cuenta? '),
+                  const TextSpan(text: '¿Ya tienes cuenta? '),
                   TextSpan(
-                    text: 'Iniciar sesion',
+                    text: 'Iniciar sesión',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: scheme.primary,

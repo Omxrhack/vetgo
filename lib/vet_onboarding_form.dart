@@ -113,14 +113,14 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             keyboardType: TextInputType.phone,
             decoration: authInputDecoration(
               context,
-              label: 'Telefono',
+              label: 'Teléfono',
               hintText: 'con lada',
             ),
             validator: (v) {
               final s = v?.trim() ?? '';
               if (s.isEmpty) return 'Requerido';
               if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(s)) {
-                return 'Telefono no valido';
+                return 'Teléfono no válido';
               }
               return null;
             },
@@ -137,7 +137,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
               final s = v?.trim() ?? '';
               if (s.isEmpty) return 'Requerido';
               final uri = Uri.tryParse(s);
-              if (uri == null || !uri.hasScheme) return 'URL no valida';
+              if (uri == null || !uri.hasScheme) return 'URL no válida';
               return null;
             },
           ),
@@ -146,7 +146,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             controller: _cedula,
             decoration: authInputDecoration(
               context,
-              label: 'Cedula profesional',
+              label: 'Cédula profesional',
             ),
             validator: (v) =>
                 (v == null || v.trim().length < 5) ? 'Requerido (min 5)' : null,
@@ -164,7 +164,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             initialValue: _experience,
             decoration: authInputDecoration(
               context,
-              label: 'Anos de experiencia',
+              label: 'Años de experiencia',
             ),
             items: const [
               DropdownMenuItem(value: '1-3', child: Text('1-3')),
@@ -176,7 +176,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
           const SizedBox(height: 24),
           const AuthSectionHeader(
             eyebrow: 'COBERTURA',
-            title: 'Como atiendes',
+            title: 'Cómo atiendes',
           ),
           const SizedBox(height: 14),
           TextFormField(
@@ -199,7 +199,7 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             child: SwitchListTile(
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              title: const Text('Tengo vehiculo propio'),
+              title: const Text('Tengo vehículo propio'),
               value: _hasVehicle,
               onChanged: (v) => setState(() => _hasVehicle = v),
             ),
@@ -214,8 +214,8 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
                 child: Text('Medicina general'),
               ),
               DropdownMenuItem(value: 'urgencias', child: Text('Urgencias')),
-              DropdownMenuItem(value: 'exoticos', child: Text('Exoticos')),
-              DropdownMenuItem(value: 'nutricion', child: Text('Nutricion')),
+              DropdownMenuItem(value: 'exoticos', child: Text('Exóticos')),
+              DropdownMenuItem(value: 'nutricion', child: Text('Nutrición')),
               DropdownMenuItem(
                 value: 'fisioterapia',
                 child: Text('Fisioterapia'),
@@ -271,11 +271,11 @@ class VetOnboardingFormState extends State<VetOnboardingForm> {
             decoration: authInputDecoration(
               context,
               label: 'CLABE',
-              hintText: '18 digitos',
+              hintText: '18 dígitos',
             ).copyWith(counterText: ''),
             validator: (v) {
               final s = v?.trim() ?? '';
-              if (s.length != 18) return 'Deben ser 18 digitos';
+              if (s.length != 18) return 'Deben ser 18 dígitos';
               return null;
             },
           ),
