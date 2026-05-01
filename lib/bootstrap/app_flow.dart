@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_flow.dart';
 import '../core/auth/auth_storage.dart';
+import '../core/auth/session_bootstrap.dart';
 import '../home/home_screen.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../onboarding/vetgo_onboarding_page.dart';
+import '../profile_onboarding/profile_onboarding_flow.dart';
 import '../splash/splash_screen.dart';
 
 /// Orquesta las etapas iniciales con transición animada entre pantallas.
@@ -15,13 +17,15 @@ class AppFlow extends StatefulWidget {
   State<AppFlow> createState() => _AppFlowState();
 }
 
-enum _AppStage { splash, onboarding, auth, home }
+enum _AppStage { splash, onboarding, auth, profileOnboarding, home }
 
 class _AppFlowState extends State<AppFlow> {
   static const Duration _minSplashTime = Duration(seconds: 3);
   static const Duration _extraSplashTime = Duration(seconds: 1);
 
   _AppStage _stage = _AppStage.splash;
+  bool _authStartAtOtp = false;
+  String? _authOtpEmail;
 
   @override
   void initState() {
@@ -42,36 +46,72 @@ class _AppFlowState extends State<AppFlow> {
   Future<void> _bootstrap() async {
     await _prepareApp();
     if (!mounted) return;
-    final onboardingDone = await OnboardingPrefs.isComplete();
-    final loggedIn = await AuthStorage.isLoggedIn();
+    final introDone = await OnboardingPrefs.isComplete();
+    if (!mounted) return;
+    if (!introDone) {
+      setState(() => _stage = _AppStage.onboarding);
+      return;
+    }
+    await _applySessionBootstrap();
+  }
+
+  Future<void> _applySessionBootstrap() async {
+    final dest = await SessionBootstrap.resolve();
+    if (!mounted) return;
+
+    String? otpEmail;
+    if (dest == SessionBootstrapResult.needsOtp) {
+      otpEmail = await AuthStorage.readEmail();
+      if (otpEmail == null || otpEmail.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _authStartAtOtp = false;
+          _authOtpEmail = null;
+          _stage = _AppStage.auth;
+        });
+        return;
+      }
+    }
+
     if (!mounted) return;
     setState(() {
-      if (!onboardingDone) {
-        _stage = _AppStage.onboarding;
-      } else if (!loggedIn) {
-        _stage = _AppStage.auth;
-      } else {
-        _stage = _AppStage.home;
+      switch (dest) {
+        case SessionBootstrapResult.unauthenticated:
+          _authStartAtOtp = false;
+          _authOtpEmail = null;
+          _stage = _AppStage.auth;
+        case SessionBootstrapResult.needsOtp:
+          _authStartAtOtp = true;
+          _authOtpEmail = otpEmail;
+          _stage = _AppStage.auth;
+        case SessionBootstrapResult.needsProfileOnboarding:
+          _authStartAtOtp = false;
+          _authOtpEmail = null;
+          _stage = _AppStage.profileOnboarding;
+        case SessionBootstrapResult.home:
+          _authStartAtOtp = false;
+          _authOtpEmail = null;
+          _stage = _AppStage.home;
       }
     });
   }
 
-  void _onAuthenticated() {
-    setState(() => _stage = _AppStage.home);
+  Future<void> _onSessionUpdated() async {
+    await _applySessionBootstrap();
   }
 
   void _onLoggedOut() {
-    setState(() => _stage = _AppStage.auth);
+    setState(() {
+      _authStartAtOtp = false;
+      _authOtpEmail = null;
+      _stage = _AppStage.auth;
+    });
   }
 
-  Future<void> _finishOnboarding() async {
+  Future<void> _finishIntroOnboarding() async {
     await OnboardingPrefs.markComplete();
     if (!mounted) return;
-    final loggedIn = await AuthStorage.isLoggedIn();
-    if (!mounted) return;
-    setState(() {
-      _stage = loggedIn ? _AppStage.home : _AppStage.auth;
-    });
+    await _applySessionBootstrap();
   }
 
   @override
@@ -109,12 +149,21 @@ class _AppFlowState extends State<AppFlow> {
       case _AppStage.onboarding:
         return KeyedSubtree(
           key: const ValueKey<String>('onboarding'),
-          child: VetgoOnboardingPage(onFinished: _finishOnboarding),
+          child: VetgoOnboardingPage(onFinished: _finishIntroOnboarding),
         );
       case _AppStage.auth:
         return KeyedSubtree(
-          key: const ValueKey<String>('auth'),
-          child: AuthFlow(onAuthenticated: _onAuthenticated),
+          key: ValueKey<String>('auth_${_authStartAtOtp}_${_authOtpEmail ?? ''}'),
+          child: AuthFlow(
+            onAuthenticated: _onSessionUpdated,
+            startAtOtp: _authStartAtOtp,
+            initialOtpEmail: _authOtpEmail,
+          ),
+        );
+      case _AppStage.profileOnboarding:
+        return KeyedSubtree(
+          key: const ValueKey<String>('profileOnboarding'),
+          child: ProfileOnboardingFlow(onFinished: _onSessionUpdated),
         );
       case _AppStage.home:
         return KeyedSubtree(

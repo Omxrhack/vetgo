@@ -6,9 +6,20 @@ import 'verify_otp_screen.dart';
 
 /// Orquesta login → registro → verificación OTP (mismo stack, sin `Navigator` anidado).
 class AuthFlow extends StatefulWidget {
-  const AuthFlow({super.key, required this.onAuthenticated});
+  const AuthFlow({
+    super.key,
+    required this.onAuthenticated,
+    this.startAtOtp = false,
+    this.initialOtpEmail,
+  });
 
   final VoidCallback onAuthenticated;
+
+  /// Si es true, abre directamente la pantalla OTP (p. ej. tras [SessionBootstrap]).
+  final bool startAtOtp;
+
+  /// Correo para OTP cuando [startAtOtp] es true.
+  final String? initialOtpEmail;
 
   @override
   State<AuthFlow> createState() => _AuthFlowState();
@@ -17,9 +28,23 @@ class AuthFlow extends StatefulWidget {
 enum _AuthView { login, register, otp }
 
 class _AuthFlowState extends State<AuthFlow> {
-  _AuthView _view = _AuthView.login;
+  late _AuthView _view;
   String _otpEmail = '';
   String? _otpHint;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.startAtOtp &&
+        widget.initialOtpEmail != null &&
+        widget.initialOtpEmail!.trim().isNotEmpty) {
+      _view = _AuthView.otp;
+      _otpEmail = widget.initialOtpEmail!.trim();
+      _otpHint = 'Verifica tu correo para continuar en Vetgo.';
+    } else {
+      _view = _AuthView.login;
+    }
+  }
 
   void _goRegister() => setState(() => _view = _AuthView.register);
 
