@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
@@ -8,9 +11,12 @@ import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/client/simple_osm_map.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// Flujo progresivo (varios pasos) para solicitar una visita; demo hasta conectar citas API.
+final LatLng _fallbackVisitMapCenter = LatLng(19.4326, -99.1332);
+
+/// Flujo para agendar visita: mascota, fecha/hora/ubicaciùn en mapa, confirmaciùn y API.
 class ScheduleVisitFlowScreen extends StatefulWidget {
   const ScheduleVisitFlowScreen({super.key, required this.pets});
 
@@ -23,11 +29,16 @@ class ScheduleVisitFlowScreen extends StatefulWidget {
 class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   final PageController _page = PageController();
   final VetgoApiClient _api = VetgoApiClient();
-  int _step = 0;
+  final TextEditingController _notes = TextEditingController();
 
+  int _step = 0;
   ClientPetVm? _pet;
-  DateTime? _suggestedDate;
+  DateTime? _visitDate;
+  TimeOfDay? _visitTime;
   String? _preferredVetName;
+
+  LatLng _visitLocation = _fallbackVisitMapCenter;
+  bool _triedLocation = false;
 
   @override
   void initState() {
@@ -46,13 +57,95 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   @override
   void dispose() {
     _page.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
+  void _ensureVisitDefaults() {
+    final base = DateTime.now().add(const Duration(days: 1));
+    _visitDate ??= DateTime(base.year, base.month, base.day);
+    _visitTime ??= const TimeOfDay(hour: 10, minute: 0);
+  }
+
+  DateTime _combinedLocalDateTime() {
+    _ensureVisitDefaults();
+    final d = _visitDate!;
+    final t = _visitTime!;
+    return DateTime(d.year, d.month, d.day, t.hour, t.minute);
+  }
+
+  bool _visitDateTimeIsFuture() {
+    return _combinedLocalDateTime().isAfter(DateTime.now());
+  }
+
+  Future<void> _tryLoadVisitLocation() async {
+    if (_triedLocation) return;
+    _triedLocation = true;
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled || !mounted) return;
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _visitLocation = LatLng(pos.latitude, pos.longitude);
+      });
+    } catch (_) {
+      // Mantiene centro por defecto.
+    }
+  }
+
+  Future<void> _pickDate() async {
+    _ensureVisitDefaults();
+    final now = DateTime.now();
+    final last = now.add(const Duration(days: 365));
+    final d = await showDatePicker(
+      context: context,
+      initialDate: _visitDate!,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: last,
+      locale: const Locale('es', 'MX'),
+    );
+    if (d != null) setState(() => _visitDate = DateTime(d.year, d.month, d.day));
+  }
+
+  Future<void> _pickTime() async {
+    _ensureVisitDefaults();
+    final t = await showTimePicker(
+      context: context,
+      initialTime: _visitTime!,
+    );
+    if (t != null) setState(() => _visitTime = t);
+  }
+
+  bool _canAdvanceFromPetStep() {
+    if (widget.pets.isEmpty) return false;
+    return _pet != null;
+  }
+
   void _next() {
-    if (_step < 2) {
-      setState(() => _step++);
+    if (_step == 1 && !_canAdvanceFromPetStep()) return;
+    if (_step == 2) {
+      _ensureVisitDefaults();
+      if (!_visitDateTimeIsFuture()) {
+        VetgoNotice.show(context, message: AppStrings.scheduleFechaPasada, isError: true);
+        return;
+      }
+    }
+    if (_step < 3) {
+      final nextStep = _step + 1;
+      setState(() => _step = nextStep);
       _page.nextPage(duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+      if (nextStep == 2) {
+        _ensureVisitDefaults();
+        _tryLoadVisitLocation();
+      }
     }
   }
 
@@ -63,13 +156,20 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     }
   }
 
+  String _formattedVisitSummary() {
+    final dt = _combinedLocalDateTime();
+    final datePart = DateFormat('EEEE d MMM y', 'es').format(dt);
+    final timePart = DateFormat.Hm('es').format(dt);
+    return '$datePart ù $timePart';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Paso ${_step + 1} de 3'),
+        title: Text(AppStrings.schedulePasoNDeM(_step + 1, 4)),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -80,11 +180,11 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
             child: Row(
-              children: List.generate(3, (i) {
+              children: List.generate(4, (i) {
                 final active = i <= _step;
                 return Expanded(
                   child: Padding(
-                    padding: EdgeInsets.only(right: i < 2 ? 8 : 0),
+                    padding: EdgeInsets.only(right: i < 3 ? 6 : 0),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 240),
                       height: 6,
@@ -105,6 +205,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               children: [
                 _stepIntro(context),
                 _stepPet(context),
+                _stepWhenWhere(context),
                 _stepConfirm(context),
               ],
             ),
@@ -117,17 +218,23 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                   if (_step > 0)
                     TextButton(
                       onPressed: _back,
-                      child: const Text('Atr\u00E1s'),
+                      child: Text(AppStrings.scheduleAtras),
                     ),
                   const Spacer(),
-                  if (_step < 2)
+                  if (_step < 3)
                     FilledButton(
-                      onPressed: _step == 1 && (_pet == null && widget.pets.isNotEmpty)
-                          ? null
-                          : _step == 1 && widget.pets.isEmpty
-                              ? null
-                              : _next,
-                      child: Text(_step == 0 ? 'Continuar' : 'Siguiente'),
+                      onPressed: _step == 0
+                          ? _next
+                          : _step == 1
+                              ? (_canAdvanceFromPetStep() ? _next : null)
+                              : _step == 2
+                                  ? _next
+                                  : null,
+                      child: Text(
+                        _step == 0
+                            ? AppStrings.scheduleContinuar
+                            : AppStrings.scheduleSiguiente,
+                      ),
                     ),
                 ],
               ),
@@ -149,7 +256,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Agendar visita a domicilio',
+              AppStrings.scheduleAgendarVisitaTitulo,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
@@ -169,7 +276,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No hay mascotas registradas. Vuelve cuando sincronicemos tus datos.',
+            AppStrings.scheduleSinMascotas,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
@@ -181,7 +288,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
       padding: const EdgeInsets.all(22),
       children: [
         Text(
-          '\u00BFQu\u00E9 mascota necesita la visita?',
+          AppStrings.schedulePasoMascotaTitulo,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 16),
@@ -226,9 +333,78 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     );
   }
 
+  Widget _stepWhenWhere(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final muted = ClientPastelColors.mutedOn(context);
+    _ensureVisitDefaults();
+
+    final timeDisplay = DateFormat.Hm('es').format(
+      DateTime(1970, 1, 1, _visitTime!.hour, _visitTime!.minute),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.all(22),
+      children: [
+        Text(
+          AppStrings.scheduleCuandoUbicacionTitulo,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          AppStrings.scheduleMapaHint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _pickDate,
+                icon: const Icon(Icons.calendar_month_rounded),
+                label: Text(DateFormat.yMMMd('es').format(_visitDate!)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _pickTime,
+                icon: const Icon(Icons.schedule_rounded),
+                label: Text(timeDisplay),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SimpleOsmMap(
+          center: _visitLocation,
+          height: 220,
+          zoom: 15,
+          markerColor: scheme.primary,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          AppStrings.mapaOsmAtribucion,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: muted),
+        ),
+        const SizedBox(height: 18),
+        TextField(
+          controller: _notes,
+          maxLines: 3,
+          maxLength: 500,
+          decoration: InputDecoration(
+            labelText: AppStrings.scheduleNotasOpcional,
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _stepConfirm(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    _suggestedDate ??= DateTime.now().add(const Duration(days: 3));
+    _ensureVisitDefaults();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(22),
@@ -238,27 +414,32 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Confirmaci\u00F3n',
+              AppStrings.scheduleConfirmacionTitulo,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Text(
-              'Mascota: ${_pet?.name ?? '\u2014'}',
+              '${AppStrings.scheduleResumenMascota} ${_pet?.name ?? '\u2014'}',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
-              'Fecha sugerida: ${_suggestedDate!.toIso8601String().split('T').first}',
-              style: Theme.of(context).textTheme.bodyMedium,
+              '${AppStrings.scheduleResumenCuando} ${_formattedVisitSummary()}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
+            if (_notes.text.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${AppStrings.scheduleResumenNotas} ${_notes.text.trim()}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ClientPastelColors.mutedOn(context)),
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
               _preferredVetName != null && _preferredVetName!.isNotEmpty
                   ? AppStrings.scheduleVetLinePref(_preferredVetName!)
                   : AppStrings.scheduleVetLineAuto,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: ClientPastelColors.mutedOn(context),
-                  ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ClientPastelColors.mutedOn(context)),
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -275,21 +456,36 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 120,
+                width: double.infinity,
+                child: SimpleOsmMap(
+                  center: _visitLocation,
+                  height: 120,
+                  zoom: 14,
+                  markerColor: scheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             AsyncEndpointButton(
-              label: 'Enviar solicitud',
+              label: AppStrings.scheduleEnviarSolicitud,
               icon: Icons.check_rounded,
-              loadingLabel: 'Enviando\u2026',
+              loadingLabel: AppStrings.scheduleEnviando,
               style: FilledButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary),
               onPressed: _pet == null
                   ? null
                   : () async {
-                      final d = _suggestedDate!;
-                      final at = DateTime(d.year, d.month, d.day, 10, 0);
+                      final at = _combinedLocalDateTime().toUtc();
                       final vetId = await PreferredVetPrefs.readId();
+                      final notes = _notes.text.trim();
                       final (data, err) = await _api.createAppointment(
                         petId: _pet!.id,
-                        scheduledAtIso: at.toUtc().toIso8601String(),
+                        scheduledAtIso: at.toIso8601String(),
                         vetId: vetId,
+                        notes: notes.isEmpty ? null : notes,
                       );
                       if (!context.mounted) return;
                       if (err != null) {

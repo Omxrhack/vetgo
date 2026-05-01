@@ -159,9 +159,51 @@ abstract final class AppStrings {
   static const scheduleSolicitudDemo = 'Solicitud registrada (demo).';
 
   static const scheduleIntroBody =
-      'En los siguientes pasos eleg\u00EDs la mascota y una fecha sugerida. '
-      'La solicitud se env\u00EDa al servidor; si elegiste un veterinario en '
-      'Servicios, la cita quedar\u00E1 asignada a esa persona cuando sea posible.';
+      'Eliges la mascota, fecha y hora de la visita y un mapa con la ubicaci\u00F3n '
+      'aproximada (tu GPS si lo permites). La solicitud se env\u00EDa al servidor; '
+      'si tienes veterinario preferido en Servicios, la cita puede asign\u00E1rsele cuando sea posible.';
+
+  static String schedulePasoNDeM(int n, int total) => 'Paso $n de $total';
+
+  static const scheduleAgendarVisitaTitulo = 'Agendar visita a domicilio';
+
+  static const scheduleAtras = 'Atr\u00E1s';
+
+  static const scheduleContinuar = 'Continuar';
+
+  static const scheduleSiguiente = 'Siguiente';
+
+  static const scheduleSinMascotas =
+      'No hay mascotas registradas. Vuelve cuando sincronicemos tus datos.';
+
+  static const schedulePasoMascotaTitulo =
+      '\u00BFQu\u00E9 mascota necesita la visita?';
+
+  static const scheduleCuandoUbicacionTitulo = 'Fecha, hora y ubicaci\u00F3n';
+
+  static const scheduleMapaHint =
+      'El marcador muestra tu ubicaci\u00F3n aproximada si activas el GPS; '
+      'si no, usamos una zona de referencia.';
+
+  static const scheduleNotasOpcional = 'Notas para el veterinario (opcional)';
+
+  static const scheduleConfirmacionTitulo = 'Confirmaci\u00F3n';
+
+  static const scheduleResumenMascota = 'Mascota:';
+
+  static const scheduleResumenCuando = 'Cu\u00E1ndo:';
+
+  static const scheduleResumenNotas = 'Notas:';
+
+  static const scheduleEnviarSolicitud = 'Enviar solicitud';
+
+  static const scheduleEnviando = 'Enviando\u2026';
+
+  static const scheduleFechaPasada =
+      'Elige una fecha y hora posteriores a ahora.';
+
+  static const mapaOsmAtribucion =
+      '\u00A9 OpenStreetMap contributors';
 
   // --- Login / auth (visible errors) ---
   static const loginSinToken =

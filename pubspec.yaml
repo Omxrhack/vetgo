@@ -21,6 +21,8 @@ dependencies:
   pinput: ^6.0.2
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.12.4
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
