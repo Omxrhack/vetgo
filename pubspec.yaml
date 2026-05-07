@@ -44,6 +44,6 @@ flutter:
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
   assets:
-    - assets/config/environment.env
+    - .env
     - assets/lottie/davsan.json
     - assets/onboarding/

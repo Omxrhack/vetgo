@@ -8,7 +8,7 @@ import 'package:vetgo/theme/vetgo_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: 'assets/config/environment.env');
+  await dotenv.load(fileName: '.env');
   await VetgoSupabase.initializeIfConfigured();
   await initializeDateFormatting('es');
   runApp(const VetgoApp());
