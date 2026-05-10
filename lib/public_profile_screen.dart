@@ -157,7 +157,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       headerSliverBuilder: (ctx, _) => [
         // ── Banner SliverAppBar ──────────────────────────────────────────
         SliverAppBar(
-          expandedHeight: 148,
+          expandedHeight: 145,
           pinned: true,
           backgroundColor: scheme.surfaceContainerLowest,
           surfaceTintColor: Colors.transparent,
@@ -198,14 +198,24 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           // Title only visible when collapsed
           title: _CollapsedTitle(fullName: p.fullName, theme: theme),
           flexibleSpace: FlexibleSpaceBar(
-            collapseMode: CollapseMode.pin,
             background: _BannerBackground(avatarUrl: p.avatarUrl),
           ),
         ),
 
-        // ── Header content (avatar superpuesto + info) ──────────────────
+        // ── Header content (card flota sobre el banner) ─────────────────
         SliverToBoxAdapter(
-          child: Padding(
+          child: Container(
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLowest,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,7 +225,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Transform.translate(
-                      offset: const Offset(0, -28),
+                      offset: const Offset(0, -44),
                       child: _ProfileAvatar(
                         avatarUrl: p.avatarUrl,
                         isVet: p.isVet,
@@ -241,7 +251,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
 
                 // Name + verification badge
                 Transform.translate(
-                  offset: const Offset(0, -20),
+                  offset: const Offset(0, -32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
