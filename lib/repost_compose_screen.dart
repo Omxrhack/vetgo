@@ -6,6 +6,7 @@ import 'package:markdown_quill/markdown_quill.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
 /// Quote-repost estilo Twitter/X: comentario Quill arriba, tarjeta citada, «Republicar» en píldora.
@@ -195,7 +196,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                               expands: true,
                               padding: EdgeInsets.zero,
                               placeholder: 'Añade un comentario (opcional)',
-                              customStyles: DefaultStyles.getInstance(context),
+                              customStyles: vetgoSocialQuillStyles(context),
                             ),
                           ),
                         ),

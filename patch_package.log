@@ -1741,3 +1741,21 @@
 [2026-05-09T22:49:33.521420] Patch created at patches/flutter_quill.patch
 [2026-05-09T22:49:33.521560] Cleaning up temporary directory...
 [2026-05-09T22:49:33.565409] Patch finalization for flutter_quill completed.
+[2026-05-09T22:49:53.842072] Starting patch_package with arguments: apply
+[2026-05-09T22:49:53.845459] Command: apply
+[2026-05-09T22:49:53.848143] PUB_CACHE environment variable is not set.
+[2026-05-09T22:49:53.848505] HOME environment variable is set to: /Users/omarbermejo
+[2026-05-09T22:49:53.851655] Found .pub-cache directory at /Users/omarbermejo/.pub-cache (Linux/MacOS default location).
+[2026-05-09T22:49:53.855879] Package  not found in any hosted source directory.
+[2026-05-09T22:49:53.856103] Applying all patches
+[2026-05-09T22:49:53.856809] Starting to apply patches...
+[2026-05-09T22:49:53.856922] Patches directory found. Scanning for patch files...
+[2026-05-09T22:49:53.864896] Found patch file for flutter_quill. Attempting to find package path...
+[2026-05-09T22:49:53.865184] PUB_CACHE environment variable is not set.
+[2026-05-09T22:49:53.865337] HOME environment variable is set to: /Users/omarbermejo
+[2026-05-09T22:49:53.865466] Found .pub-cache directory at /Users/omarbermejo/.pub-cache (Linux/MacOS default location).
+[2026-05-09T22:49:53.866688] Found package directory: /Users/omarbermejo/.pub-cache/hosted/pub.dev/flutter_quill-11.5.0
+[2026-05-09T22:49:53.866851] Applying patch for flutter_quill located at patches/flutter_quill.patch to /Users/omarbermejo/.pub-cache/hosted/pub.dev/flutter_quill-11.5.0
+[2026-05-09T22:49:53.887646] Failed to apply patch for flutter_quill. Error: patch: **** patch file 'patches/flutter_quill.patch' not found: No such file or directory
+
+[2026-05-09T22:49:53.888378] Finished applying patches.

@@ -5,6 +5,7 @@ import 'package:markdown_quill/markdown_quill.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
 /// Composer estilo Twitter/X: cerrar, «Publicar», avatar + Quill (negrita/listas) + envío en Markdown.
@@ -181,7 +182,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         expands: true,
                         padding: EdgeInsets.zero,
                         placeholder: 'Escribe tu publicación',
-                        customStyles: DefaultStyles.getInstance(context),
+                        customStyles: vetgoSocialQuillStyles(context),
                       ),
                     ),
                   ),
