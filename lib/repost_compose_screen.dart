@@ -284,65 +284,62 @@ class _QuotedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final outline = scheme.outlineVariant.withValues(alpha: 0.7);
     Widget card = DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+        border: Border(
+          left: BorderSide(color: accent, width: 4),
+          top: BorderSide(color: outline),
+          right: BorderSide(color: outline),
+          bottom: BorderSide(color: outline),
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(11),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          shrinkWrap: true,
+          primary: false,
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
           children: [
-            Container(width: 4, color: accent),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 10,
-                          backgroundColor: scheme.primaryContainer,
-                          backgroundImage: original.author.avatarUrl != null &&
-                                  original.author.avatarUrl!.isNotEmpty
-                              ? NetworkImage(original.author.avatarUrl!)
-                              : null,
-                          child: original.author.avatarUrl == null ||
-                                  original.author.avatarUrl!.isEmpty
-                              ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            original.author.fullName,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    MarkdownBody(
-                      data: original.body,
-                      shrinkWrap: true,
-                      styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                        p: theme.textTheme.bodyMedium?.copyWith(
-                          height: 1.4,
-                          color: scheme.onSurface.withValues(alpha: 0.92),
-                        ),
-                        blockSpacing: 8,
-                      ),
-                    ),
-                  ],
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 10,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: original.author.avatarUrl != null &&
+                          original.author.avatarUrl!.isNotEmpty
+                      ? NetworkImage(original.author.avatarUrl!)
+                      : null,
+                  child: original.author.avatarUrl == null ||
+                          original.author.avatarUrl!.isEmpty
+                      ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
+                      : null,
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    original.author.fullName,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            MarkdownBody(
+              data: original.body,
+              shrinkWrap: true,
+              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                p: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.4,
+                  color: scheme.onSurface.withValues(alpha: 0.92),
+                ),
+                blockSpacing: 8,
               ),
             ),
           ],
