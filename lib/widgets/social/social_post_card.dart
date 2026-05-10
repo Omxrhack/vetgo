@@ -4,6 +4,7 @@ import 'package:heroine/heroine.dart';
 
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
+import 'package:vetgo/widgets/social/vetgo_social_network_image.dart';
 
 /// Avatar del autor (alineado con compositor / _ComposeBox).
 const double _kAuthorAvatarRadius = 22;
@@ -384,12 +385,14 @@ class SocialPostCard extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: _SocialTrailingAction(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    activeIcon: Icons.chat_bubble_outline_rounded,
+                    icon: Icons.favorite_border_rounded,
+                    activeIcon: Icons.favorite_rounded,
                     theme: theme,
                     scheme: scheme,
-                    count: displayPost.commentCount,
-                    onPressed: onCommentTap ?? () {},
+                    count: displayPost.likeCount,
+                    activeAsBrand: displayPost.viewerHasLiked,
+                    brandGreen: brandGreen,
+                    onPressed: onLikeTap ?? () {},
                   ),
                 ),
               ),
@@ -414,14 +417,12 @@ class SocialPostCard extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: _SocialTrailingAction(
-                    icon: Icons.favorite_border_rounded,
-                    activeIcon: Icons.favorite_rounded,
+                    icon: Icons.chat_bubble_outline_rounded,
+                    activeIcon: Icons.chat_bubble_outline_rounded,
                     theme: theme,
                     scheme: scheme,
-                    count: displayPost.likeCount,
-                    activeAsBrand: displayPost.viewerHasLiked,
-                    brandGreen: brandGreen,
-                    onPressed: onLikeTap ?? () {},
+                    count: displayPost.commentCount,
+                    onPressed: onCommentTap ?? () {},
                   ),
                 ),
               ),
@@ -873,39 +874,12 @@ class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
                   itemCount: urls.length,
                   onPageChanged: (i) => setState(() => _page = i),
                   itemBuilder: (context, index) {
-                    return Image.network(
-                      urls[index],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return ColoredBox(
-                          color: scheme.surfaceContainerHighest.withValues(
-                            alpha: 0.35,
-                          ),
-                          child: Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: scheme.primary.withValues(alpha: 0.65),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return ColoredBox(
-                          color: scheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            color: scheme.outline,
-                            size: 40,
-                          ),
-                        );
-                      },
+                    return SizedBox.expand(
+                      child: VetgoSocialNetworkImage(
+                        url: urls[index],
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      ),
                     );
                   },
                 ),

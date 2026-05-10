@@ -12,6 +12,7 @@ import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
 import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
+import 'package:vetgo/widgets/social/vetgo_social_network_image.dart';
 
 /// Composer estilo Twitter/X: cerrar, «Publicar», avatar + Quill (negrita/listas) + envío en Markdown.
 class CreatePostScreen extends StatefulWidget {
@@ -290,15 +291,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(_mediaPreviewRadius),
-                                      child: Image.network(
-                                        url,
+                                      child: VetgoSocialNetworkImage(
+                                        url: url,
                                         width: 88,
                                         height: 88,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => ColoredBox(
-                                          color: scheme.surfaceContainerHighest,
-                                          child: Icon(Icons.broken_image_outlined, color: scheme.outline),
-                                        ),
                                       ),
                                     ),
                                     Positioned(

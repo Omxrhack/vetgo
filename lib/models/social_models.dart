@@ -1,3 +1,34 @@
+import 'dart:convert';
+
+/// URLs de adjuntos del post (robusto ante `text[]`, JSON string o tipos sueltos desde la API).
+List<String> parsePostImageUrls(dynamic value) {
+  if (value == null) return [];
+  Iterable<dynamic>? items;
+  if (value is List) {
+    items = value;
+  } else if (value is String) {
+    final s = value.trim();
+    if (s.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(s);
+      if (decoded is List<dynamic>) items = decoded;
+    } catch (_) {
+      return [];
+    }
+  }
+  if (items == null) return [];
+
+  final out = <String>[];
+  for (final e in items) {
+    final raw = e?.toString().trim() ?? '';
+    if (raw.isEmpty) continue;
+    final uri = Uri.tryParse(raw);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) continue;
+    out.add(uri.toString());
+  }
+  return out;
+}
+
 class VetStatsVm {
   const VetStatsVm({
     this.specialty,
@@ -127,7 +158,7 @@ class PostVm {
   factory PostVm.fromJson(Map<String, dynamic> j) => PostVm(
         id: j['id'] as String,
         body: j['body'] as String? ?? '',
-        imageUrls: (j['image_urls'] as List<dynamic>?)?.cast<String>() ?? [],
+        imageUrls: parsePostImageUrls(j['image_urls']),
         createdAt: DateTime.tryParse(j['created_at'] as String? ?? '')?.toLocal() ?? DateTime.now(),
         author: PostAuthorVm.fromJson(
           j['author'] is Map<String, dynamic>

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:heroine/heroine.dart';
 import 'package:intl/intl.dart';
 
@@ -427,6 +428,15 @@ class _SocialScreenState extends State<SocialScreen> {
                 ),
               ),
               centerTitle: false,
+              actions: [
+                IconButton(
+                  tooltip: 'Buscar',
+                  icon: const FaIcon(FontAwesomeIcons.magnifyingGlass, size: 18),
+                  color: scheme.onSurfaceVariant,
+                  onPressed: () {},
+                ),
+                const SizedBox(width: 4),
+              ],
             ),
 
             // ── Compose strip (bloque redondeado; sin doble divisor duro) ──

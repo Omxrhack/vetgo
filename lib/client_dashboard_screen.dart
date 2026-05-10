@@ -174,11 +174,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             ),
             actions: [
               IconButton(
-                icon: const FaIcon(FontAwesomeIcons.magnifyingGlass, size: 18),
-                color: scheme.onSurfaceVariant,
-                onPressed: () {},
-              ),
-              IconButton(
                 icon: const FaIcon(FontAwesomeIcons.bell, size: 18),
                 color: scheme.onSurfaceVariant,
                 onPressed: () {},
