@@ -793,8 +793,7 @@ class _AssignedVetCard extends StatelessWidget {
       onTap: () => Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => VetProfileScreen(
-            vet: vet,
-            appointments: appointments,
+            vetId: vet['id']?.toString() ?? '',
             onBookTap: onBookTap,
           ),
         ),

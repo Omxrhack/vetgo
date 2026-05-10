@@ -33,7 +33,14 @@ class _AppFlowState extends State<AppFlow> {
   @override
   void initState() {
     super.initState();
+    VetgoApiClient.onForceLogout = _onLoggedOut;
     _bootstrap();
+  }
+
+  @override
+  void dispose() {
+    VetgoApiClient.onForceLogout = null;
+    super.dispose();
   }
 
   Future<void> _prepareApp() async {

@@ -7,31 +7,40 @@ import 'auth_outcomes.dart';
 
 typedef VetJsonResult = (Map<String, dynamic>? data, String? error);
 
+/// Se invoca cuando el refresh falla y la sesión queda inválida.
+/// El app_flow debe registrar este callback para forzar la pantalla de login.
+typedef ForceLogoutCallback = void Function();
+
 /// Cliente HTTP para el backend Vetgo.
 ///
 /// Rutas bajo `/api` ([petixfy-backend/src/index.js]). El endpoint `/health` está fuera de `/api`.
 class VetgoApiClient {
-  VetgoApiClient()
-      : _root = Dio(
-          BaseOptions(
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
-          ),
-        ),
-        _api = Dio(
-          BaseOptions(
-            baseUrl: '${AppConfig.apiBaseUrl}/api',
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
-            headers: {
-              Headers.contentTypeHeader: Headers.jsonContentType,
-              Headers.acceptHeader: Headers.jsonContentType,
-            },
-          ),
-        );
+  VetgoApiClient() {
+    _root = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+      ),
+    );
+    _api = Dio(
+      BaseOptions(
+        baseUrl: '${AppConfig.apiBaseUrl}/api',
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {
+          Headers.contentTypeHeader: Headers.jsonContentType,
+          Headers.acceptHeader: Headers.jsonContentType,
+        },
+      ),
+    );
+    _api.interceptors.add(_TokenRefreshInterceptor(_api));
+  }
 
-  final Dio _root;
-  final Dio _api;
+  /// Registrar un callback para cuando el refresh falle (sesión expirada sin recuperación).
+  static ForceLogoutCallback? onForceLogout;
+
+  late final Dio _root;
+  late final Dio _api;
 
   /// Dio para llamadas a `/api/*`.
   Dio get api => _api;
@@ -762,6 +771,158 @@ class VetgoApiClient {
       return (error: err, alreadyVerified: verified);
     }
   }
+
+  // ─── Social ────────────────────────────────────────────────────────────────
+
+  /// `GET /api/profiles/:id` — perfil público (auth opcional para is_following).
+  Future<VetJsonResult> getPublicProfile(String profileId) async {
+    final token = await AuthStorage.readAccessToken();
+    final headers = <String, dynamic>{};
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/profiles/$profileId',
+        options: Options(headers: headers),
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/profiles/me`
+  Future<VetJsonResult> updateMyProfile({
+    String? bio,
+    String? location,
+    int? yearsExperience,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    final body = <String, dynamic>{};
+    if (bio != null) body['bio'] = bio;
+    if (location != null) body['location'] = location;
+    if (yearsExperience != null) body['years_experience'] = yearsExperience;
+    try {
+      final r = await _api.patch<Map<String, dynamic>>('/profiles/me', data: body, options: opts);
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/follows`
+  Future<VetJsonResult> followUser(String followingId) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/follows',
+        data: <String, dynamic>{'following_id': followingId},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `DELETE /api/follows/:id`
+  Future<VetJsonResult> unfollowUser(String followingId) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.delete<Map<String, dynamic>>('/follows/$followingId', options: opts);
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/posts` — feed paginado.
+  Future<VetJsonResult> getSocialFeed({int page = 1, int limit = 20}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/posts',
+        queryParameters: <String, dynamic>{'page': page, 'limit': limit},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/posts`
+  Future<VetJsonResult> createPost({
+    required String body,
+    List<String> imageUrls = const [],
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts',
+        data: <String, dynamic>{'body': body, 'image_urls': imageUrls},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/profiles/:id/posts`
+  Future<VetJsonResult> getUserPosts(String profileId, {int page = 1}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/profiles/$profileId/posts',
+        queryParameters: <String, dynamic>{'page': page},
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/reviews`
+  Future<VetJsonResult> createReview({
+    required String revieweeId,
+    required String appointmentId,
+    required int rating,
+    String? comment,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    final body = <String, dynamic>{
+      'reviewee_id': revieweeId,
+      'appointment_id': appointmentId,
+      'rating': rating,
+    };
+    if (comment != null) body['comment'] = comment;
+    try {
+      final r = await _api.post<Map<String, dynamic>>('/reviews', data: body, options: opts);
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/profiles/:id/reviews`
+  Future<VetJsonResult> getProfileReviews(String profileId, {int page = 1}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/profiles/$profileId/reviews',
+        queryParameters: <String, dynamic>{'page': page},
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
 }
 
 class HealthCheckResult {
@@ -769,4 +930,82 @@ class HealthCheckResult {
 
   final bool ok;
   final String message;
+}
+
+/// Interceptor que refresca el access token automáticamente al recibir 401.
+/// Usa un Dio auxiliar (sin este interceptor) para llamar a /auth/refresh
+/// y evitar recursión infinita.
+class _TokenRefreshInterceptor extends Interceptor {
+  _TokenRefreshInterceptor(this._api);
+
+  final Dio _api;
+  bool _refreshing = false;
+
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    final status = err.response?.statusCode;
+    final alreadyRetried = err.requestOptions.extra['_retried'] == true;
+
+    if (status == 401 && !alreadyRetried && !_refreshing) {
+      _refreshing = true;
+      try {
+        final refreshToken = await AuthStorage.readRefreshToken();
+        if (refreshToken == null || refreshToken.isEmpty) {
+          await _forceLogout();
+          return handler.next(err);
+        }
+
+        // Llamada de refresh con Dio limpio para no entrar en el interceptor de nuevo.
+        final refreshDio = Dio(
+          BaseOptions(
+            baseUrl: _api.options.baseUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 15),
+            headers: {
+              Headers.contentTypeHeader: Headers.jsonContentType,
+            },
+          ),
+        );
+
+        final r = await refreshDio.post<Map<String, dynamic>>(
+          '/auth/refresh',
+          data: <String, dynamic>{'refresh_token': refreshToken},
+        );
+
+        final data = r.data;
+        if (data == null) {
+          await _forceLogout();
+          return handler.next(err);
+        }
+
+        final newSession = AuthSession.fromJson(data);
+        if (!newSession.hasAccessToken) {
+          await _forceLogout();
+          return handler.next(err);
+        }
+
+        await AuthStorage.saveSession(newSession);
+
+        // Reintentar la request original con el nuevo token.
+        final opts = err.requestOptions;
+        opts.headers['Authorization'] = 'Bearer ${newSession.accessToken}';
+        opts.extra['_retried'] = true;
+
+        final retryResp = await _api.fetch<dynamic>(opts);
+        return handler.resolve(retryResp);
+      } on DioException {
+        await _forceLogout();
+        return handler.next(err);
+      } finally {
+        _refreshing = false;
+      }
+    }
+
+    return handler.next(err);
+  }
+
+  Future<void> _forceLogout() async {
+    await AuthStorage.clear();
+    VetgoApiClient.onForceLogout?.call();
+  }
 }
