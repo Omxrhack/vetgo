@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Tarjeta con borde muy redondeado y sombra suave.
-class VetSoftCard extends StatelessWidget {
+class VetSoftCard extends StatefulWidget {
   const VetSoftCard({
     super.key,
     required this.child,
@@ -18,12 +18,21 @@ class VetSoftCard extends StatelessWidget {
   static const BorderRadius radius = BorderRadius.all(Radius.circular(24));
 
   @override
+  State<VetSoftCard> createState() => _VetSoftCardState();
+}
+
+class _VetSoftCardState extends State<VetSoftCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = color ?? scheme.surface;
+    final bg = widget.color ?? scheme.surface;
+    final shadowAlpha = _pressed ? 0.035 : 0.06;
+    final shadowOffsetY = _pressed ? 4.0 : 10.0;
 
     final decorated = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 160),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
         color: bg,
@@ -31,20 +40,35 @@ class VetSoftCard extends StatelessWidget {
         border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.06),
+            color: scheme.shadow.withValues(alpha: shadowAlpha),
             blurRadius: 22,
-            offset: const Offset(0, 10),
+            offset: Offset(0, shadowOffsetY),
           ),
         ],
       ),
-      child: Padding(padding: padding, child: child),
+      child: Padding(padding: widget.padding, child: widget.child),
     );
 
-    if (onTap == null) return decorated;
+    final scaled = AnimatedScale(
+      scale: _pressed ? 0.988 : 1,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOutCubic,
+      child: decorated,
+    );
+
+    if (widget.onTap == null) return scaled;
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(onTap: onTap, borderRadius: radius, child: decorated),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: VetSoftCard.radius,
+        onHighlightChanged: (active) {
+          if (_pressed == active) return;
+          setState(() => _pressed = active);
+        },
+        child: scaled,
+      ),
     );
   }
 }

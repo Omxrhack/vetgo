@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:vetgo/client_dashboard_screen.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
@@ -109,26 +110,49 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () => setState(() => _tab = index),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  selected ? iconFilled : iconOutlined,
-                  size: 26,
-                  color: color,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: color,
-                    letterSpacing: 0.2,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.08 : 1,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(
+                      selected ? iconFilled : iconOutlined,
+                      size: 26,
+                      color: color,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: color,
+                      letterSpacing: 0.2,
+                    ),
+                    child: Text(label),
+                  ),
+                  const SizedBox(height: 3),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    width: selected ? 18 : 6,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: selected ? scheme.primary : Colors.transparent,
+                      borderRadius: const BorderRadius.all(Radius.circular(20)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -155,13 +179,20 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
         ],
       ),
       floatingActionButton: FloatingActionButton.large(
-        onPressed: _openSos,
-        backgroundColor: scheme.errorContainer,
-        foregroundColor: scheme.onErrorContainer,
-        elevation: 6,
-        highlightElevation: 10,
-        child: const Icon(Icons.sos_rounded, size: 36),
-      ),
+            onPressed: _openSos,
+            backgroundColor: scheme.errorContainer,
+            foregroundColor: scheme.onErrorContainer,
+            elevation: 6,
+            highlightElevation: 10,
+            child: const Icon(Icons.sos_rounded, size: 36),
+          )
+          .animate(onPlay: (controller) => controller.repeat(reverse: true))
+          .scaleXY(
+            begin: 1,
+            end: 1.03,
+            duration: 1800.ms,
+            curve: Curves.easeInOutSine,
+          ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         padding: EdgeInsets.zero,

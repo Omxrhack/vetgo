@@ -245,37 +245,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                             },
                       child: const Text(AppStrings.verExpediente),
                     ),
-                    child: SizedBox(
-                      height: 160,
-                      child: widget.petsLoading && widget.pets.isEmpty
-                          ? const Center(child: CircularProgressIndicator())
-                          : widget.pets.isEmpty
-                              ? Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    AppStrings.carouselSinMascotas,
-                                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: widget.pets.length,
-                                  separatorBuilder: (_, _) => const SizedBox(width: 12),
-                                  itemBuilder: (context, i) {
-                                    final p = widget.pets[i];
-                                    return _PetCarouselTile(
-                                      pet: p,
-                                      onTap: () {
-                                        Navigator.of(context).push<void>(
-                                          MaterialPageRoute<void>(
-                                            builder: (_) => PetProfileScreen(pet: p),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                    ),
+                    child: _buildPetsSection(theme, muted),
                   )
                       .animate()
                       .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
@@ -340,83 +310,202 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         ),
       );
     } else {
-      final first = upcoming.first;
-      final dt = DateTime.tryParse(first['scheduled_at']?.toString() ?? '')?.toLocal();
-      if (dt != null) {
-        final pretty =
-            '${DateFormat('d MMM', 'es').format(dt)} a las ${DateFormat.Hm('es').format(dt)}';
-        reminders.add(
-          _HealthReminderModel(
-            icon: Icons.health_and_safety_outlined,
-            text: AppStrings.clienteRecordatorioConCita(pretty),
+      return _animatedSectionState(
+        stateKey: 'health_${reminders.length}_${widget.pets.length}_${upcoming.length}',
+        child: ClientSoftCard(
+          color: theme.colorScheme.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < reminders.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                _HealthReminderTile(reminder: reminders[i], muted: muted),
+              ],
+            ],
           ),
-        );
-      }
+        ),
     }
 
     if (reminders.isEmpty) {
       reminders.add(
+      final String stateKey;
+      final Widget content;
+
         _HealthReminderModel(
-          icon: Icons.check_circle_outline_rounded,
+        stateKey = 'activity_loading';
+        content = const SizedBox(
           text: AppStrings.recordatoriosCuerpo,
         ),
       );
-    }
+      } else {
+        final recent = _recentAppointments();
+        if (recent.isEmpty) {
+          stateKey = 'activity_empty';
+          content = ClientSoftCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Text(
+              AppStrings.clienteActividadVacia,
+              style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+            ),
+          );
+        } else {
+          stateKey = 'activity_list_${recent.length}';
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < recent.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                _RecentActivityTile(row: recent[i], muted: muted),
+              ],
+            ],
+          );
+        }
+      }
 
-    return ClientSoftCard(
-      color: theme.colorScheme.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < reminders.length; i++) ...[
-            if (i > 0) const SizedBox(height: 10),
-            _HealthReminderTile(reminder: reminders[i], muted: muted),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentActivitySection(ThemeData theme, Color muted) {
-    if (_apptLoading && _appointmentsRaw.isEmpty) {
-      return const SizedBox(
-        height: 96,
-        child: Center(child: CircularProgressIndicator()),
+      return _animatedSectionState(
+        stateKey: stateKey,
+        child: content,
       );
     }
 
-    final recent = _recentAppointments();
-    if (recent.isEmpty) {
-      return ClientSoftCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Text(
-          AppStrings.clienteActividadVacia,
-          style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+    Widget _buildClientAppointmentsSection(ThemeData theme, Color muted) {
+      final String stateKey;
+      final Widget content;
+
+      if (_apptLoading && _appointmentsRaw.isEmpty) {
+        stateKey = 'appointments_loading';
+        content = const SizedBox(
+          height: 120,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      } else if (_apptError != null) {
+        stateKey = 'appointments_error';
+        content = ClientSoftCard(
+          color: theme.colorScheme.errorContainer.withValues(alpha: 0.28),
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_month_rounded, color: theme.colorScheme.error, size: 26),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  AppStrings.clienteCitasErrorCarga,
+                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final upcoming = _upcomingAppointments();
+        if (upcoming.isEmpty) {
+          stateKey = 'appointments_empty';
+          content = ClientSoftCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Text(
+              AppStrings.clienteSinCitasProgramadas,
+              style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+            ),
+          );
+        } else {
+          stateKey = 'appointments_list_${upcoming.length}';
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < upcoming.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                _ClientAppointmentSummaryTile(
+                  row: upcoming[i],
+                  muted: muted,
+                ),
+              ],
+            ],
+          );
+        }
+      }
+
+      return _animatedSectionState(
+        stateKey: stateKey,
+        child: content,
+      );
+    }
+
+    Widget _buildPetsSection(ThemeData theme, Color muted) {
+      final String stateKey;
+      final Widget content;
+
+      if (widget.petsLoading && widget.pets.isEmpty) {
+        stateKey = 'pets_loading';
+        content = const SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      } else if (widget.pets.isEmpty) {
+        stateKey = 'pets_empty';
+        content = SizedBox(
+          height: 160,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppStrings.carouselSinMascotas,
+              style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+            ),
+          ),
+        );
+      } else {
+        stateKey = 'pets_list_${widget.pets.length}';
+        content = SizedBox(
+          height: 160,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.pets.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final p = widget.pets[i];
+              return _PetCarouselTile(
+                pet: p,
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PetProfileScreen(pet: p),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      }
+
+      return _animatedSectionState(
+        stateKey: stateKey,
+        child: content,
+      );
+    }
+
+    Widget _animatedSectionState({required String stateKey, required Widget child}) {
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 240),
+        reverseDuration: const Duration(milliseconds: 180),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              axisAlignment: -1,
+              child: child,
+            ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<String>(stateKey),
+          child: child,
         ),
       );
     }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < recent.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          _RecentActivityTile(row: recent[i], muted: muted),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildClientAppointmentsSection(ThemeData theme, Color muted) {
-    if (_apptLoading && _appointmentsRaw.isEmpty) {
-      return const SizedBox(
-        height: 120,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (_apptError != null) {
-      return ClientSoftCard(
         color: theme.colorScheme.errorContainer.withValues(alpha: 0.28),
         padding: const EdgeInsets.all(14),
         child: Row(
