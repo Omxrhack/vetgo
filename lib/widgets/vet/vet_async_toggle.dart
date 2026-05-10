@@ -84,7 +84,7 @@ class VetDutyToggleCard extends StatelessWidget {
                       scale: 1.15,
                       child: Switch.adaptive(
                         value: available,
-                        activeColor: scheme.primary,
+                        activeThumbColor: scheme.primary,
                         activeTrackColor: scheme.primaryContainer,
                         onChanged: busy ? null : onChanged,
                       ),

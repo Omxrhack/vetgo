@@ -915,7 +915,7 @@ class _PetCarouselTile extends StatelessWidget {
                     ? Image.network(
                         pet.photoUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _petPlaceholder(scheme),
+                        errorBuilder: (_, _, _) => _petPlaceholder(scheme),
                       )
                     : _petPlaceholder(scheme),
               ),
