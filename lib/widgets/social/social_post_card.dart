@@ -106,17 +106,6 @@ class SocialPostCard extends StatelessWidget {
             children: [
               Icon(Icons.repeat_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.45)),
               const SizedBox(width: 6),
-              CircleAvatar(
-                radius: 10,
-                backgroundColor: scheme.primaryContainer,
-                backgroundImage: reposter!.avatarUrl != null && reposter!.avatarUrl!.isNotEmpty
-                    ? NetworkImage(reposter!.avatarUrl!)
-                    : null,
-                child: reposter!.avatarUrl == null || reposter!.avatarUrl!.isEmpty
-                    ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
-                    : null,
-              ),
-              const SizedBox(width: 6),
               Expanded(
                 child: Text.rich(
                   TextSpan(

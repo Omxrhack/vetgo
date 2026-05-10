@@ -1,0 +1,16 @@
+diff -ruN /var/folders/hp/_g7b8vl91qg_028z0p6nvxmh0000gn/T/flutter_quill/lib/src/editor/widgets/text/text_line.dart /Users/omarbermejo/.pub-cache/hosted/pub.dev/flutter_quill-11.5.0/lib/src/editor/widgets/text/text_line.dart
+--- /var/folders/hp/_g7b8vl91qg_028z0p6nvxmh0000gn/T/flutter_quill/lib/src/editor/widgets/text/text_line.dart	2026-05-09 22:28:23
++++ /Users/omarbermejo/.pub-cache/hosted/pub.dev/flutter_quill-11.5.0/lib/src/editor/widgets/text/text_line.dart	2026-05-09 22:49:23
+@@ -345,9 +345,9 @@
+     final textComposing = text.substring(composingStart, composingEnd);
+     final textAfter = text.substring(composingEnd);
+ 
+-    final composingStyle = child.style
+-            ?.merge(const TextStyle(decoration: TextDecoration.underline)) ??
+-        const TextStyle(decoration: TextDecoration.underline);
++    final composingStyle = (child.style ?? const TextStyle()).copyWith(
++      decoration: TextDecoration.none,
++    );
+ 
+     final isLink = node.style.attributes[Attribute.link.key]?.value != null;
+     final recognizer = _getRecognizer(node, isLink);
