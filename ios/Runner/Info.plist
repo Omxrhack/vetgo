@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necesitamos tu ubicación para emergencias, visitas a domicilio con mapa y funciones según tu zona.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Permite elegir fotos para tu perfil, mascotas y documentación en Vetgo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -59,10 +63,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Necesitamos tu ubicación para emergencias, visitas a domicilio con mapa y funciones según tu zona.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Permite elegir fotos para tu perfil, mascotas y documentación en Vetgo.</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
