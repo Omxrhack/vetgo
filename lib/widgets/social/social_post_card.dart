@@ -9,9 +9,6 @@ import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 const double _kAuthorAvatarRadius = 22;
 const double _kGapAvatarToName = 12;
 
-/// Radio del contenedor tipo tarjeta (compositor); el feed usa timeline plano.
-const double _kCardRadius = 16;
-
 /// Radio de las fotos del post (media estilo X / Threads).
 const double _kMediaCornerRadius = 12;
 
@@ -72,10 +69,7 @@ Widget _maybeHeroineRepostAction({
     tag: tag,
     motion: vetgoSocialHeroCompactMotion,
     flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
-    child: Material(
-      type: MaterialType.transparency,
-      child: child,
-    ),
+    child: Material(type: MaterialType.transparency, child: child),
   );
 }
 
@@ -157,9 +151,9 @@ class SocialPostCard extends StatelessWidget {
 
   bool get _showRecommendedFollowBadge =>
       recommended &&
-          (recommendedFollowed ||
-              recommendedFollowLoading ||
-              onRecommendedFollowTap != null);
+      (recommendedFollowed ||
+          recommendedFollowLoading ||
+          onRecommendedFollowTap != null);
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +186,10 @@ class SocialPostCard extends StatelessWidget {
                       color: scheme.onSurface.withValues(alpha: 0.3),
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
               ],
@@ -220,7 +217,11 @@ class SocialPostCard extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(_hPad, recommended ? 8 : 10, _hPad, 0),
           child: Row(
             children: [
-              Icon(Icons.repeat_rounded, size: 15, color: brandGreen.withValues(alpha: 0.85)),
+              Icon(
+                Icons.repeat_rounded,
+                size: 15,
+                color: brandGreen.withValues(alpha: 0.85),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text.rich(
@@ -258,7 +259,10 @@ class SocialPostCard extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
-                left: BorderSide(color: brandGreen.withValues(alpha: 0.55), width: 3),
+                left: BorderSide(
+                  color: brandGreen.withValues(alpha: 0.55),
+                  width: 3,
+                ),
               ),
             ),
             child: Padding(
@@ -268,8 +272,12 @@ class SocialPostCard extends StatelessWidget {
                 shrinkWrap: true,
                 styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
                   p: quoteParagraph,
-                  strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                  em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                  strong: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  em: theme.textTheme.bodyMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
@@ -300,15 +308,26 @@ class SocialPostCard extends StatelessWidget {
     final threadTailChildren = <Widget>[
       if (displayPost.body.isNotEmpty)
         Padding(
-          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 2, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(
+            _bodyTextStartPadding(_hPad),
+            2,
+            _hPad,
+            0,
+          ),
           child: MarkdownBody(
             data: displayPost.body,
             shrinkWrap: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
               blockSpacing: 6,
-              h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-              h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              h1: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+              h2: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              h3: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
               p: baseParagraph,
               strong: baseParagraph?.copyWith(fontWeight: FontWeight.w700),
               em: baseParagraph?.copyWith(fontStyle: FontStyle.italic),
@@ -513,7 +532,12 @@ class _AuthorHeaderRow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),
-        Text(timeLabel, style: metaStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          timeLabel,
+          style: metaStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
 
@@ -522,8 +546,8 @@ class _AuthorHeaderRow extends StatelessWidget {
       backgroundColor: scheme.primaryContainer,
       backgroundImage:
           post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
-              ? NetworkImage(post.author.avatarUrl!)
-              : null,
+          ? NetworkImage(post.author.avatarUrl!)
+          : null,
       child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
           ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
           : null,
@@ -617,7 +641,9 @@ class _RecommendedFollowAvatarBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = Border.all(
-      color: followed ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.65),
+      color: followed
+          ? scheme.primary
+          : scheme.outlineVariant.withValues(alpha: 0.65),
       width: 1.2,
     );
     final bg = followed ? scheme.primary : scheme.surface;
@@ -734,25 +760,6 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-              AnimatedSwitcher(
-                duration: _switchDuration,
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(scale: animation, child: child),
-                  );
-                },
-                child: Icon(
-                  iconData,
-                  key: ValueKey<String>('${iconData}_${widget.activeAsBrand}'),
-                  size: 20,
-                  color: iconColor,
-                ),
-              ),
-              if (widget.count > 0) ...[
-                const SizedBox(width: 5),
                 AnimatedSwitcher(
                   duration: _switchDuration,
                   switchInCurve: Curves.easeOutCubic,
@@ -760,26 +767,47 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
                   transitionBuilder: (child, animation) {
                     return FadeTransition(
                       opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.15),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
+                      child: ScaleTransition(scale: animation, child: child),
                     );
                   },
-                  child: Text(
-                    '${widget.count}',
-                    key: ValueKey<int>(widget.count),
-                    style: widget.theme.textTheme.labelMedium?.copyWith(
-                      color: muted,
-                      fontWeight: FontWeight.w600,
+                  child: Icon(
+                    iconData,
+                    key: ValueKey<String>(
+                      '${iconData}_${widget.activeAsBrand}',
                     ),
+                    size: 20,
+                    color: iconColor,
                   ),
                 ),
+                if (widget.count > 0) ...[
+                  const SizedBox(width: 5),
+                  AnimatedSwitcher(
+                    duration: _switchDuration,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.15),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '${widget.count}',
+                      key: ValueKey<int>(widget.count),
+                      style: widget.theme.textTheme.labelMedium?.copyWith(
+                        color: muted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
             ),
           ),
         ),
@@ -800,7 +828,8 @@ class SocialPostImageCarousel extends StatefulWidget {
   final ColorScheme scheme;
 
   @override
-  State<SocialPostImageCarousel> createState() => _SocialPostImageCarouselState();
+  State<SocialPostImageCarousel> createState() =>
+      _SocialPostImageCarouselState();
 }
 
 class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
@@ -835,71 +864,77 @@ class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
         ClipRRect(
           borderRadius: BorderRadius.circular(_kMediaCornerRadius),
           child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              PageView.builder(
-                controller: _pageController,
-                itemCount: urls.length,
-                onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (context, index) {
-                  return Image.network(
-                    urls[index],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    alignment: Alignment.center,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return ColoredBox(
-                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                        child: Center(
-                          child: SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: scheme.primary.withValues(alpha: 0.65),
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: urls.length,
+                  onPageChanged: (i) => setState(() => _page = i),
+                  itemBuilder: (context, index) {
+                    return Image.network(
+                      urls[index],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return ColoredBox(
+                          color: scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.35,
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.primary.withValues(alpha: 0.65),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return ColoredBox(
-                        color: scheme.surfaceContainerHighest,
-                        child: Icon(Icons.broken_image_outlined, color: scheme.outline, size: 40),
-                      );
-                    },
-                  );
-                },
-              ),
-              if (urls.length > 1)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(urls.length, (i) {
-                      final on = i == _page;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: on ? 18 : 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: on ? dotActive : dotMuted,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      );
-                    }),
-                  ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return ColoredBox(
+                          color: scheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: scheme.outline,
+                            size: 40,
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-            ],
+                if (urls.length > 1)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 8,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(urls.length, (i) {
+                        final on = i == _page;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: on ? 18 : 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: on ? dotActive : dotMuted,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
         ),
       ],
     );

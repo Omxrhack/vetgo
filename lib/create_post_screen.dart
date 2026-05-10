@@ -33,6 +33,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   static const int _maxChars = 2000;
   static const int _maxImages = 4;
 
+  static const double _mediaPreviewRadius = 12;
+
   bool get _canPost {
     if (_saving || _uploadingGallery) return false;
     final plain = _quillController.document.toPlainText();
@@ -210,7 +212,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           child: Divider(
             height: 1,
             thickness: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.55),
+            color: scheme.outlineVariant.withValues(alpha: 0.11),
           ),
         ),
       ),
@@ -219,7 +221,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -255,7 +257,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                         ),
                         if (_imageUrls.isNotEmpty || _uploadingGallery) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           SizedBox(
                             height: 88,
                             child: ListView.separated(
@@ -270,7 +272,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
                                         color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(_mediaPreviewRadius),
                                       ),
                                       child: const Center(
                                         child: SizedBox(
@@ -287,7 +289,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   clipBehavior: Clip.none,
                                   children: [
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(_mediaPreviewRadius),
                                       child: Image.network(
                                         url,
                                         width: 88,
@@ -329,10 +331,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
           ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.11),
+          ),
           Material(
             color: scheme.surface,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              padding: const EdgeInsets.fromLTRB(4, 8, 8, 6),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -343,11 +350,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             _imageUrls.length >= _maxImages
                         ? null
                         : _pickAndUploadPhotos,
+                    iconSize: 22,
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                     icon: Icon(
                       Icons.image_outlined,
                       color: _imageUrls.length >= _maxImages
                           ? scheme.onSurface.withValues(alpha: 0.35)
-                          : scheme.primary,
+                          : scheme.primary.withValues(alpha: 0.92),
                     ),
                   ),
                   Expanded(
@@ -360,27 +369,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
           ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.45),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),
+            padding: EdgeInsets.fromLTRB(16, 2, 16, 8 + MediaQuery.paddingOf(context).bottom),
             child: Align(
               alignment: Alignment.centerRight,
               child: Text(
                 '$remaining',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.05,
                   color: remaining < 200
                       ? scheme.error
-                      : scheme.onSurface.withValues(alpha: 0.45),
-                  fontWeight: FontWeight.w600,
+                      : scheme.onSurface.withValues(alpha: 0.48),
                 ),
               ),
             ),
           ),
-          SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );

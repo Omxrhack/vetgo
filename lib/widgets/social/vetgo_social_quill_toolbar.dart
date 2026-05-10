@@ -18,7 +18,7 @@ QuillSimpleToolbarConfig vetgoSocialToolbarConfig(ThemeData theme) {
 
   return QuillSimpleToolbarConfig(
     multiRowsDisplay: false,
-    color: scheme.surface,
+    color: Colors.transparent,
     showFontFamily: false,
     showFontSize: false,
     showBoldButton: true,

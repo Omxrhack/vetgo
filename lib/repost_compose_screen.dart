@@ -168,7 +168,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
           child: Divider(
             height: 1,
             thickness: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.55),
+            color: scheme.outlineVariant.withValues(alpha: 0.11),
           ),
         ),
       ),
@@ -182,7 +182,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -212,10 +212,15 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                     ),
                   ),
                 ),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: scheme.outlineVariant.withValues(alpha: 0.11),
+                ),
                 Material(
                   color: scheme.surface,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    padding: const EdgeInsets.fromLTRB(4, 8, 8, 6),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: QuillSimpleToolbar(
@@ -226,16 +231,17 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),
+                  padding: EdgeInsets.fromLTRB(16, 2, 16, 6),
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       '$remaining',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.05,
                         color: remaining < 100
                             ? scheme.error
-                            : scheme.onSurface.withValues(alpha: 0.45),
-                        fontWeight: FontWeight.w600,
+                            : scheme.onSurface.withValues(alpha: 0.48),
                       ),
                     ),
                   ),
@@ -246,18 +252,34 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
           Divider(
             height: 1,
             thickness: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.45),
+            color: scheme.outlineVariant.withValues(alpha: 0.11),
           ),
           Expanded(
             flex: 3,
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
-              child: _QuotedPostCard(
-                original: o,
-                accent: _brandGreen,
-                theme: theme,
-                scheme: scheme,
-                heroineQuotedFlightTag: widget.heroineQuotedFlightTag,
+              padding: EdgeInsets.fromLTRB(16, 10, 16, 12 + bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'Publicación citada',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.1,
+                        color: scheme.onSurface.withValues(alpha: 0.38),
+                      ),
+                    ),
+                  ),
+                  _QuotedPostCard(
+                    original: o,
+                    accent: _brandGreen,
+                    theme: theme,
+                    scheme: scheme,
+                    heroineQuotedFlightTag: widget.heroineQuotedFlightTag,
+                  ),
+                ],
               ),
             ),
           ),
@@ -284,78 +306,81 @@ class _QuotedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final outline = scheme.outlineVariant.withValues(alpha: 0.7);
-    Widget card = DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: outline),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: ListView(
-                shrinkWrap: true,
-                primary: false,
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 10,
-                        backgroundColor: scheme.primaryContainer,
-                        backgroundImage: original.author.avatarUrl != null &&
-                                original.author.avatarUrl!.isNotEmpty
-                            ? NetworkImage(original.author.avatarUrl!)
-                            : null,
-                        child: original.author.avatarUrl == null ||
-                                original.author.avatarUrl!.isEmpty
-                            ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
-                            : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          original.author.fullName,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  MarkdownBody(
-                    data: original.body,
-                    shrinkWrap: true,
-                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                      p: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.4,
-                        color: scheme.onSurface.withValues(alpha: 0.92),
-                      ),
-                      blockSpacing: 8,
+    final embedSurface = scheme.surfaceContainerHighest.withValues(alpha: 0.32);
+    final bodyStyle = (theme.textTheme.bodyLarge ?? theme.textTheme.bodyMedium)!.copyWith(
+      fontSize: 15.5,
+      height: 1.42,
+      letterSpacing: -0.15,
+      fontWeight: FontWeight.w400,
+      color: scheme.onSurface.withValues(alpha: 0.9),
+    );
+
+    Widget card = Material(
+      color: embedSurface,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 11,
+                      backgroundColor: scheme.primaryContainer,
+                      backgroundImage: original.author.avatarUrl != null &&
+                              original.author.avatarUrl!.isNotEmpty
+                          ? NetworkImage(original.author.avatarUrl!)
+                          : null,
+                      child: original.author.avatarUrl == null ||
+                              original.author.avatarUrl!.isEmpty
+                          ? Icon(Icons.person_rounded, size: 13, color: scheme.primary)
+                          : null,
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        original.author.fullName,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                          color: scheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                MarkdownBody(
+                  data: original.body,
+                  shrinkWrap: true,
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                    p: bodyStyle,
+                    blockSpacing: 6,
+                    strong: bodyStyle.copyWith(fontWeight: FontWeight.w700),
+                    em: bodyStyle.copyWith(fontStyle: FontStyle.italic),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              child: IgnorePointer(
-                child: ColoredBox(color: accent),
-              ),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            child: IgnorePointer(
+              child: ColoredBox(color: accent.withValues(alpha: 0.92)),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
     final tag = heroineQuotedFlightTag;

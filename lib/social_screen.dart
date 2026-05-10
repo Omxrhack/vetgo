@@ -758,67 +758,56 @@ class _ComposeBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: radius,
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: radius,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          splashColor: scheme.primary.withValues(alpha: 0.08),
-          highlightColor: scheme.primary.withValues(alpha: 0.05),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Heroine(
-                  tag: vetgoSocialComposeHeroTag,
-                  motion: vetgoSocialHeroAvatarMotion,
-                  flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
-                  child: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: scheme.primaryContainer,
-                    backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                        ? NetworkImage(avatarUrl!)
-                        : null,
-                    child: avatarUrl == null || avatarUrl!.isEmpty
-                        ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
-                        : null,
-                  ),
+    return Material(
+      color: scheme.surface,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: scheme.primary.withValues(alpha: 0.06),
+        highlightColor: scheme.primary.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Heroine(
+                tag: vetgoSocialComposeHeroTag,
+                motion: vetgoSocialHeroAvatarMotion,
+                flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+                      ? NetworkImage(avatarUrl!)
+                      : null,
+                  child: avatarUrl == null || avatarUrl!.isEmpty
+                      ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
+                      : null,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      '¿Qué está pasando?',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.45),
-                        fontWeight: FontWeight.w400,
-                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    '¿Qué está pasando?',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.42),
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -0.15,
+                      height: 1.35,
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Icon(
-                    Icons.edit_note_rounded,
-                    size: 26,
-                    color: scheme.primary,
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Icon(
+                  Icons.edit_note_rounded,
+                  size: 24,
+                  color: scheme.primary.withValues(alpha: 0.88),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
