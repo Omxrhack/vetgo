@@ -109,8 +109,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     final scheme = theme.colorScheme;
     final muted = scheme.onSurface.withValues(alpha: 0.68);
     final displayName = widget.userName.trim().isEmpty ? 'amigo' : widget.userName.trim();
-    final petsCount = widget.pets.length;
-    final upcomingCount = _upcomingAppointments().length;
 
     return RefreshIndicator(
       color: scheme.primary,
@@ -123,56 +121,33 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             floating: false,
             backgroundColor: theme.scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
-            expandedHeight: 132,
-            actions: [
-              IconButton(
-                tooltip: AppStrings.cerrarSesionTooltip,
-                icon: const Icon(Icons.logout_rounded),
-                onPressed: widget.onLogout,
-              ),
-            ],
+            expandedHeight: 80,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, right: 52, bottom: 12),
-              title: Row(
+              titlePadding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.holaNombre(displayName),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                            height: 1.1,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          AppStrings.clienteDashboardSubtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                  Text(
+                    AppStrings.holaNombre(displayName),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      height: 1.1,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 12),
-                  ProfilePhotoAvatar(
-                    heroTag: 'client_avatar',
-                    imageUrl: widget.profilePhotoUrl,
-                    placeholderBackground: scheme.primaryContainer,
-                    placeholderIconColor: scheme.primary,
-                    radius: 26,
-                    onUploaded: widget.onProfilePhotoUpdated,
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.clienteDashboardSubtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: muted,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -204,23 +179,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                         ),
                       ),
                     ),
-                  DashboardSection(
-                    title: AppStrings.clientePerfilTitulo,
-                    subtitle: AppStrings.clientePerfilSubtitulo,
-                    subtitleColor: muted,
-                    bottomSpacing: 22,
-                    spacingBeforeChild: 10,
-                    child: _ProfileSummaryCard(
-                      userName: displayName,
-                      profilePhotoUrl: widget.profilePhotoUrl,
-                      petsCount: petsCount,
-                      upcomingCount: upcomingCount,
-                      onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.03, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
                   DashboardSection(
                     title: AppStrings.tusMascotas,
                     subtitleColor: muted,
@@ -646,147 +604,7 @@ class _PetCarouselTile extends StatelessWidget {
   }
 }
 
-class _ProfileSummaryCard extends StatelessWidget {
-  const _ProfileSummaryCard({
-    required this.userName,
-    required this.profilePhotoUrl,
-    required this.petsCount,
-    required this.upcomingCount,
-    this.onProfilePhotoUpdated,
-  });
 
-  final String userName;
-  final String? profilePhotoUrl;
-  final int petsCount;
-  final int upcomingCount;
-  final VoidCallback? onProfilePhotoUpdated;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return ClientSoftCard(
-      color: scheme.surface,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              ProfilePhotoAvatar(
-                imageUrl: profilePhotoUrl,
-                placeholderBackground: scheme.primaryContainer,
-                placeholderIconColor: scheme.primary,
-                radius: 24,
-                onUploaded: onProfilePhotoUpdated,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      AppStrings.clienteDashboardSubtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.68),
-                        height: 1.3,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _StatBadge(
-                  icon: Icons.pets_rounded,
-                  value: '$petsCount',
-                  label: AppStrings.tusMascotas,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _StatBadge(
-                  icon: Icons.calendar_month_rounded,
-                  value: '$upcomingCount',
-                  label: AppStrings.clienteProximasCitas,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatBadge extends StatelessWidget {
-  const _StatBadge({required this.icon, required this.value, required this.label});
-
-  final IconData icon;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.42),
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: scheme.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.68),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _HealthReminderModel {
   const _HealthReminderModel({required this.icon, required this.text});
