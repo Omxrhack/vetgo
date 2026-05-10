@@ -141,7 +141,7 @@ class _AuthFlowState extends State<AuthFlow> {
           alignment: Alignment.topCenter,
           children: <Widget>[
             ...previousChildren,
-            if (currentChild != null) currentChild,
+            ?currentChild,
           ],
         );
       },

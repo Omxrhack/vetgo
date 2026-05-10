@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final session = _session;
     final uid = session?.user?['id']?.toString();
     final roleRaw = session?.profile?['role'];
-    final role = roleRaw == null ? null : roleRaw.toString().trim();
+    final role = roleRaw?.toString().trim();
 
     if (session == null ||
         !session.hasAccessToken ||

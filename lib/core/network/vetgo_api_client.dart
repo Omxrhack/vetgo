@@ -523,7 +523,7 @@ class VetgoApiClient {
         data: <String, dynamic>{
           'vet_lat': vetLat,
           'vet_lng': vetLng,
-          if (etaMinutes != null) 'eta_minutes': etaMinutes,
+          'eta_minutes': ?etaMinutes,
         },
         options: opts,
       );
@@ -703,9 +703,9 @@ class VetgoApiClient {
     final body = <String, dynamic>{
       'vet_lat': vetLat,
       'vet_lng': vetLng,
-      if (appointmentId != null) 'appointment_id': appointmentId,
-      if (emergencyId != null) 'emergency_id': emergencyId,
-      if (etaMinutes != null) 'eta_minutes': etaMinutes,
+      'appointment_id': ?appointmentId,
+      'emergency_id': ?emergencyId,
+      'eta_minutes': ?etaMinutes,
     };
     try {
       final r = await _api.post<Map<String, dynamic>>(
