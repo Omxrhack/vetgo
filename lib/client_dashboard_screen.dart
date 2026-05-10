@@ -131,14 +131,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Vetgo',
+                  'vetgo',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w800,
                     fontSize: 26,
                     letterSpacing: -0.8,
                     height: 1.1,
-                    color: scheme.primary,
+                    color: const Color(0xFF1B8A4E),
                   ),
                 ),
                 Text(
