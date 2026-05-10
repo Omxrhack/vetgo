@@ -7,6 +7,18 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/social/social_post_card.dart';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+String _socialFeedRelativeTime(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inMinutes < 1) return 'ahora';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+  if (diff.inHours < 24) return '${diff.inHours}h';
+  if (diff.inDays < 7) return '${diff.inDays}d';
+  return DateFormat('d MMM', 'es').format(dt);
+}
 
 // ─── Feed item sealed types ───────────────────────────────────────────────────
 
@@ -286,24 +298,26 @@ class _SocialScreenState extends State<SocialScreen> {
               )
             else ...[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                 sliver: SliverList.separated(
                   itemCount: _feedItems.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (ctx, i) {
                     final item = _feedItems[i];
                     return switch (item) {
-                      _PostItem() => _FeedPostCard(
+                      _PostItem() => SocialPostCard(
                           post: item.post,
-                          recommended: item.recommended,
                           theme: theme,
                           scheme: scheme,
+                          timeLabel: _socialFeedRelativeTime(item.post.createdAt),
+                          recommended: item.recommended,
+                          onDismissRecommended:
+                              item.recommended ? () => _dismissRecommended(item.post) : null,
                           onAuthorTap: () => Navigator.of(context).push<void>(
                             MaterialPageRoute<void>(
                               builder: (_) => PublicProfileScreen(profileId: item.post.author.id),
                             ),
                           ),
-                          onDismiss: item.recommended ? () => _dismissRecommended(item.post) : null,
                         )
                             .animate()
                             .fadeIn(duration: 260.ms, delay: (i * 20).ms)
@@ -588,156 +602,6 @@ class _SuggestionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ─── Feed post card ───────────────────────────────────────────────────────────
-
-class _FeedPostCard extends StatelessWidget {
-  const _FeedPostCard({
-    required this.post,
-    required this.recommended,
-    required this.theme,
-    required this.scheme,
-    required this.onAuthorTap,
-    this.onDismiss,
-  });
-
-  final PostVm post;
-  final bool recommended;
-  final ThemeData theme;
-  final ColorScheme scheme;
-  final VoidCallback onAuthorTap;
-  final VoidCallback? onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final timeLabel = _relativeTime(post.createdAt);
-    return ClientSoftCard(
-      padding: const EdgeInsets.all(0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (recommended)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: Row(
-                children: [
-                  Icon(Icons.explore_outlined,
-                      size: 13, color: scheme.onSurface.withValues(alpha: 0.38)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Descubre nuevo contenido',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.38),
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: onDismiss,
-                    child: Icon(Icons.close_rounded,
-                        size: 14, color: scheme.onSurface.withValues(alpha: 0.3)),
-                  ),
-                ],
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onTap: onAuthorTap,
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: scheme.primaryContainer,
-                        backgroundImage: post.author.avatarUrl != null &&
-                                post.author.avatarUrl!.isNotEmpty
-                            ? NetworkImage(post.author.avatarUrl!)
-                            : null,
-                        child: post.author.avatarUrl == null ||
-                                post.author.avatarUrl!.isEmpty
-                            ? Icon(Icons.person_rounded, size: 20, color: scheme.primary)
-                            : null,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              post.author.fullName,
-                              style: theme.textTheme.labelLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                            Text(
-                              timeLabel,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                  color: scheme.onSurface.withValues(alpha: 0.45)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.more_horiz_rounded,
-                          color: scheme.onSurface.withValues(alpha: 0.3)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(post.body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
-                if (post.imageUrls.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  _ImageGrid(urls: post.imageUrls),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static String _relativeTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'ahora';
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes}m';
-    if (diff.inHours < 24) return 'hace ${diff.inHours}h';
-    if (diff.inDays < 7) return 'hace ${diff.inDays}d';
-    return DateFormat('d MMM', 'es').format(dt);
-  }
-}
-
-class _ImageGrid extends StatelessWidget {
-  const _ImageGrid({required this.urls});
-
-  final List<String> urls;
-
-  @override
-  Widget build(BuildContext context) {
-    if (urls.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.network(urls.first,
-            fit: BoxFit.cover, width: double.infinity, height: 200),
-      );
-    }
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 4,
-      crossAxisSpacing: 4,
-      childAspectRatio: 1,
-      children: urls
-          .take(4)
-          .map((url) => ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(url, fit: BoxFit.cover),
-              ))
-          .toList(),
     );
   }
 }

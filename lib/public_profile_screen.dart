@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/social/social_post_card.dart';
 
 /// Pantalla de perfil público estilo profesional.
 /// Reutilizable para vets, clientes, y el propio usuario (isOwnProfile = true).
@@ -928,103 +929,19 @@ class _FeedTab extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       itemCount: posts.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _PostCard(post: posts[i], theme: theme, scheme: scheme)
+      itemBuilder: (_, i) => SocialPostCard(
+            post: posts[i],
+            theme: theme,
+            scheme: scheme,
+            timeLabel: DateFormat('d MMM · HH:mm', 'es').format(posts[i].createdAt),
+            onAuthorTap: null,
+          )
           .animate()
           .fadeIn(duration: 260.ms, delay: (i * 40).ms)
           .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic),
-    );
-  }
-}
-
-class _PostCard extends StatelessWidget {
-  const _PostCard(
-      {required this.post, required this.theme, required this.scheme});
-
-  final PostVm post;
-  final ThemeData theme;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final timeLabel = DateFormat('d MMM · HH:mm', 'es').format(post.createdAt);
-    return ClientSoftCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: scheme.primaryContainer,
-                backgroundImage:
-                    post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
-                        ? NetworkImage(post.author.avatarUrl!)
-                        : null,
-                child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
-                    ? Icon(Icons.person_rounded, size: 18, color: scheme.primary)
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(post.author.fullName,
-                        style: theme.textTheme.labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(timeLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.45))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(post.body,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
-          if (post.imageUrls.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            _ImageGrid(urls: post.imageUrls),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ImageGrid extends StatelessWidget {
-  const _ImageGrid({required this.urls});
-
-  final List<String> urls;
-
-  @override
-  Widget build(BuildContext context) {
-    if (urls.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.network(urls.first,
-            fit: BoxFit.cover, width: double.infinity, height: 200),
-      );
-    }
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 4,
-      crossAxisSpacing: 4,
-      childAspectRatio: 1,
-      children: urls
-          .take(4)
-          .map((url) => ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(url, fit: BoxFit.cover),
-              ))
-          .toList(),
     );
   }
 }
