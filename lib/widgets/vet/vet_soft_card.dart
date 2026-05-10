@@ -8,12 +8,16 @@ class VetSoftCard extends StatefulWidget {
     this.padding = const EdgeInsets.all(20),
     this.color,
     this.onTap,
+    this.showShadow = true,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final Color? color;
   final VoidCallback? onTap;
+
+  /// Si es false, no se dibuja sombra (útil con fondo transparente).
+  final bool showShadow;
 
   static const BorderRadius radius = BorderRadius.all(Radius.circular(24));
 
@@ -38,13 +42,15 @@ class _VetSoftCardState extends State<VetSoftCard> {
         color: bg,
         borderRadius: VetSoftCard.radius,
         border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: shadowAlpha),
-            blurRadius: 22,
-            offset: Offset(0, shadowOffsetY),
-          ),
-        ],
+        boxShadow: widget.showShadow
+            ? [
+                BoxShadow(
+                  color: scheme.shadow.withValues(alpha: shadowAlpha),
+                  blurRadius: 22,
+                  offset: Offset(0, shadowOffsetY),
+                ),
+              ]
+            : const [],
       ),
       child: Padding(padding: widget.padding, child: widget.child),
     );

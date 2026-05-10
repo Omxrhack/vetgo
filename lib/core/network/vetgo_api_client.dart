@@ -856,7 +856,7 @@ class VetgoApiClient {
     }
   }
 
-  /// `POST /api/posts`
+  /// `POST /api/posts` — respuesta: `{ feed_kind, created_at, post }`.
   Future<VetJsonResult> createPost({
     required String body,
     List<String> imageUrls = const [],
@@ -867,6 +867,27 @@ class VetgoApiClient {
       final r = await _api.post<Map<String, dynamic>>(
         '/posts',
         data: <String, dynamic>{'body': body, 'image_urls': imageUrls},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/posts/:id/repost`
+  Future<VetJsonResult> createRepost(
+    String postId, {
+    String? quoteBody,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts/$postId/repost',
+        data: <String, dynamic>{
+          if (quoteBody != null && quoteBody.isNotEmpty) 'quote_body': quoteBody,
+        },
         options: opts,
       );
       return (r.data, null);

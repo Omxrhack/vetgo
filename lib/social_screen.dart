@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/create_post_screen.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/public_profile_screen.dart';
+import 'package:vetgo/repost_compose_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
 
@@ -25,8 +27,8 @@ String _socialFeedRelativeTime(DateTime dt) {
 sealed class _FeedItem {}
 
 final class _PostItem extends _FeedItem {
-  _PostItem(this.post, {this.recommended = false});
-  final PostVm post;
+  _PostItem(this.entry, {this.recommended = false});
+  final FeedEntryVm entry;
   final bool recommended;
 }
 
@@ -47,8 +49,8 @@ class SocialScreen extends StatefulWidget {
 class _SocialScreenState extends State<SocialScreen> {
   final _api = VetgoApiClient();
 
-  List<PostVm> _posts = [];
-  List<PostVm> _explorePosts = [];
+  List<FeedEntryVm> _feedEntries = [];
+  List<FeedEntryVm> _exploreEntries = [];
   List<SuggestedProfileVm> _suggestions = [];
   List<_FeedItem> _feedItems = [];
 
@@ -115,19 +117,19 @@ class _SocialScreenState extends State<SocialScreen> {
       return;
     }
 
-    final posts       = _parsePosts(feedData);
+    final feedList = _parseFeedEntries(feedData);
     final suggestions = _parseSuggestions(suggestData);
-    final explore     = _parsePosts(exploreData ?? <String, dynamic>{});
+    final explore = _parseFeedEntries(exploreData ?? <String, dynamic>{});
 
     setState(() {
-      _posts        = posts;
-      _explorePosts = explore;
-      _suggestions  = suggestions;
-      _myAvatarUrl  = session?.profile?['avatar_url'] as String?;
-      _hasMore      = feedData['has_more'] == true;
-      _page         = 2;
-      _loading      = false;
-      _feedItems    = _buildFeedItems(posts, suggestions, explore);
+      _feedEntries = feedList;
+      _exploreEntries = explore;
+      _suggestions = suggestions;
+      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
+      _hasMore = feedData['has_more'] == true;
+      _page = 2;
+      _loading = false;
+      _feedItems = _buildFeedItems(feedList, suggestions, explore);
     });
   }
 
@@ -137,22 +139,22 @@ class _SocialScreenState extends State<SocialScreen> {
     final (data, _) = await _api.getSocialFeed(page: _page);
     if (!mounted) return;
     if (data != null) {
-      final more = _parsePosts(data);
-      final allPosts = [..._posts, ...more];
+      final more = _parseFeedEntries(data);
+      final merged = [..._feedEntries, ...more];
       setState(() {
-        _posts = allPosts;
+        _feedEntries = merged;
         _hasMore = data['has_more'] == true;
         _page++;
-        _feedItems = _buildFeedItems(allPosts, _suggestions, _explorePosts);
+        _feedItems = _buildFeedItems(merged, _suggestions, _exploreEntries);
       });
     }
     setState(() => _loadingMore = false);
   }
 
-  List<PostVm> _parsePosts(Map<String, dynamic> data) =>
+  List<FeedEntryVm> _parseFeedEntries(Map<String, dynamic> data) =>
       (data['posts'] as List<dynamic>?)
           ?.whereType<Map<String, dynamic>>()
-          .map(PostVm.fromJson)
+          .map(FeedEntryVm.fromJson)
           .toList() ??
       [];
 
@@ -164,61 +166,56 @@ class _SocialScreenState extends State<SocialScreen> {
       [];
 
   static List<_FeedItem> _buildFeedItems(
-    List<PostVm> posts,
+    List<FeedEntryVm> entries,
     List<SuggestedProfileVm> suggestions,
-    List<PostVm> explore,
+    List<FeedEntryVm> explore,
   ) {
     final items = <_FeedItem>[];
     int exploreIdx = 0;
     bool carouselInserted = false;
 
-    for (int i = 0; i < posts.length; i++) {
-      items.add(_PostItem(posts[i]));
+    for (int i = 0; i < entries.length; i++) {
+      items.add(_PostItem(entries[i]));
 
-      // Insert suggestion carousel after 3rd post (once)
       if (i == 2 && suggestions.isNotEmpty && !carouselInserted) {
         items.add(_SuggestionCarouselItem(suggestions));
         carouselInserted = true;
       }
 
-      // Inject recommended post every 5 regular posts
       if ((i + 1) % 5 == 0 && exploreIdx < explore.length) {
         items.add(_PostItem(explore[exploreIdx++], recommended: true));
       }
     }
 
-    // If no followed posts but there are explore posts, show them
-    if (posts.isEmpty && explore.isNotEmpty) {
-      for (final p in explore) {
-        items.add(_PostItem(p, recommended: true));
+    if (entries.isEmpty && explore.isNotEmpty) {
+      for (final e in explore) {
+        items.add(_PostItem(e, recommended: true));
       }
     }
 
     return items;
   }
 
-  void _dismissRecommended(PostVm post) {
+  void _dismissRecommended(FeedEntryVm entry) {
+    final id = entry.displayPost.id;
     setState(() {
       _feedItems = _feedItems
-          .where((item) => !(item is _PostItem && item.recommended && item.post.id == post.id))
+          .where((item) =>
+              !(item is _PostItem && item.recommended && item.entry.displayPost.id == id))
           .toList();
     });
   }
 
-  void _openCreatePost() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CreatePostSheet(
-        onCreated: (post) {
-          setState(() {
-            _posts = [post, ..._posts];
-            _feedItems = [_PostItem(post), ..._feedItems];
-          });
-        },
-      ),
+  Future<void> _openCreatePost() async {
+    final result = await Navigator.of(context).push<FeedEntryVm>(
+      MaterialPageRoute<FeedEntryVm>(builder: (_) => const CreatePostScreen()),
     );
+    if (result != null && mounted) {
+      setState(() {
+        _feedEntries = [result, ..._feedEntries];
+        _feedItems = _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
+      });
+    }
   }
 
   @override
@@ -301,23 +298,24 @@ class _SocialScreenState extends State<SocialScreen> {
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                 sliver: SliverList.separated(
                   itemCount: _feedItems.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox.shrink(),
                   itemBuilder: (ctx, i) {
                     final item = _feedItems[i];
                     return switch (item) {
-                      _PostItem() => SocialPostCard(
-                          post: item.post,
+                      _PostItem() => _SocialFeedPostTile(
+                          entry: item.entry,
+                          recommended: item.recommended,
                           theme: theme,
                           scheme: scheme,
-                          timeLabel: _socialFeedRelativeTime(item.post.createdAt),
-                          recommended: item.recommended,
                           onDismissRecommended:
-                              item.recommended ? () => _dismissRecommended(item.post) : null,
-                          onAuthorTap: () => Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder: (_) => PublicProfileScreen(profileId: item.post.author.id),
-                            ),
-                          ),
+                              item.recommended ? () => _dismissRecommended(item.entry) : null,
+                          onFeedUpdated: (entry) {
+                            setState(() {
+                              _feedEntries = [entry, ..._feedEntries];
+                              _feedItems =
+                                  _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
+                            });
+                          },
                         )
                             .animate()
                             .fadeIn(duration: 260.ms, delay: (i * 20).ms)
@@ -350,6 +348,67 @@ class _SocialScreenState extends State<SocialScreen> {
   }
 }
 
+// ─── Feed post tile (navegación repost) ───────────────────────────────────────
+
+class _SocialFeedPostTile extends StatelessWidget {
+  const _SocialFeedPostTile({
+    required this.entry,
+    required this.recommended,
+    required this.theme,
+    required this.scheme,
+    this.onDismissRecommended,
+    required this.onFeedUpdated,
+  });
+
+  final FeedEntryVm entry;
+  final bool recommended;
+  final ThemeData theme;
+  final ColorScheme scheme;
+  final VoidCallback? onDismissRecommended;
+  final void Function(FeedEntryVm entry) onFeedUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final display = entry.displayPost;
+    final timeLabel = _socialFeedRelativeTime(display.createdAt);
+
+    final PostAuthorVm? reposter;
+    final String? quoteBody;
+    switch (entry) {
+      case FeedRepostEntryVm r:
+        reposter = r.reposter;
+        quoteBody = r.quoteBody;
+      case FeedPostEntryVm():
+        reposter = null;
+        quoteBody = null;
+    }
+
+    return SocialPostCard(
+      displayPost: display,
+      theme: theme,
+      scheme: scheme,
+      timeLabel: timeLabel,
+      reposter: reposter,
+      quoteBody: quoteBody,
+      recommended: recommended,
+      onDismissRecommended: onDismissRecommended,
+      onAuthorTap: () => Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => PublicProfileScreen(profileId: display.author.id),
+        ),
+      ),
+      onRepost: () async {
+        final res = await Navigator.of(context).push<FeedEntryVm>(
+          MaterialPageRoute<void>(
+            builder: (_) => RepostComposeScreen(original: display),
+          ),
+        );
+        if (res != null && context.mounted) onFeedUpdated(res);
+      },
+    );
+  }
+}
+
 // ─── Compose box ──────────────────────────────────────────────────────────────
 
 class _ComposeBox extends StatelessWidget {
@@ -367,7 +426,7 @@ class _ComposeBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClientSoftCard(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: GestureDetector(
         onTap: onTap,
@@ -386,13 +445,8 @@ class _ComposeBox extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: scheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(24),
-                  color: scheme.surfaceContainerLowest,
-                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 child: Text(
                   '¿Qué está pasando?',
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -598,109 +652,6 @@ class _SuggestionCard extends StatelessWidget {
                           ),
                           child: const Text('Seguir'),
                         ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Create post sheet ────────────────────────────────────────────────────────
-
-class _CreatePostSheet extends StatefulWidget {
-  const _CreatePostSheet({required this.onCreated});
-
-  final void Function(PostVm post) onCreated;
-
-  @override
-  State<_CreatePostSheet> createState() => _CreatePostSheetState();
-}
-
-class _CreatePostSheetState extends State<_CreatePostSheet> {
-  final _body = TextEditingController();
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _body.dispose();
-    super.dispose();
-  }
-
-  Future<void> _post() async {
-    final text = _body.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _saving = true);
-    final (data, err) = await VetgoApiClient().createPost(body: text);
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (err != null || data == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(err ?? 'Error al publicar')));
-      return;
-    }
-    widget.onCreated(PostVm.fromJson(data));
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLowest,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: scheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Nueva publicación',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _body,
-              maxLines: 5,
-              maxLength: 2000,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: '¿Qué quieres compartir?',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _saving ? null : _post,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-              child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Publicar',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         ),

@@ -30,7 +30,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   final _api = VetgoApiClient();
 
   PublicProfileVm? _profile;
-  List<PostVm> _posts = [];
+  List<FeedEntryVm> _feedEntries = [];
   List<ReviewVm> _reviews = [];
   bool _loading = true;
   bool _followLoading = false;
@@ -79,10 +79,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     if (!mounted || data == null) return;
     final list = (data['posts'] as List<dynamic>?)
             ?.whereType<Map<String, dynamic>>()
-            .map(PostVm.fromJson)
+            .map(FeedEntryVm.fromJson)
             .toList() ??
         [];
-    setState(() => _posts = list);
+    setState(() => _feedEntries = list);
   }
 
   Future<void> _loadReviews() async {
@@ -387,8 +387,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _FeedTab(posts: _posts, theme: theme, scheme: scheme),
-          _PhotosTab(posts: _posts, scheme: scheme),
+          _FeedTab(entries: _feedEntries, theme: theme, scheme: scheme),
+          _PhotosTab(entries: _feedEntries, scheme: scheme),
           _ReviewsTab(
               reviews: _reviews,
               isVet: p.isVet,
@@ -912,15 +912,15 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
 class _FeedTab extends StatelessWidget {
   const _FeedTab(
-      {required this.posts, required this.theme, required this.scheme});
+      {required this.entries, required this.theme, required this.scheme});
 
-  final List<PostVm> posts;
+  final List<FeedEntryVm> entries;
   final ThemeData theme;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    if (posts.isEmpty) {
+    if (entries.isEmpty) {
       return _EmptyState(
         icon: Icons.rss_feed_rounded,
         message: 'Aún sin publicaciones',
@@ -930,18 +930,28 @@ class _FeedTab extends StatelessWidget {
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-      itemCount: posts.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => SocialPostCard(
-            post: posts[i],
-            theme: theme,
-            scheme: scheme,
-            timeLabel: DateFormat('d MMM · HH:mm', 'es').format(posts[i].createdAt),
-            onAuthorTap: null,
-          )
-          .animate()
-          .fadeIn(duration: 260.ms, delay: (i * 40).ms)
-          .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic),
+      itemCount: entries.length,
+      separatorBuilder: (_, _) => const SizedBox.shrink(),
+      itemBuilder: (_, i) {
+        final entry = entries[i];
+        final display = entry.displayPost;
+        final (reposter, quoteBody) = switch (entry) {
+          FeedRepostEntryVm r => (r.reposter, r.quoteBody),
+          FeedPostEntryVm() => (null, null),
+        };
+        return SocialPostCard(
+              displayPost: display,
+              theme: theme,
+              scheme: scheme,
+              timeLabel: DateFormat('d MMM · HH:mm', 'es').format(display.createdAt),
+              reposter: reposter,
+              quoteBody: quoteBody,
+              onAuthorTap: null,
+            )
+            .animate()
+            .fadeIn(duration: 260.ms, delay: (i * 40).ms)
+            .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic);
+      },
     );
   }
 }
@@ -949,14 +959,14 @@ class _FeedTab extends StatelessWidget {
 // ─── Photos tab ───────────────────────────────────────────────────────────────
 
 class _PhotosTab extends StatelessWidget {
-  const _PhotosTab({required this.posts, required this.scheme});
+  const _PhotosTab({required this.entries, required this.scheme});
 
-  final List<PostVm> posts;
+  final List<FeedEntryVm> entries;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    final images = posts.expand((p) => p.imageUrls).toList();
+    final images = entries.expand((e) => e.displayPost.imageUrls).toList();
     if (images.isEmpty) {
       return _EmptyState(
         icon: Icons.camera_alt_outlined,

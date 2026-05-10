@@ -115,7 +115,7 @@ class PostVm {
 
   factory PostVm.fromJson(Map<String, dynamic> j) => PostVm(
         id: j['id'] as String,
-        body: j['body'] as String,
+        body: j['body'] as String? ?? '',
         imageUrls: (j['image_urls'] as List<dynamic>?)?.cast<String>() ?? [],
         createdAt: DateTime.tryParse(j['created_at'] as String? ?? '')?.toLocal() ?? DateTime.now(),
         author: PostAuthorVm.fromJson(
@@ -124,6 +124,84 @@ class PostVm {
               : <String, dynamic>{},
         ),
       );
+}
+
+/// Entrada del feed unificado (post original o repost).
+sealed class FeedEntryVm {
+  const FeedEntryVm();
+
+  DateTime get feedAt;
+
+  /// Post que muestra fotos / contenido principal en la tarjeta.
+  PostVm get displayPost;
+
+  factory FeedEntryVm.fromJson(Map<String, dynamic> j) {
+    final kind = j['feed_kind'] as String?;
+    final createdAt =
+        DateTime.tryParse(j['created_at'] as String? ?? '')?.toLocal() ?? DateTime.now();
+
+    if (kind == 'repost') {
+      final postMap = j['post'];
+      if (postMap is! Map<String, dynamic>) {
+        throw FormatException('repost sin post');
+      }
+      return FeedRepostEntryVm(
+        feedAt: createdAt,
+        repostId: j['repost_id'] as String,
+        quoteBody: j['quote_body'] as String?,
+        reposter: PostAuthorVm.fromJson(
+          j['reposter'] is Map<String, dynamic>
+              ? j['reposter'] as Map<String, dynamic>
+              : <String, dynamic>{},
+        ),
+        originalPost: PostVm.fromJson(postMap),
+      );
+    }
+
+    final nested = j['post'];
+    if (nested is Map<String, dynamic>) {
+      return FeedPostEntryVm(
+        feedAt: createdAt,
+        post: PostVm.fromJson(nested),
+      );
+    }
+
+    return FeedPostEntryVm(
+      feedAt: createdAt,
+      post: PostVm.fromJson(j),
+    );
+  }
+}
+
+final class FeedPostEntryVm extends FeedEntryVm {
+  const FeedPostEntryVm({required this.feedAt, required this.post});
+
+  @override
+  final DateTime feedAt;
+  final PostVm post;
+
+  @override
+  PostVm get displayPost => post;
+}
+
+final class FeedRepostEntryVm extends FeedEntryVm {
+  const FeedRepostEntryVm({
+    required this.feedAt,
+    required this.repostId,
+    this.quoteBody,
+    required this.reposter,
+    required this.originalPost,
+  });
+
+  @override
+  final DateTime feedAt;
+  final String repostId;
+  final String? quoteBody;
+  final PostAuthorVm reposter;
+  final PostVm originalPost;
+
+  @override
+  PostVm get displayPost => originalPost;
 }
 
 class ReviewerVm {
