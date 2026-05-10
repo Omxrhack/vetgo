@@ -35,28 +35,25 @@ Widget _socialHeroPostTail(List<Widget> children) {
         return column;
       }
 
-      Widget inner = column;
+      Widget content = column;
       if (finiteW) {
-        inner = ConstrainedBox(
+        content = ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxW),
-          child: inner,
+          child: content,
         );
       }
-
       if (finiteH) {
         return SizedBox(
           height: maxH,
-          width: finiteW ? maxW : double.infinity,
           child: ClipRect(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              child: inner,
+              child: content,
             ),
           ),
         );
       }
-
-      return inner;
+      return content;
     },
   );
 }
