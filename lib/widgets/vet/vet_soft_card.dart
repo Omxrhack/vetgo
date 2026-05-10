@@ -36,7 +36,7 @@ class _VetSoftCardState extends State<VetSoftCard> {
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: radius,
+        borderRadius: VetSoftCard.radius,
         border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
