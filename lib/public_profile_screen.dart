@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/repost_compose_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/social/post_comments_sheet.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
+
+const Color _vetgoGreenProfile = Color(0xFF1B8A4E);
 
 /// Pantalla de perfil público estilo profesional.
 /// Reutilizable para vets, clientes, y el propio usuario (isOwnProfile = true).
@@ -94,6 +99,76 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             .toList() ??
         [];
     setState(() => _reviews = list);
+  }
+
+  FeedEntryVm _entryWithUpdatedPost(FeedEntryVm e, PostVm p) {
+    switch (e) {
+      case FeedPostEntryVm(:final feedAt):
+        return FeedPostEntryVm(feedAt: feedAt, post: p);
+      case FeedRepostEntryVm(
+          :final feedAt,
+          :final repostId,
+          :final quoteBody,
+          :final reposter,
+        ):
+        return FeedRepostEntryVm(
+          feedAt: feedAt,
+          repostId: repostId,
+          quoteBody: quoteBody,
+          reposter: reposter,
+          originalPost: p,
+        );
+    }
+  }
+
+  void _patchFeedPost(PostVm updated) {
+    setState(() {
+      _feedEntries = _feedEntries.map((e) {
+        if (e.displayPost.id != updated.id) return e;
+        return _entryWithUpdatedPost(e, updated);
+      }).toList();
+    });
+  }
+
+  Future<void> _handleFeedLike(PostVm post) async {
+    final (data, err) = await _api.togglePostLike(post.id);
+    if (!mounted) return;
+    if (err != null || data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err ?? 'No se pudo actualizar')),
+      );
+      return;
+    }
+    _patchFeedPost(
+      post.copyWith(
+        likeCount: (data['like_count'] as num?)?.toInt() ?? post.likeCount,
+        viewerHasLiked: data['viewer_has_liked'] as bool? ?? post.viewerHasLiked,
+      ),
+    );
+  }
+
+  void _openFeedComments(PostVm post) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+        child: PostCommentsSheet(
+          api: _api,
+          postId: post.id,
+          onCommentCountChanged: (total) {
+            _patchFeedPost(post.copyWith(commentCount: total));
+          },
+        ),
+      ),
+    );
+  }
+
+  void _shareFeedPost(PostVm post) {
+    Share.share(
+      '${post.author.fullName}: ${post.body}',
+      subject: 'Vetgo Social',
+    );
   }
 
   Future<void> _toggleFollow() async {
@@ -387,7 +462,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _FeedTab(entries: _feedEntries, theme: theme, scheme: scheme),
+          _FeedTab(
+            entries: _feedEntries,
+            theme: theme,
+            scheme: scheme,
+            brandGreen: _vetgoGreenProfile,
+            onLikePost: _handleFeedLike,
+            onCommentPost: _openFeedComments,
+            onSharePost: _shareFeedPost,
+            onRepostDone: (entry) {
+              final u = entry.displayPost;
+              setState(() {
+                _feedEntries = [
+                  entry,
+                  ..._feedEntries.map((e) {
+                    if (e.displayPost.id != u.id) return e;
+                    return _entryWithUpdatedPost(e, u);
+                  }),
+                ];
+              });
+            },
+          ),
           _PhotosTab(entries: _feedEntries, scheme: scheme),
           _ReviewsTab(
               reviews: _reviews,
@@ -911,12 +1006,25 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 // ─── Feed tab ─────────────────────────────────────────────────────────────────
 
 class _FeedTab extends StatelessWidget {
-  const _FeedTab(
-      {required this.entries, required this.theme, required this.scheme});
+  const _FeedTab({
+    required this.entries,
+    required this.theme,
+    required this.scheme,
+    required this.brandGreen,
+    required this.onLikePost,
+    required this.onCommentPost,
+    required this.onSharePost,
+    required this.onRepostDone,
+  });
 
   final List<FeedEntryVm> entries;
   final ThemeData theme;
   final ColorScheme scheme;
+  final Color brandGreen;
+  final Future<void> Function(PostVm post) onLikePost;
+  final void Function(PostVm post) onCommentPost;
+  final void Function(PostVm post) onSharePost;
+  final void Function(FeedEntryVm entry) onRepostDone;
 
   @override
   Widget build(BuildContext context) {
@@ -946,7 +1054,19 @@ class _FeedTab extends StatelessWidget {
               timeLabel: DateFormat('d MMM · HH:mm', 'es').format(display.createdAt),
               reposter: reposter,
               quoteBody: quoteBody,
+              brandGreen: brandGreen,
               onAuthorTap: null,
+              onLikeTap: () => onLikePost(display),
+              onCommentTap: () => onCommentPost(display),
+              onShareTap: () => onSharePost(display),
+              onRepost: () async {
+                final res = await Navigator.of(context).push<FeedEntryVm>(
+                  MaterialPageRoute<FeedEntryVm>(
+                    builder: (_) => RepostComposeScreen(original: display),
+                  ),
+                );
+                if (res != null && context.mounted) onRepostDone(res);
+              },
             )
             .animate()
             .fadeIn(duration: 260.ms, delay: (i * 40).ms)

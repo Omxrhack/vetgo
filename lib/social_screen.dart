@@ -201,14 +201,13 @@ class _SocialScreenState extends State<SocialScreen> {
 
   FeedEntryVm _entryWithUpdatedPost(FeedEntryVm e, PostVm p) {
     switch (e) {
-      case FeedPostEntryVm(:final feedAt, :final post):
+      case FeedPostEntryVm(:final feedAt):
         return FeedPostEntryVm(feedAt: feedAt, post: p);
       case FeedRepostEntryVm(
           :final feedAt,
           :final repostId,
           :final quoteBody,
           :final reposter,
-          :final originalPost,
         ):
         return FeedRepostEntryVm(
           feedAt: feedAt,
