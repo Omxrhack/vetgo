@@ -51,18 +51,24 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
 
   final Set<String> _pendingLikePostIds = {};
 
-  late final TabController _tabController;
+  TabController? _tabController;
+
+  void _syncTabsForRole(bool isVet) {
+    final len = isVet ? 4 : 3;
+    if (_tabController != null && _tabController!.length == len) return;
+    _tabController?.dispose();
+    _tabController = TabController(length: len, vsync: this);
+  }
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
     _load();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -81,6 +87,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       return;
     }
     final profile = PublicProfileVm.fromJson(data);
+    _syncTabsForRole(profile.isVet);
     setState(() {
       _profile = profile;
       _loading = false;
@@ -278,6 +285,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
 
   Widget _buildProfile(BuildContext context) {
     final p = _profile!;
+    final tc = _tabController;
+    if (tc == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -326,7 +337,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           // Title only visible when collapsed
           title: _CollapsedTitle(fullName: p.fullName, theme: theme),
           flexibleSpace: FlexibleSpaceBar(
-            background: _BannerBackground(avatarUrl: p.avatarUrl),
+            background: _BannerBackground(isVet: p.isVet),
           ),
         ),
 
@@ -411,8 +422,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                         ],
                       ),
 
-                      // Specialty chip
-                      if (p.vet?.specialty != null) ...[
+                      // Rol: perfil profesional vs comunidad
+                      const SizedBox(height: 6),
+                      _ProfileRoleHeader(profile: p, scheme: scheme, theme: theme),
+
+                      // Specialty chip (solo MVZ)
+                      if (p.isVet && p.vet?.specialty != null) ...[
                         const SizedBox(height: 5),
                         _SpecialtyChip(
                             specialty: p.vet!.specialty!,
@@ -482,7 +497,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           pinned: true,
           delegate: _TabBarDelegate(
             TabBar(
-              controller: _tabController,
+              controller: tc,
               labelColor: scheme.primary,
               unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.4),
               indicatorSize: TabBarIndicatorSize.tab,
@@ -494,57 +509,87 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               labelStyle: theme.textTheme.labelSmall
                   ?.copyWith(fontWeight: FontWeight.w700),
               unselectedLabelStyle: theme.textTheme.labelSmall,
-              tabs: const [
-                Tab(icon: Icon(Icons.article_outlined, size: 17), text: 'Feed'),
-                Tab(
-                    icon: Icon(Icons.photo_library_outlined, size: 17),
-                    text: 'Fotos'),
-                Tab(
-                    icon: Icon(Icons.star_outline_rounded, size: 17),
-                    text: 'Reseñas'),
-                Tab(
-                    icon: Icon(Icons.timeline_rounded, size: 17),
-                    text: 'Actividad'),
-              ],
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: p.isVet
+                  ? const [
+                      Tab(
+                          icon: Icon(Icons.article_outlined, size: 17),
+                          text: 'Feed'),
+                      Tab(
+                          icon: Icon(Icons.grid_view_rounded, size: 17),
+                          text: 'Galería'),
+                      Tab(
+                          icon: Icon(Icons.star_outline_rounded, size: 17),
+                          text: 'Reseñas'),
+                      Tab(
+                          icon: Icon(Icons.local_hospital_outlined, size: 17),
+                          text: 'Consultorio'),
+                    ]
+                  : const [
+                      Tab(
+                          icon: Icon(Icons.article_outlined, size: 17),
+                          text: 'Feed'),
+                      Tab(
+                          icon: Icon(Icons.photo_library_outlined, size: 17),
+                          text: 'Fotos'),
+                      Tab(
+                          icon: Icon(Icons.auto_awesome_outlined, size: 17),
+                          text: 'Momentos'),
+                    ],
             ),
             color: scheme.surfaceContainerLowest,
             borderColor: scheme.outlineVariant.withValues(alpha: 0.4),
           ),
         ),
       ],
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _FeedTab(
-            entries: _feedEntries,
-            theme: theme,
-            scheme: scheme,
-            brandGreen: _vetgoGreenProfile,
-            onLikePost: _handleFeedLike,
-            onOpenPostDetail: _openFeedPostDetail,
-            onSharePost: _shareFeedPost,
-            onRepostDone: (entry) {
-              final u = entry.displayPost;
-              setState(() {
-                _feedEntries = filterProfileFeedPosts([
-                  entry,
-                  ..._feedEntries.map((e) {
-                    if (e.displayPost.id != u.id) return e;
-                    return _entryWithUpdatedPost(e, u);
-                  }),
-                ]);
-              });
-            },
-          ),
-          _PhotosTab(entries: _feedEntries, scheme: scheme),
-          _ReviewsTab(
-              reviews: _reviews,
-              isVet: p.isVet,
-              theme: theme,
-              scheme: scheme),
-          _ActivityTab(theme: theme, scheme: scheme),
-        ],
+        body: TabBarView(
+        controller: tc,
+        children: p.isVet
+            ? [
+                _buildFeedTab(theme, scheme),
+                _PhotosTab(entries: _feedEntries, scheme: scheme),
+                _ReviewsTab(
+                    reviews: _reviews,
+                    isVet: true,
+                    theme: theme,
+                    scheme: scheme),
+                _ConsultorioTab(profile: p, theme: theme, scheme: scheme),
+              ]
+            : [
+                _buildFeedTab(theme, scheme),
+                _PhotosTab(entries: _feedEntries, scheme: scheme),
+                _MomentosTab(
+                  entries: _feedEntries,
+                  theme: theme,
+                  scheme: scheme,
+                ),
+              ],
       ),
+    );
+  }
+
+  Widget _buildFeedTab(ThemeData theme, ColorScheme scheme) {
+    return _FeedTab(
+      entries: _feedEntries,
+      theme: theme,
+      scheme: scheme,
+      brandGreen: _vetgoGreenProfile,
+      onLikePost: _handleFeedLike,
+      onOpenPostDetail: _openFeedPostDetail,
+      onSharePost: _shareFeedPost,
+      onRepostDone: (entry) {
+        final u = entry.displayPost;
+        setState(() {
+          _feedEntries = filterProfileFeedPosts([
+            entry,
+            ..._feedEntries.map((e) {
+              if (e.displayPost.id != u.id) return e;
+              return _entryWithUpdatedPost(e, u);
+            }),
+          ]);
+        });
+      },
     );
   }
 }
@@ -552,35 +597,79 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
 // ─── Banner background ────────────────────────────────────────────────────────
 
 class _BannerBackground extends StatelessWidget {
-  const _BannerBackground({this.avatarUrl});
+  const _BannerBackground({required this.isVet});
 
-  final String? avatarUrl;
+  /// Veterinario: verde clínico + patas. Comunidad: tonos más cálidos + corazones.
+  final bool isVet;
 
   @override
   Widget build(BuildContext context) {
+    final gradient = isVet
+        ? const LinearGradient(
+            colors: [Color(0xFF1B8A4E), Color(0xFF0D5C34)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFF2D9B62), Color(0xFF6BBF8A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Gradient verde brand
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1B8A4E), Color(0xFF0D5C34)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        Container(decoration: BoxDecoration(gradient: gradient)),
+        Opacity(
+          opacity: isVet ? 0.07 : 0.09,
+          child: CustomPaint(
+            painter:
+                isVet ? _PawPatternPainter() : _HeartPatternPainter(),
+          ),
+        ),
+        if (isVet)
+          Positioned(
+            right: -20,
+            top: 24,
+            child: Icon(
+              Icons.medical_services_outlined,
+              size: 120,
+              color: Colors.white.withValues(alpha: 0.06),
             ),
           ),
-        ),
-        // Patrón de patas con baja opacidad
-        Opacity(
-          opacity: 0.07,
-          child: CustomPaint(
-            painter: _PawPatternPainter(),
-          ),
-        ),
       ],
     );
   }
+}
+
+/// Patrón suave de corazones para perfiles de comunidad (no clínico).
+class _HeartPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    const step = 52.0;
+    for (double x = -step; x < size.width + step; x += step) {
+      for (double y = -step; y < size.height + step; y += step) {
+        final ox = x + ((y / step).floor() % 2) * (step / 2);
+        _drawTinyHeart(canvas, Offset(ox + step * 0.35, y + step * 0.4), 5.5, paint);
+      }
+    }
+  }
+
+  void _drawTinyHeart(Canvas canvas, Offset c, double r, Paint paint) {
+    final path = Path()
+      ..moveTo(c.dx, c.dy + r * 0.35)
+      ..cubicTo(c.dx - r, c.dy - r * 0.9, c.dx - r * 1.2, c.dy + r * 0.2, c.dx, c.dy + r * 1.1)
+      ..cubicTo(c.dx + r * 1.2, c.dy + r * 0.2, c.dx + r, c.dy - r * 0.9, c.dx, c.dy + r * 0.35)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _PawPatternPainter extends CustomPainter {
@@ -797,6 +886,85 @@ class _ActionButton extends StatelessWidget {
                   style: theme.textTheme.labelMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Cabecera de rol (MVZ vs comunidad) ───────────────────────────────────────
+
+class _ProfileRoleHeader extends StatelessWidget {
+  const _ProfileRoleHeader({
+    required this.profile,
+    required this.scheme,
+    required this.theme,
+  });
+
+  final PublicProfileVm profile;
+  final ColorScheme scheme;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    if (profile.isVet) {
+      return Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: scheme.primary.withValues(alpha: 0.35),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspace_premium_outlined,
+                    size: 15, color: scheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Médico veterinario verificado',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final (String label, IconData icon) = switch (profile.role) {
+      'owner' => ('Dueño de mascotas', Icons.pets_rounded),
+      'client' => ('Familia Petixfy', Icons.family_restroom_rounded),
+      'admin' => ('Equipo Vetgo', Icons.shield_outlined),
+      _ => ('Comunidad Petixfy', Icons.waving_hand_rounded),
+    };
+
+    return Row(
+      children: [
+        Icon(icon,
+            size: 16, color: scheme.onSurface.withValues(alpha: 0.42)),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.58),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -1306,21 +1474,187 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
-// ─── Activity tab ─────────────────────────────────────────────────────────────
+// ─── Consultorio (solo MVZ): credibilidad clínica, sin duplicar el feed ───────
 
-class _ActivityTab extends StatelessWidget {
-  const _ActivityTab({required this.theme, required this.scheme});
+class _ConsultorioTab extends StatelessWidget {
+  const _ConsultorioTab({
+    required this.profile,
+    required this.theme,
+    required this.scheme,
+  });
 
+  final PublicProfileVm profile;
   final ThemeData theme;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    return _EmptyState(
-      icon: Icons.history_rounded,
-      message: 'Actividad próximamente',
-      scheme: scheme,
-      theme: theme,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+      children: [
+        ClientSoftCard(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.local_hospital_rounded,
+                      color: scheme.primary, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Consulta profesional',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Agenda citas y revisa disponibilidad desde el mapa de Vetgo. '
+                'Este perfil muestra experiencia acumulada y opiniones de familias que ya fueron atendidas.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.45,
+                  color: scheme.onSurface.withValues(alpha: 0.78),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ClientSoftCard(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.map_outlined,
+                  size: 20, color: scheme.primary.withValues(alpha: 0.85)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ubicación del consultorio',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      profile.location != null &&
+                              profile.location!.trim().isNotEmpty
+                          ? profile.location!.trim()
+                          : 'El mapa muestra veterinarios cercanos; confirma horario al agendar.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        height: 1.4,
+                        color: scheme.onSurface.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Momentos: vista social para dueños / clientes (no clínica) ───────────────
+
+class _MomentosTab extends StatelessWidget {
+  const _MomentosTab({
+    required this.entries,
+    required this.theme,
+    required this.scheme,
+  });
+
+  final List<FeedEntryVm> entries;
+  final ThemeData theme;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return _EmptyState(
+        icon: Icons.auto_awesome_outlined,
+        message:
+            'Cuando publiques en el feed, tus momentos aparecerán aquí en orden breve.',
+        scheme: scheme,
+        theme: theme,
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      itemCount: entries.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (_, i) {
+        final post = entries[i].displayPost;
+        final preview = post.body.length > 120
+            ? '${post.body.substring(0, 117)}…'
+            : post.body;
+        final when =
+            DateFormat('d MMM yyyy', 'es').format(post.createdAt);
+        final thumb = post.imageUrls.isNotEmpty ? post.imageUrls.first : null;
+        return ClientSoftCard(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (thumb != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    thumb,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.chat_bubble_outline_rounded,
+                      color: scheme.primary.withValues(alpha: 0.45)),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      when,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      preview,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+            .animate()
+            .fadeIn(duration: 240.ms, delay: (i * 28).ms)
+            .slideY(begin: 0.02, end: 0, duration: 240.ms);
+      },
     );
   }
 }
