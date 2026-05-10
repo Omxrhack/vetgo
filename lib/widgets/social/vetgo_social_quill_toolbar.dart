@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
-/// Barra compacta para compositores sociales.
-///
-/// No usamos [QuillToolbarToggleStyleButtonOptions.childBuilder] para el botón
-/// negrita: en varias versiones de flutter_quill el tipo del builder choca con
-/// el resolutor interno y provoca `_TypeError` en tiempo de ejecución.
-/// El estado activo/inactivo sigue reflejándose con [IconButton.filled] vía
-/// [QuillIconTheme] (icono del tema Material `format_bold`).
+/// Barra compacta para compositores sociales (negrita con estado visual corregido).
 QuillSimpleToolbarConfig vetgoSocialToolbarConfig(ThemeData theme) {
   final scheme = theme.colorScheme;
   final onSurface = scheme.onSurface;
+  final boldIconTheme = QuillIconTheme(
+    iconButtonUnselectedData: IconButtonData(color: onSurface),
+    iconButtonSelectedData: IconButtonData(
+      color: onSurface,
+      style: IconButton.styleFrom(
+        foregroundColor: onSurface,
+        backgroundColor: scheme.surfaceContainerHighest,
+      ),
+    ),
+  );
 
   return QuillSimpleToolbarConfig(
     multiRowsDisplay: false,
@@ -45,16 +49,37 @@ QuillSimpleToolbarConfig vetgoSocialToolbarConfig(ThemeData theme) {
     axis: Axis.horizontal,
     buttonOptions: QuillSimpleToolbarButtonOptions(
       base: QuillToolbarBaseButtonOptions(
-        iconTheme: QuillIconTheme(
-          iconButtonUnselectedData: IconButtonData(color: onSurface),
-          iconButtonSelectedData: IconButtonData(
-            color: onSurface,
-            style: IconButton.styleFrom(
-              foregroundColor: onSurface,
-              backgroundColor: scheme.surfaceContainerHighest,
+        iconTheme: boldIconTheme,
+      ),
+      bold: QuillToolbarToggleStyleButtonOptions(
+        iconTheme: boldIconTheme,
+        // firma (dynamic, dynamic): el typedef interno de flutter_quill no coincide
+        // en runtime con parámetros tipados y provoca _TypeError.
+        childBuilder: ((dynamic options, dynamic extra) {
+          final o = options as QuillToolbarToggleStyleButtonOptions;
+          final e = extra as QuillToolbarToggleStyleButtonExtraOptions;
+          final ctx = e.context;
+          final tooltip = o.tooltip ??
+              FlutterQuillLocalizations.of(ctx)?.bold ??
+              'Negrita';
+          final iconSize = (o.iconSize ?? kDefaultIconSize) *
+              (o.iconButtonFactor ?? kDefaultIconButtonFactor);
+          return Tooltip(
+            message: tooltip,
+            child: QuillToolbarIconButton(
+              icon: Icon(
+                o.iconData ?? Icons.format_bold,
+                size: iconSize,
+              ),
+              isSelected: !e.isToggled,
+              onPressed: e.onPressed,
+              afterPressed: o.afterButtonPressed,
+              iconTheme: o.iconTheme ?? boldIconTheme,
             ),
-          ),
-        ),
+          );
+        }) as QuillToolbarButtonOptionsChildBuilder<
+            QuillToolbarToggleStyleButtonOptions,
+            QuillToolbarToggleStyleButtonExtraOptions>,
       ),
     ),
   );

@@ -6,6 +6,7 @@ import 'package:markdown_quill/markdown_quill.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
@@ -37,7 +38,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
   @override
   void initState() {
     super.initState();
-    _quoteController = QuillController.basic();
+    _quoteController = vetgoSocialQuillController();
     _quoteController.addListener(() => setState(() {}));
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -192,11 +193,9 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                             controller: _quoteController,
                             focusNode: _focusNode,
                             scrollController: _scrollController,
-                            config: QuillEditorConfig(
-                              expands: true,
-                              padding: EdgeInsets.zero,
+                            config: vetgoSocialQuillEditorConfig(
+                              context,
                               placeholder: 'Añade un comentario (opcional)',
-                              customStyles: vetgoSocialQuillStyles(context),
                             ),
                           ),
                         ),

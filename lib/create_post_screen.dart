@@ -5,6 +5,7 @@ import 'package:markdown_quill/markdown_quill.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
@@ -41,7 +42,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
-    _quillController = QuillController.basic();
+    _quillController = vetgoSocialQuillController();
     _quillController.addListener(() => setState(() {}));
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -178,11 +179,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       controller: _quillController,
                       focusNode: _focusNode,
                       scrollController: _scrollController,
-                      config: QuillEditorConfig(
-                        expands: true,
-                        padding: EdgeInsets.zero,
+                      config: vetgoSocialQuillEditorConfig(
+                        context,
                         placeholder: 'Escribe tu publicación',
-                        customStyles: vetgoSocialQuillStyles(context),
                       ),
                     ),
                   ),
