@@ -177,11 +177,12 @@ class SocialPostCard extends StatelessWidget {
       ),
       if (displayPost.body.isNotEmpty)
         Padding(
-          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 12, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 4, _hPad, 0),
           child: MarkdownBody(
             data: displayPost.body,
             shrinkWrap: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+              blockSpacing: 6,
               h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -299,7 +300,7 @@ class SocialPostCard extends StatelessWidget {
   double _topPaddingForAuthor(bool rec, PostAuthorVm? rep, String? quote) {
     if (rep != null) return quote != null && quote.trim().isNotEmpty ? 12 : 10;
     if (rec) return 6;
-    return 14;
+    return 10;
   }
 }
 
@@ -336,35 +337,32 @@ class _AuthorHeaderRow extends StatelessWidget {
         ),
         const SizedBox(width: _kGapAvatarToName),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text.rich(
-              TextSpan(
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface,
-                ),
-                children: [
-                  TextSpan(text: post.author.fullName),
-                  TextSpan(
-                    text: ' · ',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: scheme.onSurface.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  TextSpan(
-                    text: timeLabel,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: scheme.onSurface.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ],
+          child: Text.rich(
+            TextSpan(
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              children: [
+                TextSpan(text: post.author.fullName),
+                TextSpan(
+                  text: ' · ',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                  ),
+                ),
+                TextSpan(
+                  text: timeLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         IconButton(
