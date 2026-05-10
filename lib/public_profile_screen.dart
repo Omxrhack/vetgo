@@ -1075,9 +1075,9 @@ class _FeedTab extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: entries.length,
-      separatorBuilder: (_, _) => const SizedBox.shrink(),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final entry = entries[i];
         final display = entry.displayPost;
@@ -1092,6 +1092,7 @@ class _FeedTab extends StatelessWidget {
               timeLabel: DateFormat('d MMM · HH:mm', 'es').format(display.createdAt),
               reposter: reposter,
               quoteBody: quoteBody,
+              useElevatedChrome: true,
               brandGreen: brandGreen,
               onAuthorTap: null,
               onLikeTap: () => onLikePost(display),

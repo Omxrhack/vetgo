@@ -3,9 +3,12 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:vetgo/models/social_models.dart';
 
-/// Avatar del autor en cabecera (debe coincidir con el sangrado del cuerpo).
-const double _kAuthorAvatarRadius = 20;
-const double _kGapAvatarToName = 10;
+/// Avatar del autor (alineado con compositor / _ComposeBox).
+const double _kAuthorAvatarRadius = 22;
+const double _kGapAvatarToName = 12;
+
+/// Radio del contenedor tipo tarjeta (misma pista que _ComposeBox).
+const double _kCardRadius = 16;
 
 /// Izquierda del texto del post alineada con el nombre: padding card + avatar + hueco.
 double _bodyTextStartPadding(double horizontalPadding) =>
@@ -31,6 +34,7 @@ class SocialPostCard extends StatelessWidget {
     this.onOpenThread,
     this.brandGreen = const Color(0xFF1B8A4E),
     this.showBottomDivider = true,
+    this.useElevatedChrome = true,
   });
 
   /// Contenido principal (post original; en repost es el citado).
@@ -51,6 +55,7 @@ class SocialPostCard extends StatelessWidget {
   final VoidCallback? onCommentTap;
   final VoidCallback? onLikeTap;
   final VoidCallback? onShareTap;
+
   /// Tap en el cuerpo del post (abrir hilo / detalle).
   final VoidCallback? onOpenThread;
 
@@ -58,6 +63,9 @@ class SocialPostCard extends StatelessWidget {
   final Color brandGreen;
 
   final bool showBottomDivider;
+
+  /// Superficie redondeada como la caja de composición; `false` en pantalla de detalle.
+  final bool useElevatedChrome;
 
   static const double _hPad = 16;
 
@@ -97,6 +105,13 @@ class SocialPostCard extends StatelessWidget {
             ),
           )
         : null;
+
+    final baseParagraph = theme.textTheme.bodyMedium?.copyWith(
+      height: 1.55,
+      fontWeight: FontWeight.w400,
+    );
+    final quoteParagraph =
+        theme.textTheme.bodyMedium?.copyWith(height: 1.45, fontWeight: FontWeight.w400);
 
     final threadChildren = <Widget>[
       if (reposter != null)
@@ -139,7 +154,9 @@ class SocialPostCard extends StatelessWidget {
             data: quoteBody!,
             shrinkWrap: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+              p: quoteParagraph,
+              strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
             ),
           ),
         ),
@@ -168,8 +185,9 @@ class SocialPostCard extends StatelessWidget {
               h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              p: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+              p: baseParagraph,
               strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
             ),
           ),
         ),
@@ -247,6 +265,22 @@ class SocialPostCard extends StatelessWidget {
       ],
     );
 
+    if (useElevatedChrome) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(_kCardRadius),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(_kCardRadius),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.12),
+            ),
+          ),
+          child: inner,
+        ),
+      );
+    }
+
     if (!showBottomDivider) return inner;
 
     return DecoratedBox(
@@ -297,7 +331,7 @@ class _AuthorHeaderRow extends StatelessWidget {
                   ? NetworkImage(post.author.avatarUrl!)
                   : null,
           child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
-              ? Icon(Icons.person_rounded, size: 20, color: scheme.primary)
+              ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
               : null,
         ),
         const SizedBox(width: _kGapAvatarToName),
@@ -418,29 +452,35 @@ class SocialPostImageGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (urls.length == 1) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Image.network(
-          urls.first,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          alignment: Alignment.center,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(_kCardRadius),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Image.network(
+            urls.first,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            alignment: Alignment.center,
+          ),
         ),
       );
     }
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 2,
-      crossAxisSpacing: 2,
-      childAspectRatio: 1,
-      children: urls
-          .take(4)
-          .map(
-            (url) => Image.network(url, fit: BoxFit.cover),
-          )
-          .toList(),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_kCardRadius),
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+        childAspectRatio: 1,
+        children: urls
+            .take(4)
+            .map(
+              (url) => Image.network(url, fit: BoxFit.cover),
+            )
+            .toList(),
+      ),
     );
   }
 }

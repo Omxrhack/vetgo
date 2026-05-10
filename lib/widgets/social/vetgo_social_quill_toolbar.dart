@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
-/// Barra compacta para compositores sociales (negrita con estado visual corregido).
+/// Barra compacta para compositores sociales.
 QuillSimpleToolbarConfig vetgoSocialToolbarConfig(ThemeData theme) {
   final scheme = theme.colorScheme;
   final onSurface = scheme.onSurface;
-  final boldIconTheme = QuillIconTheme(
+  final iconTheme = QuillIconTheme(
     iconButtonUnselectedData: IconButtonData(color: onSurface),
     iconButtonSelectedData: IconButtonData(
       color: onSurface,
@@ -49,37 +49,7 @@ QuillSimpleToolbarConfig vetgoSocialToolbarConfig(ThemeData theme) {
     axis: Axis.horizontal,
     buttonOptions: QuillSimpleToolbarButtonOptions(
       base: QuillToolbarBaseButtonOptions(
-        iconTheme: boldIconTheme,
-      ),
-      bold: QuillToolbarToggleStyleButtonOptions(
-        iconTheme: boldIconTheme,
-        // firma (dynamic, dynamic): el typedef interno de flutter_quill no coincide
-        // en runtime con parámetros tipados y provoca _TypeError.
-        childBuilder: ((dynamic options, dynamic extra) {
-          final o = options as QuillToolbarToggleStyleButtonOptions;
-          final e = extra as QuillToolbarToggleStyleButtonExtraOptions;
-          final ctx = e.context;
-          final tooltip = o.tooltip ??
-              FlutterQuillLocalizations.of(ctx)?.bold ??
-              'Negrita';
-          final iconSize = (o.iconSize ?? kDefaultIconSize) *
-              (o.iconButtonFactor ?? kDefaultIconButtonFactor);
-          return Tooltip(
-            message: tooltip,
-            child: QuillToolbarIconButton(
-              icon: Icon(
-                o.iconData ?? Icons.format_bold,
-                size: iconSize,
-              ),
-              isSelected: !e.isToggled,
-              onPressed: e.onPressed,
-              afterPressed: o.afterButtonPressed,
-              iconTheme: o.iconTheme ?? boldIconTheme,
-            ),
-          );
-        }) as QuillToolbarButtonOptionsChildBuilder<
-            QuillToolbarToggleStyleButtonOptions,
-            QuillToolbarToggleStyleButtonExtraOptions>,
+        iconTheme: iconTheme,
       ),
     ),
   );

@@ -212,6 +212,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                       quoteBody: widget.quoteBody,
                       recommended: widget.recommended,
                       brandGreen: widget.brandGreen,
+                      useElevatedChrome: false,
                       showBottomDivider: false,
                       onOpenThread: null,
                       onAuthorTap: widget.onAuthorTap,

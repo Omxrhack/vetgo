@@ -524,10 +524,10 @@ class _SocialScreenState extends State<SocialScreen> {
               )
             else ...[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
                 sliver: SliverList.separated(
                   itemCount: _feedItems.length,
-                  separatorBuilder: (_, _) => const SizedBox.shrink(),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (ctx, i) {
                     final item = _feedItems[i];
                     return switch (item) {
@@ -642,6 +642,7 @@ class _SocialFeedPostTile extends StatelessWidget {
       quoteBody: quoteBody,
       recommended: recommended,
       onDismissRecommended: onDismissRecommended,
+      useElevatedChrome: true,
       brandGreen: _vetgoGreen,
       onAuthorTap: () => Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
