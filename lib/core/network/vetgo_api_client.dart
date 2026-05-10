@@ -896,6 +896,54 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/posts/:id/like` — alterna me gusta.
+  Future<VetJsonResult> togglePostLike(String postId) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts/$postId/like',
+        data: <String, dynamic>{},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/posts/:id/comments`
+  Future<VetJsonResult> getPostComments(String postId, {int page = 1, int limit = 40}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/posts/$postId/comments',
+        queryParameters: <String, dynamic>{'page': page, 'limit': limit},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/posts/:id/comments`
+  Future<VetJsonResult> createPostComment(String postId, String body) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts/$postId/comments',
+        data: <String, dynamic>{'body': body},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/profiles/:id/posts`
   Future<VetJsonResult> getUserPosts(String profileId, {int page = 1}) async {
     try {

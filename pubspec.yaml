@@ -28,6 +28,7 @@ dependencies:
   flutter_floating_bottom_bar: ^2.0.0
   font_awesome_flutter: ^11.0.0
   flutter_markdown: ^0.7.7+1
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:

@@ -105,6 +105,11 @@ class PostVm {
     required this.imageUrls,
     required this.createdAt,
     required this.author,
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.viewerHasLiked = false,
+    this.repostCount = 0,
+    this.viewerHasReposted = false,
   });
 
   final String id;
@@ -113,10 +118,73 @@ class PostVm {
   final DateTime createdAt;
   final PostAuthorVm author;
 
+  final int likeCount;
+  final int commentCount;
+  final bool viewerHasLiked;
+  final int repostCount;
+  final bool viewerHasReposted;
+
   factory PostVm.fromJson(Map<String, dynamic> j) => PostVm(
         id: j['id'] as String,
         body: j['body'] as String? ?? '',
         imageUrls: (j['image_urls'] as List<dynamic>?)?.cast<String>() ?? [],
+        createdAt: DateTime.tryParse(j['created_at'] as String? ?? '')?.toLocal() ?? DateTime.now(),
+        author: PostAuthorVm.fromJson(
+          j['author'] is Map<String, dynamic>
+              ? j['author'] as Map<String, dynamic>
+              : <String, dynamic>{},
+        ),
+        likeCount: (j['like_count'] as num?)?.toInt() ?? 0,
+        commentCount: (j['comment_count'] as num?)?.toInt() ?? 0,
+        viewerHasLiked: j['viewer_has_liked'] as bool? ?? false,
+        repostCount: (j['repost_count'] as num?)?.toInt() ?? 0,
+        viewerHasReposted: j['viewer_has_reposted'] as bool? ?? false,
+      );
+
+  PostVm copyWith({
+    String? id,
+    String? body,
+    List<String>? imageUrls,
+    DateTime? createdAt,
+    PostAuthorVm? author,
+    int? likeCount,
+    int? commentCount,
+    bool? viewerHasLiked,
+    int? repostCount,
+    bool? viewerHasReposted,
+  }) {
+    return PostVm(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      imageUrls: imageUrls ?? this.imageUrls,
+      createdAt: createdAt ?? this.createdAt,
+      author: author ?? this.author,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      viewerHasLiked: viewerHasLiked ?? this.viewerHasLiked,
+      repostCount: repostCount ?? this.repostCount,
+      viewerHasReposted: viewerHasReposted ?? this.viewerHasReposted,
+    );
+  }
+}
+
+/// Comentario en un post (API social).
+class PostCommentVm {
+  const PostCommentVm({
+    required this.id,
+    required this.body,
+    required this.createdAt,
+    required this.author,
+  });
+
+  final String id;
+  final String body;
+  final DateTime createdAt;
+  final PostAuthorVm author;
+
+  factory PostCommentVm.fromJson(Map<String, dynamic> j) => PostCommentVm(
+        id: j['id'] as String,
+        body: j['body'] as String? ?? '',
         createdAt: DateTime.tryParse(j['created_at'] as String? ?? '')?.toLocal() ?? DateTime.now(),
         author: PostAuthorVm.fromJson(
           j['author'] is Map<String, dynamic>
