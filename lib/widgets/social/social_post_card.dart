@@ -145,7 +145,7 @@ class SocialPostCard extends StatelessWidget {
     final quoteParagraph =
         theme.textTheme.bodyMedium?.copyWith(height: 1.45, fontWeight: FontWeight.w400);
 
-    final threadChildren = <Widget>[
+    final threadHeadChildren = <Widget>[
       if (reposter != null)
         Padding(
           padding: EdgeInsets.fromLTRB(_hPad, recommended ? 6 : 12, _hPad, 0),
@@ -212,6 +212,9 @@ class SocialPostCard extends StatelessWidget {
           heroineAuthorFlightTag: heroineAuthorFlightTag,
         ),
       ),
+    ];
+
+    final threadTailChildren = <Widget>[
       if (displayPost.body.isNotEmpty)
         Padding(
           padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 4, _hPad, 0),
@@ -235,10 +238,25 @@ class SocialPostCard extends StatelessWidget {
       ],
     ];
 
+    Widget tailSection = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: threadTailChildren,
+    );
+    final postTag = heroinePostFlightTag;
+    if (postTag != null) {
+      tailSection = Heroine(
+        tag: postTag,
+        child: threadTailChildren.isEmpty
+            ? const SizedBox.shrink()
+            : tailSection,
+      );
+    }
+
     Widget threadSection = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
-      children: threadChildren,
+      children: [...threadHeadChildren, tailSection],
     );
     if (onOpenThread != null) {
       threadSection = GestureDetector(
@@ -246,10 +264,6 @@ class SocialPostCard extends StatelessWidget {
         behavior: HitTestBehavior.translucent,
         child: threadSection,
       );
-    }
-    final postTag = heroinePostFlightTag;
-    if (postTag != null) {
-      threadSection = Heroine(tag: postTag, child: threadSection);
     }
 
     final inner = Column(
