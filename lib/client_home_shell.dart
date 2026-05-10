@@ -284,7 +284,6 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BottomBar(
-        child: barWidget,
         body: content,
         showIcon: false,
         layout: BottomBarLayout(
@@ -306,6 +305,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
             ],
           ),
         ),
+        child: barWidget,
       ),
     );
   }

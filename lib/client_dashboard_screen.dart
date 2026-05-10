@@ -8,31 +8,24 @@ import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/dashboard/dashboard_section.dart';
-import 'package:vetgo/widgets/profile_photo_avatar.dart';
 
 /// Home / dashboard principal del cliente en estilo clinico-profesional.
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({
     super.key,
     required this.userName,
-    this.profilePhotoUrl,
     required this.pets,
     this.petsLoading = false,
     this.petsError,
     required this.onRefreshPets,
-    required this.onLogout,
     required this.onOpenEmergency,
-    this.onProfilePhotoUpdated,
   });
 
   final String userName;
-  final String? profilePhotoUrl;
-  final VoidCallback? onProfilePhotoUpdated;
   final List<ClientPetVm> pets;
   final bool petsLoading;
   final String? petsError;
   final Future<void> Function() onRefreshPets;
-  final VoidCallback onLogout;
   final VoidCallback onOpenEmergency;
 
   @override
