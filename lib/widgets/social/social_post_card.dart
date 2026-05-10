@@ -3,6 +3,14 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:vetgo/models/social_models.dart';
 
+/// Avatar del autor en cabecera (debe coincidir con el sangrado del cuerpo).
+const double _kAuthorAvatarRadius = 20;
+const double _kGapAvatarToName = 10;
+
+/// Izquierda del texto del post alineada con el nombre: padding card + avatar + hueco.
+double _bodyTextStartPadding(double horizontalPadding) =>
+    horizontalPadding + _kAuthorAvatarRadius * 2 + _kGapAvatarToName;
+
 /// Tarjeta de publicación estilo feed (cabecera, texto Markdown, medios, acciones).
 class SocialPostCard extends StatelessWidget {
   const SocialPostCard({
@@ -132,7 +140,12 @@ class SocialPostCard extends StatelessWidget {
         ),
       if (quoteBody != null && quoteBody!.trim().isNotEmpty)
         Padding(
-          padding: EdgeInsets.fromLTRB(_hPad, reposter != null ? 10 : (recommended ? 6 : 14), _hPad, 0),
+          padding: EdgeInsets.fromLTRB(
+            _bodyTextStartPadding(_hPad),
+            reposter != null ? 10 : (recommended ? 6 : 14),
+            _hPad,
+            0,
+          ),
           child: MarkdownBody(
             data: quoteBody!,
             shrinkWrap: true,
@@ -158,7 +171,7 @@ class SocialPostCard extends StatelessWidget {
       ),
       if (displayPost.body.isNotEmpty)
         Padding(
-          padding: const EdgeInsets.fromLTRB(_hPad, 12, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 12, _hPad, 0),
           child: MarkdownBody(
             data: displayPost.body,
             shrinkWrap: true,
@@ -288,7 +301,7 @@ class _AuthorHeaderRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CircleAvatar(
-          radius: 20,
+          radius: _kAuthorAvatarRadius,
           backgroundColor: scheme.primaryContainer,
           backgroundImage:
               post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
@@ -298,7 +311,7 @@ class _AuthorHeaderRow extends StatelessWidget {
               ? Icon(Icons.person_rounded, size: 20, color: scheme.primary)
               : null,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: _kGapAvatarToName),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(top: 2),
