@@ -20,6 +20,7 @@ class SocialPostCard extends StatelessWidget {
     this.onCommentTap,
     this.onLikeTap,
     this.onShareTap,
+    this.onOpenThread,
     this.brandGreen = const Color(0xFF1B8A4E),
     this.showBottomDivider = true,
   });
@@ -42,6 +43,8 @@ class SocialPostCard extends StatelessWidget {
   final VoidCallback? onCommentTap;
   final VoidCallback? onLikeTap;
   final VoidCallback? onShareTap;
+  /// Tap en el cuerpo del post (abrir hilo / detalle).
+  final VoidCallback? onOpenThread;
 
   /// Verde marca (corazón relleno / repost propio).
   final Color brandGreen;
@@ -52,12 +55,8 @@ class SocialPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inner = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (recommended)
-          Padding(
+    final Widget? discoverBanner = recommended
+        ? Padding(
             padding: const EdgeInsets.fromLTRB(_hPad, 10, _hPad, 0),
             child: Row(
               children: [
@@ -88,91 +87,115 @@ class SocialPostCard extends StatelessWidget {
                   ),
               ],
             ),
-          ),
-        if (reposter != null)
-          Padding(
-            padding: EdgeInsets.fromLTRB(_hPad, recommended ? 6 : 12, _hPad, 0),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.45)),
-                const SizedBox(width: 6),
-                CircleAvatar(
-                  radius: 10,
-                  backgroundColor: scheme.primaryContainer,
-                  backgroundImage: reposter!.avatarUrl != null && reposter!.avatarUrl!.isNotEmpty
-                      ? NetworkImage(reposter!.avatarUrl!)
-                      : null,
-                  child: reposter!.avatarUrl == null || reposter!.avatarUrl!.isEmpty
-                      ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
-                      : null,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.55),
-                      ),
-                      children: [
-                        TextSpan(
-                          text: reposter!.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const TextSpan(text: ' reposteó'),
-                      ],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (quoteBody != null && quoteBody!.trim().isNotEmpty)
-          Padding(
-            padding: EdgeInsets.fromLTRB(_hPad, reposter != null ? 10 : (recommended ? 6 : 14), _hPad, 0),
-            child: MarkdownBody(
-              data: quoteBody!,
-              shrinkWrap: true,
-              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                p: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
-              ),
-            ),
-          ),
+          )
+        : null;
+
+    final threadChildren = <Widget>[
+      if (reposter != null)
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            _hPad,
-            _topPaddingForAuthor(recommended, reposter, quoteBody),
-            _hPad,
-            0,
-          ),
-          child: _AuthorHeaderRow(
-            post: displayPost,
-            theme: theme,
-            scheme: scheme,
-            timeLabel: timeLabel,
-            onAuthorTap: onAuthorTap,
+          padding: EdgeInsets.fromLTRB(_hPad, recommended ? 6 : 12, _hPad, 0),
+          child: Row(
+            children: [
+              Icon(Icons.repeat_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.45)),
+              const SizedBox(width: 6),
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: scheme.primaryContainer,
+                backgroundImage: reposter!.avatarUrl != null && reposter!.avatarUrl!.isNotEmpty
+                    ? NetworkImage(reposter!.avatarUrl!)
+                    : null,
+                child: reposter!.avatarUrl == null || reposter!.avatarUrl!.isEmpty
+                    ? Icon(Icons.person_rounded, size: 12, color: scheme.primary)
+                    : null,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                    children: [
+                      TextSpan(
+                        text: reposter!.fullName,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const TextSpan(text: ' reposteó'),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
-        if (displayPost.body.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(_hPad, 12, _hPad, 0),
-            child: MarkdownBody(
-              data: displayPost.body,
-              shrinkWrap: true,
-              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-                h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                p: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
-                strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
+      if (quoteBody != null && quoteBody!.trim().isNotEmpty)
+        Padding(
+          padding: EdgeInsets.fromLTRB(_hPad, reposter != null ? 10 : (recommended ? 6 : 14), _hPad, 0),
+          child: MarkdownBody(
+            data: quoteBody!,
+            shrinkWrap: true,
+            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+              p: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
             ),
           ),
-        if (displayPost.imageUrls.isNotEmpty) ...[
-          SizedBox(height: displayPost.body.isNotEmpty ? 14 : 10),
-          SocialPostImageGrid(urls: displayPost.imageUrls),
-        ],
+        ),
+      Padding(
+        padding: EdgeInsets.fromLTRB(
+          _hPad,
+          _topPaddingForAuthor(recommended, reposter, quoteBody),
+          _hPad,
+          0,
+        ),
+        child: _AuthorHeaderRow(
+          post: displayPost,
+          theme: theme,
+          scheme: scheme,
+          timeLabel: timeLabel,
+          onAuthorTap: onAuthorTap,
+        ),
+      ),
+      if (displayPost.body.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_hPad, 12, _hPad, 0),
+          child: MarkdownBody(
+            data: displayPost.body,
+            shrinkWrap: true,
+            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+              h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              p: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+              strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      if (displayPost.imageUrls.isNotEmpty) ...[
+        SizedBox(height: displayPost.body.isNotEmpty ? 14 : 10),
+        SocialPostImageGrid(urls: displayPost.imageUrls),
+      ],
+    ];
+
+    Widget threadSection = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: threadChildren,
+    );
+    if (onOpenThread != null) {
+      threadSection = GestureDetector(
+        onTap: onOpenThread,
+        behavior: HitTestBehavior.translucent,
+        child: threadSection,
+      );
+    }
+
+    final inner = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ?discoverBanner,
+        threadSection,
         Padding(
           padding: const EdgeInsets.fromLTRB(_hPad, 10, _hPad, 8),
           child: Row(

@@ -9,7 +9,7 @@ import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/repost_compose_screen.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:vetgo/widgets/social/post_comments_sheet.dart';
+import 'package:vetgo/social_post_detail_screen.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
 
 // ─── Brand / helpers ──────────────────────────────────────────────────────────
@@ -249,21 +249,41 @@ class _SocialScreenState extends State<SocialScreen> {
     _patchDisplayPost(next);
   }
 
-  void _openComments(PostVm post) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-        child: PostCommentsSheet(
+  Future<void> _openPostDetail(FeedEntryVm entry, {required bool recommended}) async {
+    final display = entry.displayPost;
+    final timeLabel = _socialFeedRelativeTime(display.createdAt);
+    final PostAuthorVm? reposter;
+    final String? quoteBody;
+    switch (entry) {
+      case FeedRepostEntryVm r:
+        reposter = r.reposter;
+        quoteBody = r.quoteBody;
+      case FeedPostEntryVm():
+        reposter = null;
+        quoteBody = null;
+    }
+
+    final updated = await Navigator.of(context).push<PostVm>(
+      MaterialPageRoute<PostVm>(
+        builder: (ctx) => SocialPostDetailScreen(
           api: _api,
-          postId: post.id,
-          onCommentCountChanged: (total) {
-            _patchDisplayPost(post.copyWith(commentCount: total));
+          initialPost: display,
+          timeLabel: timeLabel,
+          reposter: reposter,
+          quoteBody: quoteBody,
+          recommended: recommended,
+          brandGreen: _vetgoGreen,
+          onAuthorTap: () {
+            Navigator.of(ctx).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => PublicProfileScreen(profileId: display.author.id),
+              ),
+            );
           },
         ),
       ),
     );
+    if (updated != null && mounted) _patchDisplayPost(updated);
   }
 
   void _sharePost(PostVm post) {
@@ -487,7 +507,8 @@ class _SocialScreenState extends State<SocialScreen> {
                             });
                           },
                           onLikePost: _handleLike,
-                          onCommentPost: _openComments,
+                          onOpenPostDetail: () =>
+                              _openPostDetail(item.entry, recommended: item.recommended),
                           onSharePost: _sharePost,
                         )
                             .animate()
@@ -532,7 +553,7 @@ class _SocialFeedPostTile extends StatelessWidget {
     this.onDismissRecommended,
     required this.onFeedUpdated,
     required this.onLikePost,
-    required this.onCommentPost,
+    required this.onOpenPostDetail,
     required this.onSharePost,
   });
 
@@ -543,7 +564,7 @@ class _SocialFeedPostTile extends StatelessWidget {
   final VoidCallback? onDismissRecommended;
   final void Function(FeedEntryVm entry) onFeedUpdated;
   final Future<void> Function(PostVm post) onLikePost;
-  final void Function(PostVm post) onCommentPost;
+  final VoidCallback onOpenPostDetail;
   final void Function(PostVm post) onSharePost;
 
   @override
@@ -586,7 +607,8 @@ class _SocialFeedPostTile extends StatelessWidget {
         if (res != null && context.mounted) onFeedUpdated(res);
       },
       onLikeTap: () => onLikePost(display),
-      onCommentTap: () => onCommentPost(display),
+      onCommentTap: onOpenPostDetail,
+      onOpenThread: onOpenPostDetail,
       onShareTap: () => onSharePost(display),
     );
   }

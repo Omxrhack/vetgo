@@ -6,8 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/repost_compose_screen.dart';
+import 'package:vetgo/social_post_detail_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
-import 'package:vetgo/widgets/social/post_comments_sheet.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
 
 const Color _vetgoGreenProfile = Color(0xFF1B8A4E);
@@ -147,21 +147,40 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     );
   }
 
-  void _openFeedComments(PostVm post) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-        child: PostCommentsSheet(
+  Future<void> _openFeedPostDetail(FeedEntryVm entry) async {
+    final display = entry.displayPost;
+    final timeLabel = DateFormat('d MMM · HH:mm', 'es').format(display.createdAt);
+    final PostAuthorVm? reposter;
+    final String? quoteBody;
+    switch (entry) {
+      case FeedRepostEntryVm r:
+        reposter = r.reposter;
+        quoteBody = r.quoteBody;
+      case FeedPostEntryVm():
+        reposter = null;
+        quoteBody = null;
+    }
+
+    final updated = await Navigator.of(context).push<PostVm>(
+      MaterialPageRoute<PostVm>(
+        builder: (ctx) => SocialPostDetailScreen(
           api: _api,
-          postId: post.id,
-          onCommentCountChanged: (total) {
-            _patchFeedPost(post.copyWith(commentCount: total));
+          initialPost: display,
+          timeLabel: timeLabel,
+          reposter: reposter,
+          quoteBody: quoteBody,
+          brandGreen: _vetgoGreenProfile,
+          onAuthorTap: () {
+            Navigator.of(ctx).push<void>(
+              MaterialPageRoute<void>(
+                builder: (_) => PublicProfileScreen(profileId: display.author.id),
+              ),
+            );
           },
         ),
       ),
     );
+    if (updated != null && mounted) _patchFeedPost(updated);
   }
 
   void _shareFeedPost(PostVm post) {
@@ -468,7 +487,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             scheme: scheme,
             brandGreen: _vetgoGreenProfile,
             onLikePost: _handleFeedLike,
-            onCommentPost: _openFeedComments,
+            onOpenPostDetail: _openFeedPostDetail,
             onSharePost: _shareFeedPost,
             onRepostDone: (entry) {
               final u = entry.displayPost;
@@ -1012,7 +1031,7 @@ class _FeedTab extends StatelessWidget {
     required this.scheme,
     required this.brandGreen,
     required this.onLikePost,
-    required this.onCommentPost,
+    required this.onOpenPostDetail,
     required this.onSharePost,
     required this.onRepostDone,
   });
@@ -1022,7 +1041,7 @@ class _FeedTab extends StatelessWidget {
   final ColorScheme scheme;
   final Color brandGreen;
   final Future<void> Function(PostVm post) onLikePost;
-  final void Function(PostVm post) onCommentPost;
+  final Future<void> Function(FeedEntryVm entry) onOpenPostDetail;
   final void Function(PostVm post) onSharePost;
   final void Function(FeedEntryVm entry) onRepostDone;
 
@@ -1057,7 +1076,8 @@ class _FeedTab extends StatelessWidget {
               brandGreen: brandGreen,
               onAuthorTap: null,
               onLikeTap: () => onLikePost(display),
-              onCommentTap: () => onCommentPost(display),
+              onCommentTap: () => onOpenPostDetail(entry),
+              onOpenThread: () => onOpenPostDetail(entry),
               onShareTap: () => onSharePost(display),
               onRepost: () async {
                 final res = await Navigator.of(context).push<FeedEntryVm>(
