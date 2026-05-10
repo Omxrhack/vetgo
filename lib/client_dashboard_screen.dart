@@ -8,7 +8,9 @@ import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
+import 'package:vetgo/vet_profile_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
+import 'package:vetgo/widgets/dashboard/activity_timeline_tile.dart';
 import 'package:vetgo/widgets/dashboard/dashboard_section.dart';
 
 /// Home / dashboard principal del cliente en estilo clinico-profesional.
@@ -237,7 +239,15 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                   else if (_assignedVet != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
-                      child: _AssignedVetCard(vet: _assignedVet!),
+                      child: _AssignedVetCard(
+                        vet: _assignedVet!,
+                        appointments: _appointmentsRaw
+                            .where((a) =>
+                                a['vet_id']?.toString() ==
+                                _assignedVet!['id']?.toString())
+                            .toList(),
+                        onBookTap: widget.onOpenEmergency,
+                      ),
                     )
                         .animate()
                         .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
@@ -455,7 +465,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < recent.length; i++)
-              _ActivityTimelineTile(row: recent[i], isLast: i == recent.length - 1),
+              ActivityTimelineTile(row: recent[i], isLast: i == recent.length - 1),
           ],
         );
       }
@@ -754,9 +764,15 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 
 
 class _AssignedVetCard extends StatelessWidget {
-  const _AssignedVetCard({required this.vet});
+  const _AssignedVetCard({
+    required this.vet,
+    required this.appointments,
+    required this.onBookTap,
+  });
 
   final Map<String, dynamic> vet;
+  final List<Map<String, dynamic>> appointments;
+  final VoidCallback onBookTap;
 
   @override
   Widget build(BuildContext context) {
@@ -774,6 +790,15 @@ class _AssignedVetCard extends StatelessWidget {
 
     return ClientSoftCard(
       padding: const EdgeInsets.all(20),
+      onTap: () => Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => VetProfileScreen(
+            vet: vet,
+            appointments: appointments,
+            onBookTap: onBookTap,
+          ),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -975,160 +1000,6 @@ class _HealthReminderModel {
 
   final IconData icon;
   final String text;
-}
-
-
-class _ActivityTimelineTile extends StatelessWidget {
-  const _ActivityTimelineTile({
-    required this.row,
-    required this.isLast,
-  });
-
-  final Map<String, dynamic> row;
-  final bool isLast;
-
-  static Color _dotColor(String? status, ColorScheme s) {
-    switch (status) {
-      case 'confirmed':
-        return s.primary;
-      case 'pending':
-        return const Color(0xFFF59E0B);
-      case 'cancelled':
-        return s.error;
-      case 'completed':
-        return const Color(0xFF6B7280);
-      default:
-        return s.outlineVariant;
-    }
-  }
-
-  static Color _chipBg(String? status, ColorScheme s) {
-    switch (status) {
-      case 'confirmed':
-        return s.primary.withValues(alpha: 0.12);
-      case 'pending':
-        return const Color(0xFFF59E0B).withValues(alpha: 0.12);
-      case 'cancelled':
-        return s.error.withValues(alpha: 0.12);
-      case 'completed':
-        return s.surfaceContainerHighest;
-      default:
-        return s.surfaceContainerHighest;
-    }
-  }
-
-  static String _chipLabel(String? status) {
-    switch (status) {
-      case 'confirmed':
-        return 'Confirmada';
-      case 'pending':
-        return 'Pendiente';
-      case 'cancelled':
-        return 'Cancelada';
-      case 'completed':
-        return 'Completada';
-      default:
-        return status ?? 'Pendiente';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    final scheduledRaw = row['scheduled_at']?.toString();
-    final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
-    final whenLabel = dt != null
-        ? '${DateFormat('d MMM yyyy', 'es').format(dt)} \u00B7 ${DateFormat.Hm('es').format(dt)}'
-        : '\u2014';
-
-    final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
-    final petName = petMap['name']?.toString().trim().isNotEmpty == true
-        ? petMap['name']!.toString().trim()
-        : AppStrings.vetMascota;
-
-    final status = row['status']?.toString().trim();
-    final dotColor = _dotColor(status, scheme);
-    final chipBg = _chipBg(status, scheme);
-    final chipLabel = _chipLabel(status);
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 24,
-            child: Column(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-                ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 3),
-                      decoration: BoxDecoration(
-                        color: scheme.outlineVariant.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          petName,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.2),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          whenLabel,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: chipBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      chipLabel,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: dotColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _QuickActionChip extends StatelessWidget {
