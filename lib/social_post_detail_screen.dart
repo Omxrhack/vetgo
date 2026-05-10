@@ -41,6 +41,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
   bool _loadingComments = true;
   String? _commentsError;
   bool _sending = false;
+  bool _likeRequestPending = false;
 
   @override
   void initState() {
@@ -110,20 +111,38 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
   }
 
   Future<void> _handleLike() async {
-    final (data, err) = await widget.api.togglePostLike(_post.id);
-    if (!mounted) return;
+    if (_likeRequestPending) return;
+    _likeRequestPending = true;
+
+    final prev = _post;
+    final optimistic = prev.copyWith(
+      viewerHasLiked: !prev.viewerHasLiked,
+      likeCount: prev.viewerHasLiked
+          ? (prev.likeCount - 1).clamp(0, 999999)
+          : prev.likeCount + 1,
+    );
+    setState(() => _post = optimistic);
+
+    final (data, err) = await widget.api.togglePostLike(prev.id);
+    if (!mounted) {
+      _likeRequestPending = false;
+      return;
+    }
     if (err != null || data == null) {
+      setState(() => _post = prev);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err ?? 'No se pudo actualizar')),
       );
+      _likeRequestPending = false;
       return;
     }
     setState(() {
-      _post = _post.copyWith(
-        likeCount: (data['like_count'] as num?)?.toInt() ?? _post.likeCount,
-        viewerHasLiked: data['viewer_has_liked'] as bool? ?? _post.viewerHasLiked,
+      _post = optimistic.copyWith(
+        likeCount: (data['like_count'] as num?)?.toInt() ?? optimistic.likeCount,
+        viewerHasLiked: data['viewer_has_liked'] as bool? ?? optimistic.viewerHasLiked,
       );
     });
+    _likeRequestPending = false;
   }
 
   void _share() {

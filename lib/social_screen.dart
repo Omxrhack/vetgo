@@ -64,6 +64,9 @@ class _SocialScreenState extends State<SocialScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   String? _error;
+
+  /// Evita envíos duplicados de like en el mismo post mientras la API responde.
+  final Set<String> _pendingLikePostIds = {};
   int _page = 1;
   bool _hasMore = true;
 
@@ -259,19 +262,37 @@ class _SocialScreenState extends State<SocialScreen> {
   }
 
   Future<void> _handleLike(PostVm post) async {
+    if (_pendingLikePostIds.contains(post.id)) return;
+    _pendingLikePostIds.add(post.id);
+
+    final optimistic = post.copyWith(
+      viewerHasLiked: !post.viewerHasLiked,
+      likeCount: post.viewerHasLiked
+          ? (post.likeCount - 1).clamp(0, 999999)
+          : post.likeCount + 1,
+    );
+    _patchDisplayPost(optimistic);
+
     final (data, err) = await _api.togglePostLike(post.id);
-    if (!mounted) return;
+    if (!mounted) {
+      _pendingLikePostIds.remove(post.id);
+      return;
+    }
     if (err != null || data == null) {
+      _patchDisplayPost(post);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err ?? 'No se pudo actualizar el me gusta')),
       );
+      _pendingLikePostIds.remove(post.id);
       return;
     }
-    final next = post.copyWith(
-      likeCount: (data['like_count'] as num?)?.toInt() ?? post.likeCount,
-      viewerHasLiked: data['viewer_has_liked'] as bool? ?? post.viewerHasLiked,
+    _patchDisplayPost(
+      optimistic.copyWith(
+        likeCount: (data['like_count'] as num?)?.toInt() ?? optimistic.likeCount,
+        viewerHasLiked: data['viewer_has_liked'] as bool? ?? optimistic.viewerHasLiked,
+      ),
     );
-    _patchDisplayPost(next);
+    _pendingLikePostIds.remove(post.id);
   }
 
   Future<void> _openPostDetail(FeedEntryVm entry, {required bool recommended}) async {

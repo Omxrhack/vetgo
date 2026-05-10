@@ -22,10 +22,12 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
   String? _myAvatarUrl;
 
   static const Color _brandGreen = Color(0xFF1B8A4E);
+  static const int _maxQuoteChars = 1000;
 
   @override
   void initState() {
     super.initState();
+    _quote.addListener(() => setState(() {}));
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
@@ -75,6 +77,8 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
     final scheme = theme.colorScheme;
     final o = widget.original;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final len = _quote.text.characters.length;
+    final remaining = _maxQuoteChars - len;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -82,6 +86,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(Icons.close_rounded, color: scheme.onSurface),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -129,56 +134,90 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: scheme.primaryContainer,
-                  backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
-                      ? NetworkImage(_myAvatarUrl!)
-                      : null,
-                  child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
-                      ? Icon(Icons.person_rounded, color: scheme.primary)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _quote,
-                    focusNode: _focusNode,
-                    maxLines: 6,
-                    minLines: 3,
-                    maxLength: 1000,
-                    style: theme.textTheme.titleMedium?.copyWith(height: 1.35),
-                    decoration: InputDecoration(
-                      hintText: 'Añade un comentario',
-                      hintStyle: theme.textTheme.titleMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.45),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: scheme.primaryContainer,
+                    backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
+                        ? NetworkImage(_myAvatarUrl!)
+                        : null,
+                    child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
+                        ? Icon(Icons.person_rounded, color: scheme.primary)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _quote,
+                      focusNode: _focusNode,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      keyboardType: TextInputType.multiline,
+                      maxLength: _maxQuoteChars,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        height: 1.35,
+                        fontWeight: FontWeight.w400,
                       ),
-                      border: InputBorder.none,
-                      counterText: '',
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      decoration: InputDecoration(
+                        hintText: 'Añade un comentario (opcional)',
+                        hintStyle: theme.textTheme.titleMedium?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.45),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: InputBorder.none,
+                        counterText: '',
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '$remaining',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: remaining < 100
+                      ? scheme.error
+                      : scheme.onSurface.withValues(alpha: 0.45),
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 16),
-            _QuotedPostCard(
-              original: o,
-              accent: _brandGreen,
-              theme: theme,
-              scheme: scheme,
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.45),
+          ),
+          Expanded(
+            flex: 3,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
+              child: _QuotedPostCard(
+                original: o,
+                accent: _brandGreen,
+                theme: theme,
+                scheme: scheme,
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 
-/// Composer estilo Twitter/X: cerrar, «Publicar» en píldora, avatar + campo, barra de formato inferior.
+/// Composer estilo Twitter/X: cerrar, «Publicar» en píldora, avatar + campo multilínea a pantalla completa.
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -46,19 +46,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  void _insert(String snippet) {
-    final c = _controller;
-    final t = c.text;
-    final start = c.selection.start >= 0 ? c.selection.start : t.length;
-    final end = c.selection.end >= 0 ? c.selection.end : t.length;
-    final newText = t.replaceRange(start, end, snippet);
-    c.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: start + snippet.length),
-    );
-    _focusNode.requestFocus();
   }
 
   Future<void> _publish() async {
@@ -180,7 +167,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         fontWeight: FontWeight.w400,
                       ),
                       decoration: InputDecoration(
-                        hintText: '¿Qué está pasando?',
+                        hintText: 'Escribe tu publicación',
                         hintStyle: theme.textTheme.titleMedium?.copyWith(
                           color: scheme.onSurface.withValues(alpha: 0.45),
                           fontWeight: FontWeight.w400,
@@ -211,82 +198,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ),
             ),
           ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.45),
-          ),
-          Material(
-            color: scheme.surface,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _ToolbarIcon(
-                      icon: Icons.title_rounded,
-                      tooltip: 'Título',
-                      onTap: () => _insert('# '),
-                      scheme: scheme,
-                    ),
-                    _ToolbarIcon(
-                      icon: Icons.horizontal_rule_rounded,
-                      tooltip: 'Subtítulo',
-                      onTap: () => _insert('## '),
-                      scheme: scheme,
-                    ),
-                    _ToolbarIcon(
-                      icon: Icons.format_bold_rounded,
-                      tooltip: 'Negrita',
-                      onTap: () => _insert('**negrita**'),
-                      scheme: scheme,
-                    ),
-                    _ToolbarIcon(
-                      icon: Icons.format_italic_rounded,
-                      tooltip: 'Cursiva',
-                      onTap: () => _insert('_cursiva_'),
-                      scheme: scheme,
-                    ),
-                    _ToolbarIcon(
-                      icon: Icons.format_list_bulleted_rounded,
-                      tooltip: 'Lista',
-                      onTap: () => _insert('- '),
-                      scheme: scheme,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
-      ),
-    );
-  }
-}
-
-class _ToolbarIcon extends StatelessWidget {
-  const _ToolbarIcon({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    required this.scheme,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onTap,
-      icon: Icon(icon, size: 24),
-      tooltip: tooltip,
-      style: IconButton.styleFrom(
-        foregroundColor: scheme.primary,
       ),
     );
   }

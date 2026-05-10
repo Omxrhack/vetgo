@@ -41,6 +41,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   bool _followLoading = false;
   String? _error;
 
+  final Set<String> _pendingLikePostIds = {};
+
   late final TabController _tabController;
 
   @override
@@ -131,20 +133,37 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   }
 
   Future<void> _handleFeedLike(PostVm post) async {
+    if (_pendingLikePostIds.contains(post.id)) return;
+    _pendingLikePostIds.add(post.id);
+
+    final optimistic = post.copyWith(
+      viewerHasLiked: !post.viewerHasLiked,
+      likeCount: post.viewerHasLiked
+          ? (post.likeCount - 1).clamp(0, 999999)
+          : post.likeCount + 1,
+    );
+    _patchFeedPost(optimistic);
+
     final (data, err) = await _api.togglePostLike(post.id);
-    if (!mounted) return;
+    if (!mounted) {
+      _pendingLikePostIds.remove(post.id);
+      return;
+    }
     if (err != null || data == null) {
+      _patchFeedPost(post);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err ?? 'No se pudo actualizar')),
       );
+      _pendingLikePostIds.remove(post.id);
       return;
     }
     _patchFeedPost(
-      post.copyWith(
-        likeCount: (data['like_count'] as num?)?.toInt() ?? post.likeCount,
-        viewerHasLiked: data['viewer_has_liked'] as bool? ?? post.viewerHasLiked,
+      optimistic.copyWith(
+        likeCount: (data['like_count'] as num?)?.toInt() ?? optimistic.likeCount,
+        viewerHasLiked: data['viewer_has_liked'] as bool? ?? optimistic.viewerHasLiked,
       ),
     );
+    _pendingLikePostIds.remove(post.id);
   }
 
   Future<void> _openFeedPostDetail(FeedEntryVm entry) async {
