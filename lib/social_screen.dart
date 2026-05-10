@@ -78,20 +78,22 @@ class _SocialScreenState extends State<SocialScreen> {
       _hasMore = true;
     });
 
-    // Load feed, suggestions, explore posts and session avatar in parallel
-    final results = await Future.wait([
-      _api.getSocialFeed(page: 1),
-      _api.getSuggestedProfiles(limit: 12),
-      _api.getExplorePosts(limit: 10),
-      AuthStorage.loadSession(),
-    ]);
+    // Start all requests in parallel with proper types
+    final feedFuture      = _api.getSocialFeed(page: 1);
+    final suggestFuture   = _api.getSuggestedProfiles(limit: 12);
+    final exploreFuture   = _api.getExplorePosts(limit: 10);
+    final sessionFuture   = AuthStorage.loadSession();
+
+    final feedResult    = await feedFuture;
+    final suggestResult = await suggestFuture;
+    final exploreResult = await exploreFuture;
+    final session       = await sessionFuture;
 
     if (!mounted) return;
 
-    final (feedData, feedErr) = results[0] as (Map<String, dynamic>?, String?);
-    final (suggestData, _) = results[1] as (Map<String, dynamic>?, String?);
-    final (exploreData, _) = results[2] as (Map<String, dynamic>?, String?);
-    final session = results[3] as dynamic;
+    final (feedData, feedErr) = feedResult;
+    final (suggestData, _)    = suggestResult;
+    final (exploreData, _)    = exploreResult;
 
     if (feedErr != null || feedData == null) {
       setState(() {
@@ -101,19 +103,19 @@ class _SocialScreenState extends State<SocialScreen> {
       return;
     }
 
-    final posts = _parsePosts(feedData);
+    final posts       = _parsePosts(feedData);
     final suggestions = _parseSuggestions(suggestData);
-    final explore = _parsePosts(exploreData ?? <String, dynamic>{});
+    final explore     = _parsePosts(exploreData ?? <String, dynamic>{});
 
     setState(() {
-      _posts = posts;
+      _posts        = posts;
       _explorePosts = explore;
-      _suggestions = suggestions;
-      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
-      _hasMore = feedData['has_more'] == true;
-      _page = 2;
-      _loading = false;
-      _feedItems = _buildFeedItems(posts, suggestions, explore);
+      _suggestions  = suggestions;
+      _myAvatarUrl  = session?.profile?['avatar_url'] as String?;
+      _hasMore      = feedData['has_more'] == true;
+      _page         = 2;
+      _loading      = false;
+      _feedItems    = _buildFeedItems(posts, suggestions, explore);
     });
   }
 
