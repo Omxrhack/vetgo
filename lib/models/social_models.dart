@@ -355,5 +355,5 @@ List<FeedEntryVm> filterHomeFeedForViewer(
 
 /// Pestaña Feed del perfil: solo publicaciones propias del autor, sin filas de repost.
 List<FeedEntryVm> filterProfileFeedPosts(List<FeedEntryVm> entries) {
-  return entries.where((e) => e is FeedPostEntryVm).toList();
+  return List<FeedEntryVm>.from(entries.whereType<FeedPostEntryVm>());
 }
