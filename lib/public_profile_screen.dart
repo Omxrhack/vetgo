@@ -89,7 +89,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             .map(FeedEntryVm.fromJson)
             .toList() ??
         [];
-    setState(() => _feedEntries = list);
+    setState(() => _feedEntries = filterProfileFeedPosts(list));
   }
 
   Future<void> _loadReviews() async {
@@ -511,13 +511,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             onRepostDone: (entry) {
               final u = entry.displayPost;
               setState(() {
-                _feedEntries = [
+                _feedEntries = filterProfileFeedPosts([
                   entry,
                   ..._feedEntries.map((e) {
                     if (e.displayPost.id != u.id) return e;
                     return _entryWithUpdatedPost(e, u);
                   }),
-                ];
+                ]);
               });
             },
           ),

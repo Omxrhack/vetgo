@@ -336,3 +336,24 @@ class ReviewVm {
         ),
       );
 }
+
+// ─── Filtros de feed ───────────────────────────────────────────────────────────
+
+/// Feed social (inicio): muestra reposts de otras personas; oculta los reposts
+/// hechos por [viewerUserId] (no repetir la propia acción de republicar).
+List<FeedEntryVm> filterHomeFeedForViewer(
+  List<FeedEntryVm> entries,
+  String? viewerUserId,
+) {
+  if (viewerUserId == null || viewerUserId.isEmpty) return entries;
+  return entries.where((e) {
+    if (e is FeedPostEntryVm) return true;
+    if (e is FeedRepostEntryVm) return e.reposter.id != viewerUserId;
+    return true;
+  }).toList();
+}
+
+/// Pestaña Feed del perfil: solo publicaciones propias del autor, sin filas de repost.
+List<FeedEntryVm> filterProfileFeedPosts(List<FeedEntryVm> entries) {
+  return entries.where((e) => e is FeedPostEntryVm).toList();
+}

@@ -60,6 +60,7 @@ class _SocialScreenState extends State<SocialScreen> {
   List<_FeedItem> _feedItems = [];
 
   String? _myAvatarUrl;
+  String? _myUserId;
 
   bool _loading = true;
   bool _loadingMore = false;
@@ -105,8 +106,9 @@ class _SocialScreenState extends State<SocialScreen> {
     final exploreFuture = _api.getExplorePosts(limit: 10);
     final sessionFuture = AuthStorage.loadSession();
 
-    // Capa 1: feed primero
+    // Feed + sesión en paralelo para filtrar reposts propios en la primera pintura.
     final feedResult = await feedFuture;
+    final session = await sessionFuture;
     if (!mounted) return;
 
     final (feedData, feedErr) = feedResult;
@@ -118,11 +120,15 @@ class _SocialScreenState extends State<SocialScreen> {
       return;
     }
 
-    final feedList = await _decodeFeedEntries(feedData);
+    final feedListRaw = await _decodeFeedEntries(feedData);
+    final myId = session?.user?['id']?.toString();
+    final feedList = filterHomeFeedForViewer(feedListRaw, myId);
     if (!mounted) return;
 
     setState(() {
       _feedEntries = feedList;
+      _myUserId = myId;
+      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
       _suggestions = [];
       _exploreEntries = [];
       _hasMore = feedData['has_more'] == true;
@@ -131,25 +137,23 @@ class _SocialScreenState extends State<SocialScreen> {
       _feedItems = _buildFeedItems(feedList, const [], const []);
     });
 
-    // Capa 2: sugerencias, explore y sesión en paralelo
+    // Capa 2: sugerencias y explore
     final layer2 = await Future.wait<dynamic>([
       suggestFuture,
       exploreFuture,
-      sessionFuture,
     ]);
     if (!mounted) return;
 
     final suggestTuple = layer2[0] as (Map<String, dynamic>?, String?);
     final exploreTuple = layer2[1] as (Map<String, dynamic>?, String?);
-    final session = layer2[2] as AuthSession?;
 
     final suggestions = _parseSuggestions(suggestTuple.$1);
-    final explore = _parseFeedEntries(exploreTuple.$1 ?? <String, dynamic>{});
+    final exploreRaw = _parseFeedEntries(exploreTuple.$1 ?? <String, dynamic>{});
+    final explore = filterHomeFeedForViewer(exploreRaw, _myUserId);
 
     setState(() {
       _suggestions = suggestions;
       _exploreEntries = explore;
-      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
       _feedItems = _buildFeedItems(_feedEntries, suggestions, explore);
     });
   }
@@ -160,7 +164,8 @@ class _SocialScreenState extends State<SocialScreen> {
     final (data, _) = await _api.getSocialFeed(page: _page);
     if (!mounted) return;
     if (data != null) {
-      final more = await _decodeFeedEntries(data);
+      final moreRaw = await _decodeFeedEntries(data);
+      final more = filterHomeFeedForViewer(moreRaw, _myUserId);
       final merged = [..._feedEntries, ...more];
       setState(() {
         _feedEntries = merged;
@@ -537,13 +542,13 @@ class _SocialScreenState extends State<SocialScreen> {
                           onFeedUpdated: (entry) {
                             final u = entry.displayPost;
                             setState(() {
-                              _feedEntries = [
+                              _feedEntries = filterHomeFeedForViewer([
                                 entry,
                                 ..._feedEntries.map((e) {
                                   if (e.displayPost.id != u.id) return e;
                                   return _entryWithUpdatedPost(e, u);
                                 }),
-                              ];
+                              ], _myUserId);
                               _exploreEntries = _exploreEntries.map((e) {
                                 if (e.displayPost.id != u.id) return e;
                                 return _entryWithUpdatedPost(e, u);
