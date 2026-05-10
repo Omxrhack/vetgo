@@ -242,6 +242,33 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                         .animate()
                         .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
                         .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutCubic),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 22),
+                    child: Row(
+                      children: [
+                        _QuickActionChip(
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'Nueva cita',
+                          onTap: widget.onOpenEmergency,
+                        ),
+                        const SizedBox(width: 10),
+                        _QuickActionChip(
+                          icon: Icons.history_rounded,
+                          label: 'Historial',
+                          onTap: () {},
+                        ),
+                        const SizedBox(width: 10),
+                        _QuickActionChip(
+                          icon: Icons.map_outlined,
+                          label: 'Rastrear',
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 280.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.03, end: 0, duration: 280.ms, curve: Curves.easeOutCubic),
                   if (widget.petsError != null && widget.petsError!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -367,18 +394,34 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       );
     }
 
+    final reminder = reminders.first;
+    final scheme = theme.colorScheme;
+
     return _animatedSectionState(
       stateKey: 'health_${reminders.length}_${widget.pets.length}_${upcoming.length}',
       child: ClientSoftCard(
-        color: theme.colorScheme.surface,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        color: scheme.secondaryContainer.withValues(alpha: 0.32),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
           children: [
-            for (var i = 0; i < reminders.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
-              _HealthReminderTile(reminder: reminders[i], muted: muted),
-            ],
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(reminder.icon, color: scheme.primary, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                reminder.text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -411,10 +454,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < recent.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
-              _RecentActivityTile(row: recent[i], muted: muted),
-            ],
+            for (var i = 0; i < recent.length; i++)
+              _ActivityTimelineTile(row: recent[i], isLast: i == recent.length - 1),
           ],
         );
       }
@@ -467,14 +508,154 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         );
       } else {
         stateKey = 'appointments_list_${upcoming.length}';
+        final first = upcoming.first;
+        final rawDt = first['scheduled_at']?.toString();
+        final apptDt = rawDt != null ? DateTime.tryParse(rawDt)?.toLocal() : null;
+        final dayNum = apptDt != null ? DateFormat('d', 'es').format(apptDt) : '—';
+        final monthAbbr = apptDt != null
+            ? DateFormat('MMM', 'es').format(apptDt).toUpperCase()
+            : '';
+        final timeLabel = apptDt != null ? DateFormat('h:mm a', 'es').format(apptDt) : '—';
+        final petName = (first['pet'] is Map ? first['pet']['name']?.toString() : null) ??
+            AppStrings.vetMascota;
+        final vetMap = first['vet'] is Map<String, dynamic>
+            ? first['vet'] as Map<String, dynamic>
+            : <String, dynamic>{};
+        final vetName = vetMap['full_name']?.toString().trim() ?? '';
+
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < upcoming.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
-              _ClientAppointmentSummaryTile(
-                row: upcoming[i],
-                muted: muted,
+            // Hero card — primera cita
+            ClientSoftCard(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.28),
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        monthAbbr,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      Text(
+                        dayNum,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w800,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 52,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          timeLabel,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          petName,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (vetName.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            vetName,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                  ),
+                ],
+              ),
+            ),
+            // Citas adicionales en scroll horizontal
+            if (upcoming.length > 1) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 56,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: upcoming.length - 1,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final a = upcoming[i + 1];
+                    final aDt = DateTime.tryParse(
+                      a['scheduled_at']?.toString() ?? '',
+                    )?.toLocal();
+                    final aPet = (a['pet'] is Map
+                        ? a['pet']['name']?.toString()
+                        : null) ??
+                        AppStrings.vetMascota;
+                    return ClientSoftCard(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today_rounded,
+                              size: 14,
+                              color: theme.colorScheme.primary),
+                          const SizedBox(width: 6),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                aDt != null
+                                    ? DateFormat('d MMM · H:mm', 'es')
+                                        .format(aDt)
+                                    : '—',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                aPet,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.55),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ],
@@ -511,17 +692,23 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         ),
       );
     } else {
+      final upcoming = _upcomingAppointments();
       stateKey = 'pets_list_${widget.pets.length}';
       content = SizedBox(
-        height: 160,
+        height: 220,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: widget.pets.length,
           separatorBuilder: (_, _) => const SizedBox(width: 12),
           itemBuilder: (context, i) {
             final p = widget.pets[i];
+            final nextAppt = upcoming.where((a) {
+              final pid = a['pet'] is Map ? a['pet']['id']?.toString() : null;
+              return pid == p.id;
+            }).firstOrNull;
             return _PetCarouselTile(
               pet: p,
+              nextAppointment: nextAppt,
               onTap: () {
                 Navigator.of(context).push<void>(
                   MaterialPageRoute<void>(
@@ -565,68 +752,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 }
 
-class _ClientAppointmentSummaryTile extends StatelessWidget {
-  const _ClientAppointmentSummaryTile({
-    required this.row,
-    required this.muted,
-  });
-
-  final Map<String, dynamic> row;
-  final Color muted;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final scheduledRaw = row['scheduled_at']?.toString();
-    final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
-    final whenLabel = dt != null
-        ? '${DateFormat('EEEE d MMM', 'es').format(dt)} \u00B7 ${DateFormat.Hm('es').format(dt)}'
-        : '\u2014';
-    final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
-    final petName = petMap['name']?.toString().trim().isNotEmpty == true
-        ? petMap['name']!.toString().trim()
-        : AppStrings.vetMascota;
-    final vetMap = row['vet'] is Map<String, dynamic> ? row['vet'] as Map<String, dynamic> : {};
-    final vetName = vetMap['full_name']?.toString().trim() ?? '';
-    final hasVetId = row['vet_id'] != null && row['vet_id'].toString().trim().isNotEmpty;
-    final vetLine = !hasVetId
-        ? AppStrings.clienteCitaVeterinarioPendiente
-        : (vetName.isNotEmpty ? AppStrings.clienteCitaLineaVeterinario(vetName) : AppStrings.clienteCitaVeterinarioPendiente);
-
-    return ClientSoftCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            whenLabel,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            petName,
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.medical_information_outlined, size: 18, color: scheme.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  vetLine,
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _AssignedVetCard extends StatelessWidget {
   const _AssignedVetCard({required this.vet});
@@ -733,10 +858,15 @@ class _AssignedVetCard extends StatelessWidget {
 }
 
 class _PetCarouselTile extends StatelessWidget {
-  const _PetCarouselTile({required this.pet, required this.onTap});
+  const _PetCarouselTile({
+    required this.pet,
+    required this.onTap,
+    this.nextAppointment,
+  });
 
   final ClientPetVm pet;
   final VoidCallback onTap;
+  final Map<String, dynamic>? nextAppointment;
 
   @override
   Widget build(BuildContext context) {
@@ -744,44 +874,84 @@ class _PetCarouselTile extends StatelessWidget {
     final scheme = theme.colorScheme;
     final secondary = pet.ageLabel.isNotEmpty ? pet.ageLabel : pet.speciesLabel;
 
+    String? apptChip;
+    if (nextAppointment != null) {
+      final raw = nextAppointment!['scheduled_at']?.toString();
+      final dt = raw != null ? DateTime.tryParse(raw)?.toLocal() : null;
+      if (dt != null) apptChip = DateFormat('d MMM', 'es').format(dt);
+    }
+
     return SizedBox(
-      width: 148,
+      width: 172,
       child: ClientSoftCard(
-        padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+        padding: EdgeInsets.zero,
         color: theme.colorScheme.surface,
         onTap: onTap,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: scheme.primaryContainer,
-              backgroundImage: pet.photoUrl != null && pet.photoUrl!.isNotEmpty ? NetworkImage(pet.photoUrl!) : null,
-              child: pet.photoUrl == null || pet.photoUrl!.isEmpty
-                  ? Icon(Icons.pets_rounded, color: scheme.primary, size: 28)
-                  : null,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              pet.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                height: 1.15,
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: SizedBox(
+                height: 118,
+                child: pet.photoUrl != null && pet.photoUrl!.isNotEmpty
+                    ? Image.network(
+                        pet.photoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _petPlaceholder(scheme),
+                      )
+                    : _petPlaceholder(scheme),
               ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              secondary,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.68),
-                fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pet.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    secondary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.55),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (apptChip != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today_rounded, size: 10, color: scheme.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            apptChip,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -789,6 +959,13 @@ class _PetCarouselTile extends StatelessWidget {
       ),
     );
   }
+
+  Widget _petPlaceholder(ColorScheme scheme) => Container(
+        color: scheme.primaryContainer,
+        child: Center(
+          child: Icon(Icons.pets_rounded, color: scheme.primary, size: 40),
+        ),
+      );
 }
 
 
@@ -800,42 +977,60 @@ class _HealthReminderModel {
   final String text;
 }
 
-class _HealthReminderTile extends StatelessWidget {
-  const _HealthReminderTile({required this.reminder, required this.muted});
 
-  final _HealthReminderModel reminder;
-  final Color muted;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(reminder.icon, size: 20, color: scheme.primary),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            reminder.text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: muted,
-              height: 1.35,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RecentActivityTile extends StatelessWidget {
-  const _RecentActivityTile({required this.row, required this.muted});
+class _ActivityTimelineTile extends StatelessWidget {
+  const _ActivityTimelineTile({
+    required this.row,
+    required this.isLast,
+  });
 
   final Map<String, dynamic> row;
-  final Color muted;
+  final bool isLast;
+
+  static Color _dotColor(String? status, ColorScheme s) {
+    switch (status) {
+      case 'confirmed':
+        return s.primary;
+      case 'pending':
+        return const Color(0xFFF59E0B);
+      case 'cancelled':
+        return s.error;
+      case 'completed':
+        return const Color(0xFF6B7280);
+      default:
+        return s.outlineVariant;
+    }
+  }
+
+  static Color _chipBg(String? status, ColorScheme s) {
+    switch (status) {
+      case 'confirmed':
+        return s.primary.withValues(alpha: 0.12);
+      case 'pending':
+        return const Color(0xFFF59E0B).withValues(alpha: 0.12);
+      case 'cancelled':
+        return s.error.withValues(alpha: 0.12);
+      case 'completed':
+        return s.surfaceContainerHighest;
+      default:
+        return s.surfaceContainerHighest;
+    }
+  }
+
+  static String _chipLabel(String? status) {
+    switch (status) {
+      case 'confirmed':
+        return 'Confirmada';
+      case 'pending':
+        return 'Pendiente';
+      case 'cancelled':
+        return 'Cancelada';
+      case 'completed':
+        return 'Completada';
+      default:
+        return status ?? 'Pendiente';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -854,41 +1049,123 @@ class _RecentActivityTile extends StatelessWidget {
         : AppStrings.vetMascota;
 
     final status = row['status']?.toString().trim();
-    final statusLabel = status == null || status.isEmpty ? 'pendiente' : status;
+    final dotColor = _dotColor(status, scheme);
+    final chipBg = _chipBg(status, scheme);
+    final chipLabel = _chipLabel(status);
 
-    return ClientSoftCard(
-      color: theme.colorScheme.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.history_rounded, size: 20, color: scheme.primary),
-          const SizedBox(width: 10),
-          Expanded(
+          SizedBox(
+            width: 24,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  petName,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  whenLabel,
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Estado: $statusLabel',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.74),
-                    fontWeight: FontWeight.w600,
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      decoration: BoxDecoration(
+                        color: scheme.outlineVariant.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          petName,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.2),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          whenLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      chipLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: dotColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickActionChip extends StatelessWidget {
+  const _QuickActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Expanded(
+      child: ClientSoftCard(
+        color: scheme.primaryContainer.withValues(alpha: 0.35),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: scheme.primary),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
