@@ -9,8 +9,11 @@ import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 const double _kAuthorAvatarRadius = 22;
 const double _kGapAvatarToName = 12;
 
-/// Radio del contenedor tipo tarjeta (misma pista que _ComposeBox).
+/// Radio del contenedor tipo tarjeta (compositor); el feed usa timeline plano.
 const double _kCardRadius = 16;
+
+/// Radio de las fotos del post (media estilo X / Threads).
+const double _kMediaCornerRadius = 12;
 
 /// Izquierda del texto del post alineada con el nombre: padding card + avatar + hueco.
 double _bodyTextStartPadding(double horizontalPadding) =>
@@ -132,7 +135,8 @@ class SocialPostCard extends StatelessWidget {
 
   final bool showBottomDivider;
 
-  /// Superficie redondeada como la caja de composición; `false` en pantalla de detalle.
+  /// `true`: fila de timeline plana (superficie [ColorScheme.surface] + divisor inferior).
+  /// `false`: bloque sin caja elevada (p. ej. detalle de publicación).
   final bool useElevatedChrome;
 
   /// Feed «Descubre»: ya sigues al autor (muestra palomita en el avatar).
@@ -161,19 +165,21 @@ class SocialPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget? discoverBanner = recommended
         ? Padding(
-            padding: const EdgeInsets.fromLTRB(_hPad, 10, _hPad, 0),
+            padding: const EdgeInsets.fromLTRB(_hPad, 8, _hPad, 0),
             child: Row(
               children: [
                 Icon(
                   Icons.explore_outlined,
-                  size: 13,
-                  color: scheme.onSurface.withValues(alpha: 0.38),
+                  size: 14,
+                  color: scheme.onSurface.withValues(alpha: 0.34),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 Text(
                   'Descubre nuevo contenido',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.38),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.1,
+                    color: scheme.onSurface.withValues(alpha: 0.36),
                   ),
                 ),
                 const Spacer(),
@@ -194,31 +200,42 @@ class SocialPostCard extends StatelessWidget {
           )
         : null;
 
-    final baseParagraph = theme.textTheme.bodyMedium?.copyWith(
-      height: 1.55,
+    final baseParagraph = theme.textTheme.bodyLarge?.copyWith(
+      fontSize: 15.5,
+      height: 1.42,
+      letterSpacing: -0.15,
       fontWeight: FontWeight.w400,
+      color: scheme.onSurface.withValues(alpha: 0.92),
     );
-    final quoteParagraph =
-        theme.textTheme.bodyMedium?.copyWith(height: 1.45, fontWeight: FontWeight.w400);
+    final quoteParagraph = theme.textTheme.bodyMedium?.copyWith(
+      height: 1.4,
+      letterSpacing: -0.1,
+      fontWeight: FontWeight.w400,
+      color: scheme.onSurface.withValues(alpha: 0.88),
+    );
 
     final threadHeadChildren = <Widget>[
       if (reposter != null)
         Padding(
-          padding: EdgeInsets.fromLTRB(_hPad, recommended ? 6 : 12, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(_hPad, recommended ? 8 : 10, _hPad, 0),
           child: Row(
             children: [
-              Icon(Icons.repeat_rounded, size: 14, color: scheme.onSurface.withValues(alpha: 0.45)),
-              const SizedBox(width: 6),
+              Icon(Icons.repeat_rounded, size: 15, color: brandGreen.withValues(alpha: 0.85)),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.55),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                      height: 1.2,
                     ),
                     children: [
                       TextSpan(
                         text: reposter!.fullName,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface.withValues(alpha: 0.62),
+                        ),
                       ),
                       const TextSpan(text: ' reposteó'),
                     ],
@@ -234,17 +251,27 @@ class SocialPostCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(
             _bodyTextStartPadding(_hPad),
-            reposter != null ? 6 : (recommended ? 4 : 10),
+            reposter != null ? 8 : (recommended ? 6 : 10),
             _hPad,
             0,
           ),
-          child: MarkdownBody(
-            data: quoteBody!,
-            shrinkWrap: true,
-            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: quoteParagraph,
-              strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-              em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: brandGreen.withValues(alpha: 0.55), width: 3),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: MarkdownBody(
+                data: quoteBody!,
+                shrinkWrap: true,
+                styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                  p: quoteParagraph,
+                  strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ),
             ),
           ),
         ),
@@ -278,13 +305,13 @@ class SocialPostCard extends StatelessWidget {
             data: displayPost.body,
             shrinkWrap: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              blockSpacing: 4,
+              blockSpacing: 6,
               h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               p: baseParagraph,
-              strong: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-              em: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+              strong: baseParagraph?.copyWith(fontWeight: FontWeight.w700),
+              em: baseParagraph?.copyWith(fontStyle: FontStyle.italic),
             ),
           ),
         ),
@@ -332,7 +359,7 @@ class SocialPostCard extends StatelessWidget {
         ?discoverBanner,
         threadSection,
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+          padding: const EdgeInsets.only(top: 2, bottom: 4),
           child: Row(
             children: [
               Expanded(
@@ -397,17 +424,19 @@ class SocialPostCard extends StatelessWidget {
     );
 
     if (useElevatedChrome) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(_kCardRadius),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(_kCardRadius),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.12),
+      return Material(
+        color: scheme.surface,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            inner,
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.11),
             ),
-          ),
-          child: inner,
+          ],
         ),
       );
     }
@@ -418,7 +447,7 @@ class SocialPostCard extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.4),
+            color: scheme.outlineVariant.withValues(alpha: 0.22),
             width: 1,
           ),
         ),
@@ -461,32 +490,31 @@ class _AuthorHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nameBlock = Text.rich(
-      TextSpan(
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: scheme.onSurface,
+    final nameStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.25,
+      height: 1.15,
+      color: scheme.onSurface,
+    );
+    final metaStyle = theme.textTheme.labelMedium?.copyWith(
+      fontWeight: FontWeight.w500,
+      letterSpacing: -0.05,
+      color: scheme.onSurface.withValues(alpha: 0.48),
+    );
+
+    final textColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          post.author.fullName,
+          style: nameStyle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-        children: [
-          TextSpan(text: post.author.fullName),
-          TextSpan(
-            text: ' · ',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w400,
-              color: scheme.onSurface.withValues(alpha: 0.45),
-            ),
-          ),
-          TextSpan(
-            text: timeLabel,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w400,
-              color: scheme.onSurface.withValues(alpha: 0.45),
-            ),
-          ),
-        ],
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
+        const SizedBox(height: 2),
+        Text(timeLabel, style: metaStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ],
     );
 
     Widget avatar = CircleAvatar(
@@ -550,18 +578,19 @@ class _AuthorHeaderRow extends StatelessWidget {
               ? GestureDetector(
                   onTap: onAuthorTap,
                   behavior: HitTestBehavior.opaque,
-                  child: nameBlock,
+                  child: textColumn,
                 )
-              : nameBlock,
+              : textColumn,
         ),
         IconButton(
           onPressed: () {},
           icon: Icon(
             Icons.more_horiz_rounded,
-            color: scheme.onSurface.withValues(alpha: 0.35),
+            size: 22,
+            color: scheme.onSurface.withValues(alpha: 0.38),
           ),
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           visualDensity: VisualDensity.compact,
         ),
       ],
@@ -682,7 +711,7 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
 
   @override
   Widget build(BuildContext context) {
-    final muted = widget.scheme.onSurface.withValues(alpha: 0.62);
+    final muted = widget.scheme.onSurface.withValues(alpha: 0.56);
     final active = widget.brandGreen ?? widget.scheme.primary;
     final iconColor = widget.activeAsBrand ? active : muted;
     final iconData = widget.activeAsBrand ? widget.activeIcon : widget.icon;
@@ -694,7 +723,7 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
       onTap: widget.onPressed,
       borderRadius: BorderRadius.circular(20),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
         child: AnimatedScale(
           scale: _pressed ? 0.92 : 1.0,
           duration: _pressDuration,
@@ -718,7 +747,7 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
                 child: Icon(
                   iconData,
                   key: ValueKey<String>('${iconData}_${widget.activeAsBrand}'),
-                  size: 22,
+                  size: 20,
                   color: iconColor,
                 ),
               ),
@@ -803,7 +832,9 @@ class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        AspectRatio(
+        ClipRRect(
+          borderRadius: BorderRadius.circular(_kMediaCornerRadius),
+          child: AspectRatio(
           aspectRatio: 16 / 9,
           child: Stack(
             fit: StackFit.expand,
@@ -868,6 +899,7 @@ class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
                 ),
             ],
           ),
+        ),
         ),
       ],
     );

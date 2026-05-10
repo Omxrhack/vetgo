@@ -561,7 +561,7 @@ class _SocialScreenState extends State<SocialScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
                 sliver: SliverList.separated(
                   itemCount: _feedItems.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
                   itemBuilder: (ctx, i) {
                     final item = _feedItems[i];
                     return switch (item) {

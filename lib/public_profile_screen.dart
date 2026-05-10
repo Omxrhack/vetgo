@@ -1105,7 +1105,7 @@ class _FeedTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: entries.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
         final entry = entries[i];
         final display = entry.displayPost;
