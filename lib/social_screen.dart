@@ -563,7 +563,13 @@ class _SocialScreenState extends State<SocialScreen> {
                         )
                             .animate()
                             .fadeIn(duration: 260.ms, delay: (i * 20).ms)
-                            .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic),
+                            .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic)
+                            .scale(
+                              begin: const Offset(0.98, 0.98),
+                              end: const Offset(1, 1),
+                              duration: 260.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
                       _SuggestionCarouselItem() => _SuggestionCarousel(
                           profiles: item.profiles,
                           api: _api,

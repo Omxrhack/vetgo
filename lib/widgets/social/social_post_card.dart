@@ -389,7 +389,7 @@ class _AuthorHeaderRow extends StatelessWidget {
   }
 }
 
-class _SocialTrailingAction extends StatelessWidget {
+class _SocialTrailingAction extends StatefulWidget {
   const _SocialTrailingAction({
     required this.icon,
     required this.activeIcon,
@@ -411,32 +411,84 @@ class _SocialTrailingAction extends StatelessWidget {
   final Color? brandGreen;
 
   @override
+  State<_SocialTrailingAction> createState() => _SocialTrailingActionState();
+}
+
+class _SocialTrailingActionState extends State<_SocialTrailingAction> {
+  bool _pressed = false;
+
+  static const Duration _switchDuration = Duration(milliseconds: 200);
+  static const Duration _pressDuration = Duration(milliseconds: 100);
+
+  @override
   Widget build(BuildContext context) {
-    final muted = scheme.onSurface.withValues(alpha: 0.62);
-    final active = brandGreen ?? scheme.primary;
-    final iconColor = activeAsBrand ? active : muted;
-    final iconData = activeAsBrand ? activeIcon : icon;
+    final muted = widget.scheme.onSurface.withValues(alpha: 0.62);
+    final active = widget.brandGreen ?? widget.scheme.primary;
+    final iconColor = widget.activeAsBrand ? active : muted;
+    final iconData = widget.activeAsBrand ? widget.activeIcon : widget.icon;
 
     return InkWell(
-      onTap: onPressed,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onPressed,
       borderRadius: BorderRadius.circular(20),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(iconData, size: 22, color: iconColor),
-            if (count > 0) ...[
-              const SizedBox(width: 5),
-              Text(
-                '$count',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: muted,
-                  fontWeight: FontWeight.w600,
+        child: AnimatedScale(
+          scale: _pressed ? 0.92 : 1.0,
+          duration: _pressDuration,
+          curve: Curves.easeOut,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: _switchDuration,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(scale: animation, child: child),
+                  );
+                },
+                child: Icon(
+                  iconData,
+                  key: ValueKey<String>('${iconData}_${widget.activeAsBrand}'),
+                  size: 22,
+                  color: iconColor,
                 ),
               ),
+              if (widget.count > 0) ...[
+                const SizedBox(width: 5),
+                AnimatedSwitcher(
+                  duration: _switchDuration,
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.15),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '${widget.count}',
+                    key: ValueKey<int>(widget.count),
+                    style: widget.theme.textTheme.labelMedium?.copyWith(
+                      color: muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
