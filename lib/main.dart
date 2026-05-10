@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:vetgo/app_flow.dart';
@@ -25,6 +26,8 @@ class VetgoApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       theme: VetgoTheme.light(),
       darkTheme: VetgoTheme.dark(),
+      localizationsDelegates: FlutterQuillLocalizations.localizationsDelegates,
+      supportedLocales: FlutterQuillLocalizations.supportedLocales,
       home: const AppFlow(),
     );
   }

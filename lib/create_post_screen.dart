@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:markdown_quill/markdown_quill.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
-/// Composer estilo Twitter/X: cerrar, «Publicar» en píldora, avatar + campo multilínea a pantalla completa.
+/// Composer estilo Twitter/X: cerrar, «Publicar», avatar + Quill (negrita/listas) + envío en Markdown.
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -13,22 +16,32 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  final _controller = TextEditingController();
+  late final QuillController _quillController;
+  final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   bool _saving = false;
   String? _myAvatarUrl;
 
   static const int _maxChars = 2000;
 
-  bool get _canPost =>
-      !_saving &&
-      _controller.text.trim().isNotEmpty &&
-      _controller.text.trim().characters.length <= _maxChars;
+  bool get _canPost {
+    if (_saving) return false;
+    final plain = _quillController.document.toPlainText();
+    if (plain.trim().isEmpty) return false;
+    if (plain.trim().characters.length > _maxChars) return false;
+    return true;
+  }
+
+  int get _remaining {
+    final len = _quillController.document.toPlainText().trim().characters.length;
+    return _maxChars - len;
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() {}));
+    _quillController = QuillController.basic();
+    _quillController.addListener(() => setState(() {}));
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
@@ -43,16 +56,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _quillController.dispose();
+    _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   Future<void> _publish() async {
     if (!_canPost) return;
-    final text = _controller.text.trim();
+    final trimmedPlain = _quillController.document.toPlainText().trim();
+    if (trimmedPlain.characters.length > _maxChars) return;
+
+    final markdown =
+        DeltaToMarkdown().convert(_quillController.document.toDelta()).trim();
+    if (markdown.isEmpty) return;
+
     setState(() => _saving = true);
-    final (data, err) = await VetgoApiClient().createPost(body: text);
+    final (data, err) = await VetgoApiClient().createPost(body: markdown);
     if (!mounted) return;
     setState(() => _saving = false);
     if (err != null || data == null) {
@@ -74,8 +94,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final len = _controller.text.characters.length;
-    final remaining = _maxChars - len;
+    final remaining = _remaining;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -154,34 +173,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
+                    child: QuillEditor.basic(
+                      controller: _quillController,
                       focusNode: _focusNode,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      keyboardType: TextInputType.multiline,
-                      maxLength: _maxChars,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        height: 1.35,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Escribe tu publicación',
-                        hintStyle: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.45),
-                          fontWeight: FontWeight.w400,
-                        ),
-                        border: InputBorder.none,
-                        counterText: '',
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                      scrollController: _scrollController,
+                      config: QuillEditorConfig(
+                        expands: true,
+                        padding: EdgeInsets.zero,
+                        placeholder: 'Escribe tu publicación',
+                        customStyles: DefaultStyles.getInstance(context),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+          Material(
+            color: scheme.surface,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: QuillSimpleToolbar(
+                controller: _quillController,
+                config: vetgoSocialToolbarConfig(),
+              ),
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.45),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),

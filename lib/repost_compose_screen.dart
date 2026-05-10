@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:markdown_quill/markdown_quill.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
-/// Quote-repost estilo Twitter/X: comentario arriba, tarjeta citada con barra lateral, «Republicar» en píldora.
+/// Quote-repost estilo Twitter/X: comentario Quill arriba, tarjeta citada, «Republicar» en píldora.
 class RepostComposeScreen extends StatefulWidget {
   const RepostComposeScreen({super.key, required this.original});
 
@@ -16,7 +19,8 @@ class RepostComposeScreen extends StatefulWidget {
 }
 
 class _RepostComposeScreenState extends State<RepostComposeScreen> {
-  final _quote = TextEditingController();
+  late final QuillController _quoteController;
+  final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   bool _saving = false;
   String? _myAvatarUrl;
@@ -24,10 +28,16 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
   static const Color _brandGreen = Color(0xFF1B8A4E);
   static const int _maxQuoteChars = 1000;
 
+  int get _remaining {
+    final len = _quoteController.document.toPlainText().trim().characters.length;
+    return _maxQuoteChars - len;
+  }
+
   @override
   void initState() {
     super.initState();
-    _quote.addListener(() => setState(() {}));
+    _quoteController = QuillController.basic();
+    _quoteController.addListener(() => setState(() {}));
     _loadAvatar();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
@@ -42,18 +52,36 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
 
   @override
   void dispose() {
-    _quote.dispose();
+    _quoteController.dispose();
+    _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (_saving) return;
+
+    final plain = _quoteController.document.toPlainText().trim();
+    if (plain.isNotEmpty && plain.characters.length > _maxQuoteChars) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El comentario supera el límite de caracteres')),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
-    final q = _quote.text.trim();
+    String? quoteBody;
+    if (plain.isEmpty) {
+      quoteBody = null;
+    } else {
+      final md =
+          DeltaToMarkdown().convert(_quoteController.document.toDelta()).trim();
+      quoteBody = md.isEmpty ? null : md;
+    }
+
     final (data, err) = await VetgoApiClient().createRepost(
       widget.original.id,
-      quoteBody: q.isEmpty ? null : q,
+      quoteBody: quoteBody,
     );
     if (!mounted) return;
     setState(() => _saving = false);
@@ -77,8 +105,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
     final scheme = theme.colorScheme;
     final o = widget.original;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final len = _quote.text.characters.length;
-    final remaining = _maxQuoteChars - len;
+    final remaining = _remaining;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -139,65 +166,70 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
         children: [
           Expanded(
             flex: 5,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: scheme.primaryContainer,
-                    backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
-                        ? NetworkImage(_myAvatarUrl!)
-                        : null,
-                    child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
-                        ? Icon(Icons.person_rounded, color: scheme.primary)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _quote,
-                      focusNode: _focusNode,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      keyboardType: TextInputType.multiline,
-                      maxLength: _maxQuoteChars,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        height: 1.35,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Añade un comentario (opcional)',
-                        hintStyle: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.45),
-                          fontWeight: FontWeight.w400,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: scheme.primaryContainer,
+                          backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
+                              ? NetworkImage(_myAvatarUrl!)
+                              : null,
+                          child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
+                              ? Icon(Icons.person_rounded, color: scheme.primary)
+                              : null,
                         ),
-                        border: InputBorder.none,
-                        counterText: '',
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: QuillEditor.basic(
+                            controller: _quoteController,
+                            focusNode: _focusNode,
+                            scrollController: _scrollController,
+                            config: QuillEditorConfig(
+                              expands: true,
+                              padding: EdgeInsets.zero,
+                              placeholder: 'Añade un comentario (opcional)',
+                              customStyles: DefaultStyles.getInstance(context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Material(
+                  color: scheme.surface,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: QuillSimpleToolbar(
+                      controller: _quoteController,
+                      config: vetgoSocialToolbarConfig(),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$remaining',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: remaining < 100
+                            ? scheme.error
+                            : scheme.onSurface.withValues(alpha: 0.45),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 20, 8),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$remaining',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: remaining < 100
-                      ? scheme.error
-                      : scheme.onSurface.withValues(alpha: 0.45),
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
+              ],
             ),
           ),
           Divider(
