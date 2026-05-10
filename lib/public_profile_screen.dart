@@ -6,7 +6,7 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// Pantalla de perfil público estilo Threads.
+/// Pantalla de perfil público estilo profesional.
 /// Reutilizable para vets, clientes, y el propio usuario (isOwnProfile = true).
 class PublicProfileScreen extends StatefulWidget {
   const PublicProfileScreen({
@@ -69,7 +69,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       _profile = profile;
       _loading = false;
     });
-    // Load posts and reviews in parallel
     _loadPosts();
     if (profile.isVet) _loadReviews();
   }
@@ -125,10 +124,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     }
   }
 
+  void _openEditSheet() async {
+    final refreshed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(profileId: widget.profileId),
+    );
+    if (refreshed == true && mounted) _load();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
@@ -136,79 +144,232 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? _ErrorView(message: _error!, onRetry: _load)
-              : _buildProfile(theme, scheme),
+              : _buildProfile(context),
     );
   }
 
-  Widget _buildProfile(ThemeData theme, ColorScheme scheme) {
+  Widget _buildProfile(BuildContext context) {
     final p = _profile!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return NestedScrollView(
-      headerSliverBuilder: (context, _) => [
+      headerSliverBuilder: (ctx, _) => [
+        // ── Banner SliverAppBar ──────────────────────────────────────────
         SliverAppBar(
+          expandedHeight: 148,
           pinned: true,
           backgroundColor: scheme.surfaceContainerLowest,
           surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            p.fullName,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          // Back button with semi-transparent pill background
+          leading: Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.28),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back_ios_new_rounded,
+                    size: 18, color: Colors.white),
+              ),
+            ),
           ),
           actions: [
             if (widget.isOwnProfile)
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () {},
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: _openEditSheet,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.edit_outlined,
+                        size: 17, color: Colors.white),
+                  ),
+                ),
               ),
           ],
+          // Title only visible when collapsed
+          title: _CollapsedTitle(fullName: p.fullName, theme: theme),
+          flexibleSpace: FlexibleSpaceBar(
+            collapseMode: CollapseMode.pin,
+            background: _BannerBackground(avatarUrl: p.avatarUrl),
+          ),
         ),
+
+        // ── Header content (avatar superpuesto + info) ──────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 8),
-                _ProfileHeader(profile: p, theme: theme, scheme: scheme),
-                const SizedBox(height: 12),
-                _FollowRow(
-                  profile: p,
-                  isOwnProfile: widget.isOwnProfile,
-                  followLoading: _followLoading,
-                  onFollow: _toggleFollow,
-                  onBook: widget.onBookTap,
-                  theme: theme,
-                  scheme: scheme,
+                // Avatar + action button row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Transform.translate(
+                      offset: const Offset(0, -28),
+                      child: _ProfileAvatar(
+                        avatarUrl: p.avatarUrl,
+                        isVet: p.isVet,
+                        scheme: scheme,
+                      ),
+                    ),
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _ActionButton(
+                        profile: p,
+                        isOwnProfile: widget.isOwnProfile,
+                        followLoading: _followLoading,
+                        onFollow: _toggleFollow,
+                        onBook: widget.onBookTap,
+                        onEdit: _openEditSheet,
+                        theme: theme,
+                        scheme: scheme,
+                      ),
+                    ),
+                  ],
                 ),
+
+                // Name + verification badge
+                Transform.translate(
+                  offset: const Offset(0, -20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              p.fullName,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          if (p.isVet) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: scheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.check_rounded,
+                                  size: 11, color: Colors.white),
+                            ),
+                          ],
+                        ],
+                      ),
+
+                      // Specialty chip
+                      if (p.vet?.specialty != null) ...[
+                        const SizedBox(height: 5),
+                        _SpecialtyChip(
+                            specialty: p.vet!.specialty!,
+                            scheme: scheme,
+                            theme: theme),
+                      ],
+
+                      // Bio
+                      if (p.bio != null && p.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          p.bio!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.75),
+                            height: 1.45,
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
+                      // Location
+                      if (p.location != null && p.location!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(Icons.place_outlined,
+                                size: 13,
+                                color:
+                                    scheme.onSurface.withValues(alpha: 0.4)),
+                            const SizedBox(width: 4),
+                            Text(
+                              p.location!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color:
+                                    scheme.onSurface.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      // Follower counts — flat text style Threads
+                      const SizedBox(height: 10),
+                      _FollowCountRow(profile: p, theme: theme, scheme: scheme),
+                    ],
+                  ).animate().fadeIn(duration: 280.ms).slideY(
+                      begin: 0.02,
+                      end: 0,
+                      duration: 280.ms,
+                      curve: Curves.easeOutCubic),
+                ),
+
+                // Vet stats — big numbers
                 if (p.isVet && p.vet != null) ...[
-                  const SizedBox(height: 12),
-                  _VetStatsRow(vet: p.vet!, theme: theme, scheme: scheme),
+                  const SizedBox(height: 4),
+                  _VetBigStatsRow(vet: p.vet!, theme: theme, scheme: scheme),
+                  const SizedBox(height: 4),
                 ],
-                const SizedBox(height: 4),
               ],
             ),
           ),
         ),
+
+        // ── Pinned TabBar ────────────────────────────────────────────────
         SliverPersistentHeader(
           pinned: true,
           delegate: _TabBarDelegate(
             TabBar(
               controller: _tabController,
               labelColor: scheme.primary,
-              unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.5),
-              indicatorColor: scheme.primary,
-              indicatorWeight: 2.5,
-              labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+              unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.4),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: scheme.primary.withValues(alpha: 0.10),
+              ),
+              dividerColor: Colors.transparent,
+              labelStyle: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
+              unselectedLabelStyle: theme.textTheme.labelSmall,
               tabs: const [
-                Tab(text: 'Feed'),
-                Tab(text: 'Fotos'),
-                Tab(text: 'Reseñas'),
-                Tab(text: 'Actividad'),
+                Tab(icon: Icon(Icons.article_outlined, size: 17), text: 'Feed'),
+                Tab(
+                    icon: Icon(Icons.photo_library_outlined, size: 17),
+                    text: 'Fotos'),
+                Tab(
+                    icon: Icon(Icons.star_outline_rounded, size: 17),
+                    text: 'Reseñas'),
+                Tab(
+                    icon: Icon(Icons.timeline_rounded, size: 17),
+                    text: 'Actividad'),
               ],
             ),
             color: scheme.surfaceContainerLowest,
+            borderColor: scheme.outlineVariant.withValues(alpha: 0.4),
           ),
         ),
       ],
@@ -217,7 +378,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
         children: [
           _FeedTab(posts: _posts, theme: theme, scheme: scheme),
           _PhotosTab(posts: _posts, scheme: scheme),
-          _ReviewsTab(reviews: _reviews, isVet: p.isVet, theme: theme, scheme: scheme),
+          _ReviewsTab(
+              reviews: _reviews,
+              isVet: p.isVet,
+              theme: theme,
+              scheme: scheme),
           _ActivityTab(theme: theme, scheme: scheme),
         ],
       ),
@@ -225,117 +390,161 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Banner background ────────────────────────────────────────────────────────
 
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({
-    required this.profile,
-    required this.theme,
-    required this.scheme,
-  });
+class _BannerBackground extends StatelessWidget {
+  const _BannerBackground({this.avatarUrl});
 
-  final PublicProfileVm profile;
-  final ThemeData theme;
-  final ColorScheme scheme;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = profile.avatarUrl;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        CircleAvatar(
-          radius: 36,
-          backgroundColor: scheme.primaryContainer,
-          backgroundImage:
-              avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-          child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person_rounded, size: 36, color: scheme.primary)
-              : null,
+        // Gradient verde brand
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1B8A4E), Color(0xFF0D5C34)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                profile.fullName,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
-              ),
-              if (profile.vet?.specialty != null) ...[
-                const SizedBox(height: 3),
-                _SpecialtyChip(specialty: profile.vet!.specialty!, scheme: scheme, theme: theme),
-              ],
-              if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  profile.bio!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.75),
-                    height: 1.4,
-                  ),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if (profile.location != null && profile.location!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.place_outlined, size: 14, color: scheme.onSurface.withValues(alpha: 0.45)),
-                    const SizedBox(width: 4),
-                    Text(
-                      profile.location!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.55),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
+        // Patrón de patas con baja opacidad
+        Opacity(
+          opacity: 0.07,
+          child: CustomPaint(
+            painter: _PawPatternPainter(),
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 280.ms).slideY(begin: 0.02, end: 0, duration: 280.ms, curve: Curves.easeOutCubic);
-  }
-}
-
-class _SpecialtyChip extends StatelessWidget {
-  const _SpecialtyChip({required this.specialty, required this.scheme, required this.theme});
-
-  final String specialty;
-  final ColorScheme scheme;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        specialty,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: scheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }
 
-// ─── Follow row ───────────────────────────────────────────────────────────────
+class _PawPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
 
-class _FollowRow extends StatelessWidget {
-  const _FollowRow({
+    const spacing = 60.0;
+    const pawRadius = 7.0;
+    const toeRadius = 4.0;
+
+    for (double x = 0; x < size.width + spacing; x += spacing) {
+      for (double y = 0; y < size.height + spacing; y += spacing) {
+        final cx = x + (y / spacing).floor() % 2 * (spacing / 2);
+        // Main pad
+        canvas.drawCircle(Offset(cx, y), pawRadius, paint);
+        // 4 toes
+        final toePositions = [
+          Offset(cx - 10, y - 10),
+          Offset(cx - 4, y - 13),
+          Offset(cx + 4, y - 13),
+          Offset(cx + 10, y - 10),
+        ];
+        for (final pos in toePositions) {
+          canvas.drawCircle(pos, toeRadius, paint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PawPatternPainter old) => false;
+}
+
+// ─── Collapsed title (visible only when AppBar is pinned/collapsed) ───────────
+
+class _CollapsedTitle extends StatelessWidget {
+  const _CollapsedTitle({required this.fullName, required this.theme});
+
+  final String fullName;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      fullName,
+      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
+}
+
+// ─── Avatar with badge + white border ────────────────────────────────────────
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.avatarUrl,
+    required this.isVet,
+    required this.scheme,
+  });
+
+  final String? avatarUrl;
+  final bool isVet;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImg = avatarUrl != null && avatarUrl!.isNotEmpty;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 44,
+            backgroundColor: scheme.primaryContainer,
+            backgroundImage: hasImg ? NetworkImage(avatarUrl!) : null,
+            child: !hasImg
+                ? Icon(Icons.person_rounded, size: 44, color: scheme.primary)
+                : null,
+          ),
+        ),
+        if (isVet)
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(Icons.verified_rounded,
+                  size: 14, color: Colors.white),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Action button (Follow / Siguiendo / Editar perfil) ──────────────────────
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
     required this.profile,
     required this.isOwnProfile,
     required this.followLoading,
     required this.onFollow,
     required this.onBook,
+    required this.onEdit,
     required this.theme,
     required this.scheme,
   });
@@ -345,117 +554,174 @@ class _FollowRow extends StatelessWidget {
   final bool followLoading;
   final VoidCallback onFollow;
   final VoidCallback? onBook;
+  final VoidCallback onEdit;
   final ThemeData theme;
   final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isOwnProfile) {
+      return OutlinedButton(
+        onPressed: onEdit,
+        style: OutlinedButton.styleFrom(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: BorderSide(color: scheme.outline.withValues(alpha: 0.7)),
+        ),
+        child: Text('Editar perfil',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(fontWeight: FontWeight.w700)),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (onBook != null) ...[
+          OutlinedButton.icon(
+            onPressed: onBook,
+            icon: const Icon(Icons.calendar_today_rounded, size: 14),
+            label: const Text('Agendar'),
+            style: OutlinedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              side: BorderSide(color: scheme.primary),
+              foregroundColor: scheme.primary,
+              textStyle: theme.textTheme.labelMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        FilledButton(
+          onPressed: followLoading ? null : onFollow,
+          style: FilledButton.styleFrom(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            backgroundColor: profile.isFollowing
+                ? scheme.surfaceContainerHigh
+                : scheme.primary,
+            foregroundColor:
+                profile.isFollowing ? scheme.onSurface : scheme.onPrimary,
+          ),
+          child: followLoading
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: profile.isFollowing
+                          ? scheme.onSurface
+                          : scheme.onPrimary),
+                )
+              : Text(
+                  profile.isFollowing ? 'Siguiendo' : 'Seguir',
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Specialty chip ───────────────────────────────────────────────────────────
+
+class _SpecialtyChip extends StatelessWidget {
+  const _SpecialtyChip(
+      {required this.specialty, required this.scheme, required this.theme});
+
+  final String specialty;
+  final ColorScheme scheme;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.medical_services_outlined,
+              size: 11, color: scheme.primary),
+          const SizedBox(width: 5),
+          Text(
+            specialty,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Follow count row (flat text) ─────────────────────────────────────────────
+
+class _FollowCountRow extends StatelessWidget {
+  const _FollowCountRow(
+      {required this.profile, required this.theme, required this.scheme});
+
+  final PublicProfileVm profile;
+  final ThemeData theme;
+  final ColorScheme scheme;
+
+  static String _fmt(int n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) {
+      return '${(n / 1000).toStringAsFixed(n >= 10000 ? 0 : 1)}K';
+    }
+    return n.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _CountChip(
-          label: 'Seguidores',
-          count: profile.followersCount,
-          theme: theme,
-          scheme: scheme,
-        ),
-        Container(width: 1, height: 28, color: scheme.outlineVariant, margin: const EdgeInsets.symmetric(horizontal: 14)),
-        _CountChip(
-          label: 'Siguiendo',
-          count: profile.followingCount,
-          theme: theme,
-          scheme: scheme,
-        ),
-        const Spacer(),
-        if (isOwnProfile) ...[
-          OutlinedButton(
-            onPressed: () => _openEditSheet(context),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              side: BorderSide(color: scheme.outline),
-            ),
-            child: Text('Editar perfil', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
-          ),
-        ] else ...[
-          if (onBook != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: OutlinedButton.icon(
-                onPressed: onBook,
-                icon: const Icon(Icons.calendar_today_rounded, size: 15),
-                label: const Text('Agendar'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: BorderSide(color: scheme.primary),
-                  foregroundColor: scheme.primary,
-                ),
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: scheme.onSurface.withValues(alpha: 0.55)),
+            children: [
+              TextSpan(
+                text: _fmt(profile.followersCount),
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface.withValues(alpha: 0.85)),
               ),
-            ),
-          FilledButton(
-            onPressed: followLoading ? null : onFollow,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: profile.isFollowing ? scheme.surfaceContainerHigh : scheme.primary,
-              foregroundColor: profile.isFollowing ? scheme.onSurface : scheme.onPrimary,
-            ),
-            child: followLoading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary),
-                  )
-                : Text(
-                    profile.isFollowing ? 'Siguiendo' : 'Seguir',
-                    style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
+              const TextSpan(text: ' seguidores'),
+              TextSpan(
+                text: '  ·  ${_fmt(profile.followingCount)}',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface.withValues(alpha: 0.85)),
+              ),
+              const TextSpan(text: ' siguiendo'),
+            ],
           ),
-        ],
-      ],
-    ).animate().fadeIn(duration: 280.ms, delay: 60.ms);
-  }
-
-  Future<void> _openEditSheet(BuildContext context) async {
-    final refreshed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _EditProfileSheet(profileId: context.findAncestorStateOfType<_PublicProfileScreenState>()!.widget.profileId),
-    );
-    if (refreshed == true && context.mounted) {
-      context.findAncestorStateOfType<_PublicProfileScreenState>()!._load();
-    }
-  }
-}
-
-class _CountChip extends StatelessWidget {
-  const _CountChip({required this.label, required this.count, required this.theme, required this.scheme});
-
-  final String label;
-  final int count;
-  final ThemeData theme;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final formatted = count >= 1000
-        ? '${(count / 1000).toStringAsFixed(count >= 10000 ? 0 : 1)}K'
-        : count.toString();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(formatted, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.5))),
+        ),
       ],
     );
   }
 }
 
-// ─── Vet stats ─────────────────────────────────────────────────────────────────
+// ─── Vet stats big numbers ────────────────────────────────────────────────────
 
-class _VetStatsRow extends StatelessWidget {
-  const _VetStatsRow({required this.vet, required this.theme, required this.scheme});
+class _VetBigStatsRow extends StatelessWidget {
+  const _VetBigStatsRow(
+      {required this.vet, required this.theme, required this.scheme});
 
   final VetStatsVm vet;
   final ThemeData theme;
@@ -463,77 +729,136 @@ class _VetStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _MiniStatCard(
-          value: vet.completedAppointments.toString(),
-          label: 'Citas',
-          icon: Icons.calendar_today_rounded,
-          theme: theme,
-          scheme: scheme,
+    final ratingStr =
+        vet.avgRating != null ? vet.avgRating!.toStringAsFixed(1) : '—';
+    final expStr =
+        vet.yearsExperience != null ? '${vet.yearsExperience}' : '—';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+              width: 0.5),
+          bottom: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+              width: 0.5),
         ),
-        const SizedBox(width: 8),
-        _MiniStatCard(
-          value: vet.avgRating != null ? '${vet.avgRating}★' : '—',
-          label: 'Rating',
-          icon: Icons.star_rounded,
-          theme: theme,
-          scheme: scheme,
-        ),
-        const SizedBox(width: 8),
-        _MiniStatCard(
-          value: vet.yearsExperience != null ? '${vet.yearsExperience}a' : '—',
-          label: 'Exp.',
-          icon: Icons.workspace_premium_outlined,
-          theme: theme,
-          scheme: scheme,
-        ),
-        const SizedBox(width: 8),
-        _MiniStatCard(
-          value: vet.uniquePets.toString(),
-          label: 'Mascotas',
-          icon: Icons.pets_rounded,
-          theme: theme,
-          scheme: scheme,
-        ),
-      ],
-    ).animate().fadeIn(duration: 280.ms, delay: 80.ms);
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _BigStat(
+            value: vet.completedAppointments.toString(),
+            label: 'Citas',
+            theme: theme,
+            scheme: scheme,
+          ),
+          _StatDivider(scheme: scheme),
+          _BigStat(
+            value: ratingStr,
+            label: 'Rating',
+            suffix: vet.avgRating != null ? '★' : null,
+            suffixColor: const Color(0xFFF59E0B),
+            theme: theme,
+            scheme: scheme,
+          ),
+          _StatDivider(scheme: scheme),
+          _BigStat(
+            value: expStr,
+            label: 'Años exp.',
+            suffix: vet.yearsExperience != null ? 'a' : null,
+            theme: theme,
+            scheme: scheme,
+          ),
+          _StatDivider(scheme: scheme),
+          _BigStat(
+            value: vet.uniquePets.toString(),
+            label: 'Mascotas',
+            theme: theme,
+            scheme: scheme,
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 280.ms, delay: 80.ms)
+        .slideY(begin: 0.02, end: 0, duration: 280.ms, curve: Curves.easeOutCubic);
   }
 }
 
-class _MiniStatCard extends StatelessWidget {
-  const _MiniStatCard({
+class _BigStat extends StatelessWidget {
+  const _BigStat({
     required this.value,
     required this.label,
-    required this.icon,
+    this.suffix,
+    this.suffixColor,
     required this.theme,
     required this.scheme,
   });
 
   final String value;
   final String label;
-  final IconData icon;
+  final String? suffix;
+  final Color? suffixColor;
   final ThemeData theme;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ClientSoftCard(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        child: Column(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            Icon(icon, size: 16, color: scheme.primary),
-            const SizedBox(height: 4),
-            Text(value, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
             Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.5)),
-              textAlign: TextAlign.center,
+              value,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                height: 1,
+              ),
             ),
+            if (suffix != null) ...[
+              const SizedBox(width: 1),
+              Text(
+                suffix!,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: suffixColor ?? scheme.primary,
+                  height: 1,
+                ),
+              ),
+            ],
           ],
         ),
-      ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 36,
+      color: scheme.outlineVariant.withValues(alpha: 0.5),
     );
   }
 }
@@ -541,10 +866,12 @@ class _MiniStatCard extends StatelessWidget {
 // ─── Tab bar delegate ─────────────────────────────────────────────────────────
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  _TabBarDelegate(this.tabBar, {required this.color});
+  _TabBarDelegate(this.tabBar,
+      {required this.color, required this.borderColor});
 
   final TabBar tabBar;
   final Color color;
+  final Color borderColor;
 
   @override
   double get minExtent => tabBar.preferredSize.height + 1;
@@ -552,23 +879,29 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height + 1;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return ColoredBox(
       color: color,
       child: Column(
-        children: [tabBar, Divider(height: 1, thickness: 1, color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4))],
+        children: [
+          tabBar,
+          Divider(height: 1, thickness: 1, color: borderColor),
+        ],
       ),
     );
   }
 
   @override
-  bool shouldRebuild(_TabBarDelegate old) => old.tabBar != tabBar || old.color != color;
+  bool shouldRebuild(_TabBarDelegate old) =>
+      old.tabBar != tabBar || old.color != color;
 }
 
 // ─── Feed tab ─────────────────────────────────────────────────────────────────
 
 class _FeedTab extends StatelessWidget {
-  const _FeedTab({required this.posts, required this.theme, required this.scheme});
+  const _FeedTab(
+      {required this.posts, required this.theme, required this.scheme});
 
   final List<PostVm> posts;
   final ThemeData theme;
@@ -577,7 +910,12 @@ class _FeedTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (posts.isEmpty) {
-      return _EmptyState(icon: Icons.article_outlined, message: 'Sin publicaciones aún', scheme: scheme, theme: theme);
+      return _EmptyState(
+        icon: Icons.rss_feed_rounded,
+        message: 'Aún sin publicaciones',
+        scheme: scheme,
+        theme: theme,
+      );
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -592,7 +930,8 @@ class _FeedTab extends StatelessWidget {
 }
 
 class _PostCard extends StatelessWidget {
-  const _PostCard({required this.post, required this.theme, required this.scheme});
+  const _PostCard(
+      {required this.post, required this.theme, required this.scheme});
 
   final PostVm post;
   final ThemeData theme;
@@ -611,9 +950,10 @@ class _PostCard extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: scheme.primaryContainer,
-                backgroundImage: post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
-                    ? NetworkImage(post.author.avatarUrl!)
-                    : null,
+                backgroundImage:
+                    post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
+                        ? NetworkImage(post.author.avatarUrl!)
+                        : null,
                 child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
                     ? Icon(Icons.person_rounded, size: 18, color: scheme.primary)
                     : null,
@@ -623,15 +963,20 @@ class _PostCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(post.author.fullName, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(timeLabel, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.45))),
+                    Text(post.author.fullName,
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(timeLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.45))),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(post.body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+          Text(post.body,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
           if (post.imageUrls.isNotEmpty) ...[
             const SizedBox(height: 10),
             _ImageGrid(urls: post.imageUrls),
@@ -652,7 +997,8 @@ class _ImageGrid extends StatelessWidget {
     if (urls.length == 1) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: Image.network(urls.first, fit: BoxFit.cover, width: double.infinity, height: 200),
+        child: Image.network(urls.first,
+            fit: BoxFit.cover, width: double.infinity, height: 200),
       );
     }
     return GridView.count(
@@ -662,10 +1008,13 @@ class _ImageGrid extends StatelessWidget {
       mainAxisSpacing: 4,
       crossAxisSpacing: 4,
       childAspectRatio: 1,
-      children: urls.take(4).map((url) => ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(url, fit: BoxFit.cover),
-      )).toList(),
+      children: urls
+          .take(4)
+          .map((url) => ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(url, fit: BoxFit.cover),
+              ))
+          .toList(),
     );
   }
 }
@@ -683,8 +1032,8 @@ class _PhotosTab extends StatelessWidget {
     final images = posts.expand((p) => p.imageUrls).toList();
     if (images.isEmpty) {
       return _EmptyState(
-        icon: Icons.photo_library_outlined,
-        message: 'Sin fotos aún',
+        icon: Icons.camera_alt_outlined,
+        message: 'Aún sin fotos',
         scheme: scheme,
         theme: Theme.of(context),
       );
@@ -707,7 +1056,11 @@ class _PhotosTab extends StatelessWidget {
 // ─── Reviews tab ──────────────────────────────────────────────────────────────
 
 class _ReviewsTab extends StatelessWidget {
-  const _ReviewsTab({required this.reviews, required this.isVet, required this.theme, required this.scheme});
+  const _ReviewsTab(
+      {required this.reviews,
+      required this.isVet,
+      required this.theme,
+      required this.scheme});
 
   final List<ReviewVm> reviews;
   final bool isVet;
@@ -717,25 +1070,37 @@ class _ReviewsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isVet) {
-      return _EmptyState(icon: Icons.star_outline_rounded, message: 'Las reseñas son solo para veterinarios', scheme: scheme, theme: theme);
+      return _EmptyState(
+        icon: Icons.rate_review_outlined,
+        message: 'Las reseñas son solo para veterinarios',
+        scheme: scheme,
+        theme: theme,
+      );
     }
     if (reviews.isEmpty) {
-      return _EmptyState(icon: Icons.star_outline_rounded, message: 'Sin reseñas aún', scheme: scheme, theme: theme);
+      return _EmptyState(
+        icon: Icons.rate_review_outlined,
+        message: 'Aún sin reseñas',
+        scheme: scheme,
+        theme: theme,
+      );
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: reviews.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _ReviewCard(review: reviews[i], theme: theme, scheme: scheme)
-          .animate()
-          .fadeIn(duration: 260.ms, delay: (i * 40).ms)
-          .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic),
+      itemBuilder: (_, i) =>
+          _ReviewCard(review: reviews[i], theme: theme, scheme: scheme)
+              .animate()
+              .fadeIn(duration: 260.ms, delay: (i * 40).ms)
+              .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic),
     );
   }
 }
 
 class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.review, required this.theme, required this.scheme});
+  const _ReviewCard(
+      {required this.review, required this.theme, required this.scheme});
 
   final ReviewVm review;
   final ThemeData theme;
@@ -754,10 +1119,12 @@ class _ReviewCard extends StatelessWidget {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: scheme.primaryContainer,
-                backgroundImage: review.reviewer.avatarUrl != null && review.reviewer.avatarUrl!.isNotEmpty
+                backgroundImage: review.reviewer.avatarUrl != null &&
+                        review.reviewer.avatarUrl!.isNotEmpty
                     ? NetworkImage(review.reviewer.avatarUrl!)
                     : null,
-                child: review.reviewer.avatarUrl == null || review.reviewer.avatarUrl!.isEmpty
+                child: review.reviewer.avatarUrl == null ||
+                        review.reviewer.avatarUrl!.isEmpty
                     ? Icon(Icons.person_rounded, size: 16, color: scheme.primary)
                     : null,
               ),
@@ -766,23 +1133,35 @@ class _ReviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(review.reviewer.fullName, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(timeLabel, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.45))),
+                    Text(review.reviewer.fullName,
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(timeLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.45))),
                   ],
                 ),
               ),
               Row(
-                children: List.generate(5, (i) => Icon(
-                  i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                  size: 14,
-                  color: i < review.rating ? const Color(0xFFF59E0B) : scheme.outlineVariant,
-                )),
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    i < review.rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 14,
+                    color: i < review.rating
+                        ? const Color(0xFFF59E0B)
+                        : scheme.outlineVariant,
+                  ),
+                ),
               ),
             ],
           ),
           if (review.comment != null && review.comment!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(review.comment!, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+            Text(review.comment!,
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
           ],
         ],
       ),
@@ -800,7 +1179,12 @@ class _ActivityTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _EmptyState(icon: Icons.timeline_rounded, message: 'Actividad próximamente', scheme: scheme, theme: theme);
+    return _EmptyState(
+      icon: Icons.history_rounded,
+      message: 'Actividad próximamente',
+      scheme: scheme,
+      theme: theme,
+    );
   }
 }
 
@@ -836,7 +1220,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(err)));
     } else {
       Navigator.of(context).pop(true);
     }
@@ -847,9 +1232,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLowest,
@@ -865,13 +1249,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: scheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                    color: scheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 16),
-            Text('Editar perfil', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Editar perfil',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
             TextField(
               controller: _bio,
@@ -880,7 +1265,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: 'Biografía',
                 hintText: 'Cuéntanos sobre ti...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 12),
@@ -889,16 +1275,26 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: 'Ciudad / ubicación',
                 prefixIcon: const Icon(Icons.place_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
               child: _saving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Guardar', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Text('Guardar',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -907,10 +1303,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 }
 
-// ─── Shared empty state ───────────────────────────────────────────────────────
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.icon, required this.message, required this.scheme, required this.theme});
+  const _EmptyState(
+      {required this.icon,
+      required this.message,
+      required this.scheme,
+      required this.theme});
 
   final IconData icon;
   final String message;
@@ -920,17 +1320,37 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 40, color: scheme.onSurface.withValues(alpha: 0.2)),
-          const SizedBox(height: 12),
-          Text(message, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withValues(alpha: 0.4))),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.07),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon,
+                  size: 28, color: scheme.primary.withValues(alpha: 0.5)),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.45),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+// ─── Error view ───────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message, required this.onRetry});
