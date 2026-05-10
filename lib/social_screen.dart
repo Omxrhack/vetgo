@@ -8,6 +8,8 @@ import 'package:vetgo/create_post_screen.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/repost_compose_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:vetgo/widgets/social/post_comments_sheet.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
 
 // ─── Brand / helpers ──────────────────────────────────────────────────────────
@@ -195,6 +197,81 @@ class _SocialScreenState extends State<SocialScreen> {
     }
 
     return items;
+  }
+
+  FeedEntryVm _entryWithUpdatedPost(FeedEntryVm e, PostVm p) {
+    switch (e) {
+      case FeedPostEntryVm(:final feedAt, :final post):
+        return FeedPostEntryVm(feedAt: feedAt, post: p);
+      case FeedRepostEntryVm(
+          :final feedAt,
+          :final repostId,
+          :final quoteBody,
+          :final reposter,
+          :final originalPost,
+        ):
+        return FeedRepostEntryVm(
+          feedAt: feedAt,
+          repostId: repostId,
+          quoteBody: quoteBody,
+          reposter: reposter,
+          originalPost: p,
+        );
+    }
+  }
+
+  void _patchDisplayPost(PostVm updated) {
+    setState(() {
+      _feedEntries = _feedEntries.map((e) {
+        if (e.displayPost.id != updated.id) return e;
+        return _entryWithUpdatedPost(e, updated);
+      }).toList();
+      _exploreEntries = _exploreEntries.map((e) {
+        if (e.displayPost.id != updated.id) return e;
+        return _entryWithUpdatedPost(e, updated);
+      }).toList();
+      _feedItems = _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
+    });
+  }
+
+  Future<void> _handleLike(PostVm post) async {
+    final (data, err) = await _api.togglePostLike(post.id);
+    if (!mounted) return;
+    if (err != null || data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err ?? 'No se pudo actualizar el me gusta')),
+      );
+      return;
+    }
+    final next = post.copyWith(
+      likeCount: (data['like_count'] as num?)?.toInt() ?? post.likeCount,
+      viewerHasLiked: data['viewer_has_liked'] as bool? ?? post.viewerHasLiked,
+    );
+    _patchDisplayPost(next);
+  }
+
+  void _openComments(PostVm post) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+        child: PostCommentsSheet(
+          api: _api,
+          postId: post.id,
+          onCommentCountChanged: (total) {
+            _patchDisplayPost(post.copyWith(commentCount: total));
+          },
+        ),
+      ),
+    );
+  }
+
+  void _sharePost(PostVm post) {
+    Share.share(
+      '${post.author.fullName}: ${post.body}',
+      subject: 'Vetgo Social',
+    );
   }
 
   void _dismissRecommended(FeedEntryVm entry) {
@@ -393,12 +470,26 @@ class _SocialScreenState extends State<SocialScreen> {
                           onDismissRecommended:
                               item.recommended ? () => _dismissRecommended(item.entry) : null,
                           onFeedUpdated: (entry) {
+                            final u = entry.displayPost;
                             setState(() {
-                              _feedEntries = [entry, ..._feedEntries];
+                              _feedEntries = [
+                                entry,
+                                ..._feedEntries.map((e) {
+                                  if (e.displayPost.id != u.id) return e;
+                                  return _entryWithUpdatedPost(e, u);
+                                }),
+                              ];
+                              _exploreEntries = _exploreEntries.map((e) {
+                                if (e.displayPost.id != u.id) return e;
+                                return _entryWithUpdatedPost(e, u);
+                              }).toList();
                               _feedItems =
                                   _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
                             });
                           },
+                          onLikePost: _handleLike,
+                          onCommentPost: _openComments,
+                          onSharePost: _sharePost,
                         )
                             .animate()
                             .fadeIn(duration: 260.ms, delay: (i * 20).ms)
@@ -441,6 +532,9 @@ class _SocialFeedPostTile extends StatelessWidget {
     required this.scheme,
     this.onDismissRecommended,
     required this.onFeedUpdated,
+    required this.onLikePost,
+    required this.onCommentPost,
+    required this.onSharePost,
   });
 
   final FeedEntryVm entry;
@@ -449,6 +543,9 @@ class _SocialFeedPostTile extends StatelessWidget {
   final ColorScheme scheme;
   final VoidCallback? onDismissRecommended;
   final void Function(FeedEntryVm entry) onFeedUpdated;
+  final Future<void> Function(PostVm post) onLikePost;
+  final void Function(PostVm post) onCommentPost;
+  final void Function(PostVm post) onSharePost;
 
   @override
   Widget build(BuildContext context) {
@@ -475,6 +572,7 @@ class _SocialFeedPostTile extends StatelessWidget {
       quoteBody: quoteBody,
       recommended: recommended,
       onDismissRecommended: onDismissRecommended,
+      brandGreen: _vetgoGreen,
       onAuthorTap: () => Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => PublicProfileScreen(profileId: display.author.id),
@@ -488,6 +586,9 @@ class _SocialFeedPostTile extends StatelessWidget {
         );
         if (res != null && context.mounted) onFeedUpdated(res);
       },
+      onLikeTap: () => onLikePost(display),
+      onCommentTap: () => onCommentPost(display),
+      onShareTap: () => onSharePost(display),
     );
   }
 }

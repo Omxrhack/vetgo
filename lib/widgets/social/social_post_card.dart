@@ -17,6 +17,10 @@ class SocialPostCard extends StatelessWidget {
     this.onDismissRecommended,
     this.onAuthorTap,
     this.onRepost,
+    this.onCommentTap,
+    this.onLikeTap,
+    this.onShareTap,
+    this.brandGreen = const Color(0xFF1B8A4E),
     this.showBottomDivider = true,
   });
 
@@ -35,6 +39,12 @@ class SocialPostCard extends StatelessWidget {
   final VoidCallback? onDismissRecommended;
   final VoidCallback? onAuthorTap;
   final VoidCallback? onRepost;
+  final VoidCallback? onCommentTap;
+  final VoidCallback? onLikeTap;
+  final VoidCallback? onShareTap;
+
+  /// Verde marca (corazón relleno / repost propio).
+  final Color brandGreen;
 
   final bool showBottomDivider;
 
@@ -164,29 +174,47 @@ class SocialPostCard extends StatelessWidget {
           SocialPostImageGrid(urls: displayPost.imageUrls),
         ],
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+          padding: const EdgeInsets.fromLTRB(_hPad, 10, _hPad, 8),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _ActionIcon(
+              _SocialTrailingAction(
                 icon: Icons.chat_bubble_outline_rounded,
+                activeIcon: Icons.chat_bubble_outline_rounded,
+                theme: theme,
                 scheme: scheme,
-                onPressed: () {},
+                count: displayPost.commentCount,
+                onPressed: onCommentTap ?? () {},
               ),
-              _ActionIcon(
+              const SizedBox(width: 18),
+              _SocialTrailingAction(
                 icon: Icons.repeat_rounded,
+                activeIcon: Icons.repeat_rounded,
+                theme: theme,
                 scheme: scheme,
+                count: displayPost.repostCount,
+                activeAsBrand: displayPost.viewerHasReposted,
+                brandGreen: brandGreen,
                 onPressed: onRepost ?? () {},
               ),
-              _ActionIcon(
+              const SizedBox(width: 18),
+              _SocialTrailingAction(
                 icon: Icons.favorite_border_rounded,
+                activeIcon: Icons.favorite_rounded,
+                theme: theme,
                 scheme: scheme,
-                onPressed: () {},
+                count: displayPost.likeCount,
+                activeAsBrand: displayPost.viewerHasLiked,
+                brandGreen: brandGreen,
+                onPressed: onLikeTap ?? () {},
               ),
-              _ActionIcon(
-                icon: Icons.send_outlined,
+              const SizedBox(width: 18),
+              _SocialTrailingAction(
+                icon: Icons.share_outlined,
+                activeIcon: Icons.share_outlined,
+                theme: theme,
                 scheme: scheme,
-                onPressed: () {},
+                onPressed: onShareTap ?? () {},
               ),
             ],
           ),
@@ -302,25 +330,56 @@ class _AuthorHeaderRow extends StatelessWidget {
   }
 }
 
-class _ActionIcon extends StatelessWidget {
-  const _ActionIcon({
+class _SocialTrailingAction extends StatelessWidget {
+  const _SocialTrailingAction({
     required this.icon,
+    required this.activeIcon,
+    required this.theme,
     required this.scheme,
     required this.onPressed,
+    this.count = 0,
+    this.activeAsBrand = false,
+    this.brandGreen,
   });
 
   final IconData icon;
+  final IconData activeIcon;
+  final ThemeData theme;
   final ColorScheme scheme;
   final VoidCallback onPressed;
+  final int count;
+  final bool activeAsBrand;
+  final Color? brandGreen;
 
   @override
   Widget build(BuildContext context) {
-    final color = scheme.onSurface.withValues(alpha: 0.62);
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 22, color: color),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.standard,
+    final muted = scheme.onSurface.withValues(alpha: 0.62);
+    final active = brandGreen ?? scheme.primary;
+    final iconColor = activeAsBrand ? active : muted;
+    final iconData = activeAsBrand ? activeIcon : icon;
+
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(iconData, size: 22, color: iconColor),
+            if (count > 0) ...[
+              const SizedBox(width: 5),
+              Text(
+                '$count',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
