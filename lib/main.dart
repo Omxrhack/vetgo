@@ -4,11 +4,13 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:vetgo/app_flow.dart';
+import 'package:vetgo/core/social/safe_quill_native_bridge.dart';
 import 'package:vetgo/core/supabase/vetgo_supabase.dart';
 import 'package:vetgo/theme/vetgo_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerSafeQuillNativeBridge();
   await dotenv.load(fileName: '.env');
   await VetgoSupabase.initializeIfConfigured();
   await initializeDateFormatting('es');
