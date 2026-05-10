@@ -245,10 +245,23 @@ class SocialPostCard extends StatelessWidget {
       ],
     ];
 
-    Widget tailSection = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: threadTailChildren,
+    // Durante transiciones [Heroine] el overlay puede imponer altura máxima; un Column
+    // intrínseco desborda. Con altura acotada usamos scroll interno (no afecta al feed normal).
+    Widget tailSection = LayoutBuilder(
+      builder: (context, constraints) {
+        final column = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: threadTailChildren,
+        );
+        if (!constraints.hasBoundedHeight) {
+          return column;
+        }
+        return SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: column,
+        );
+      },
     );
     final postTag = heroinePostFlightTag;
     if (postTag != null) {
