@@ -349,19 +349,14 @@ class _SocialScreenState extends State<SocialScreen> {
           recommended: recommended,
           brandGreen: _vetgoGreen,
           heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
-          heroineAuthorFlightTag: vetgoSocialProfileHeroTagForPost(
-            display.author.id,
-            display.id,
-          ),
+          heroineAuthorFlightTag: vetgoSocialAuthorAvatarFlightTag(display.id),
           onAuthorTap: () {
             Navigator.of(ctx).push<void>(
               VetgoSocialHeroineRoute<void>(
                 builder: (_) => PublicProfileScreen(
                   profileId: display.author.id,
-                  heroineAvatarFlightTag: vetgoSocialProfileHeroTagForPost(
-                    display.author.id,
-                    display.id,
-                  ),
+                  heroineAvatarFlightTag:
+                      vetgoSocialAuthorAvatarFlightTag(display.id),
                 ),
               ),
             );
@@ -715,19 +710,14 @@ class _SocialFeedPostTile extends StatelessWidget {
       useElevatedChrome: true,
       brandGreen: _vetgoGreen,
       heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
-      heroineAuthorFlightTag: vetgoSocialProfileHeroTagForPost(
-        display.author.id,
-        display.id,
-      ),
+      heroineAuthorFlightTag: vetgoSocialAuthorAvatarFlightTag(display.id),
       heroineRepostFlightTag: vetgoSocialRepostHeroTag(display.id),
       onAuthorTap: () => Navigator.of(context).push<void>(
         VetgoSocialHeroineRoute<void>(
           builder: (_) => PublicProfileScreen(
             profileId: display.author.id,
-            heroineAvatarFlightTag: vetgoSocialProfileHeroTagForPost(
-              display.author.id,
-              display.id,
-            ),
+            heroineAvatarFlightTag:
+                vetgoSocialAuthorAvatarFlightTag(display.id),
           ),
         ),
       ),

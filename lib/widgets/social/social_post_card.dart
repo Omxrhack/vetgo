@@ -17,7 +17,14 @@ double _bodyTextStartPadding(double horizontalPadding) =>
 
 Widget _maybeHeroine({required String? tag, required Widget child}) {
   if (tag == null) return child;
-  return Heroine(tag: tag, child: child);
+  // [Heroine] no aporta Material; [InkWell] en el hijo lo requiere para el splash.
+  return Heroine(
+    tag: tag,
+    child: Material(
+      type: MaterialType.transparency,
+      child: child,
+    ),
+  );
 }
 
 /// Tarjeta de publicación estilo feed (cabecera, texto Markdown, medios, acciones).
