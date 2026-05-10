@@ -15,6 +15,7 @@ import 'package:vetgo/repost_compose_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:vetgo/social_post_detail_screen.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
+import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 
 // ─── Brand / helpers ──────────────────────────────────────────────────────────
 
@@ -782,6 +783,8 @@ class _ComposeBox extends StatelessWidget {
               children: [
                 Heroine(
                   tag: vetgoSocialComposeHeroTag,
+                  motion: vetgoSocialHeroAvatarMotion,
+                  flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
                   child: CircleAvatar(
                     radius: 22,
                     backgroundColor: scheme.primaryContainer,
@@ -954,6 +957,8 @@ class _SuggestionCard extends StatelessWidget {
             onTap: onTap,
             child: Heroine(
               tag: vetgoSocialProfileHeroTag(profile.id),
+              motion: vetgoSocialHeroAvatarMotion,
+              flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
               child: CircleAvatar(
                 radius: 24,
                 backgroundColor: scheme.primaryContainer,

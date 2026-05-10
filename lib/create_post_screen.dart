@@ -9,6 +9,7 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
+import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
 /// Composer estilo Twitter/X: cerrar, «Publicar», avatar + Quill (negrita/listas) + envío en Markdown.
@@ -167,6 +168,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 children: [
                   Heroine(
                     tag: vetgoSocialComposeHeroTag,
+                    motion: vetgoSocialHeroAvatarMotion,
+                    flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
                     child: CircleAvatar(
                       radius: 22,
                       backgroundColor: scheme.primaryContainer,

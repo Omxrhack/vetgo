@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:heroine/heroine.dart';
 
 import 'package:vetgo/models/social_models.dart';
+import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 
 /// Avatar del autor (alineado con compositor / _ComposeBox).
 const double _kAuthorAvatarRadius = 22;
@@ -15,11 +16,49 @@ const double _kCardRadius = 16;
 double _bodyTextStartPadding(double horizontalPadding) =>
     horizontalPadding + _kAuthorAvatarRadius * 2 + _kGapAvatarToName;
 
-Widget _maybeHeroine({required String? tag, required Widget child}) {
+/// Cuerpo del post envuelto en [Heroine]: el overlay puede dar **maxHeight** finito aunque el
+/// [LayoutBuilder] vea altura infinita en algún frame; [FittedBox] encaja sin overflow.
+Widget _socialHeroPostTail(List<Widget> children) {
+  final column = Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: children,
+  );
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final maxW = constraints.maxWidth;
+      final maxH = constraints.maxHeight;
+      final hasMaxW = maxW.isFinite && maxW < double.infinity;
+      final hasMaxH = maxH.isFinite && maxH < double.infinity;
+      if (!hasMaxW && !hasMaxH) {
+        return column;
+      }
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: hasMaxW ? maxW : double.infinity,
+            maxHeight: hasMaxH ? maxH : double.infinity,
+          ),
+          child: column,
+        ),
+      );
+    },
+  );
+}
+
+Widget _maybeHeroineRepostAction({
+  required String? tag,
+  required Widget child,
+  required ColorScheme scheme,
+}) {
   if (tag == null) return child;
   // [Heroine] no aporta Material; [InkWell] en el hijo lo requiere para el splash.
   return Heroine(
     tag: tag,
+    motion: vetgoSocialHeroCompactMotion,
+    flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
     child: Material(
       type: MaterialType.transparency,
       child: child,
@@ -224,7 +263,7 @@ class SocialPostCard extends StatelessWidget {
     final threadTailChildren = <Widget>[
       if (displayPost.body.isNotEmpty)
         Padding(
-          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 4, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 1, _hPad, 0),
           child: MarkdownBody(
             data: displayPost.body,
             shrinkWrap: true,
@@ -245,31 +284,21 @@ class SocialPostCard extends StatelessWidget {
       ],
     ];
 
-    // Durante transiciones [Heroine] el overlay puede imponer altura máxima; un Column
-    // intrínseco desborda. Con altura acotada usamos scroll interno (no afecta al feed normal).
-    Widget tailSection = LayoutBuilder(
-      builder: (context, constraints) {
-        final column = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: threadTailChildren,
-        );
-        if (!constraints.hasBoundedHeight) {
-          return column;
-        }
-        return SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: column,
-        );
-      },
+    Widget tailSection = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: threadTailChildren,
     );
     final postTag = heroinePostFlightTag;
     if (postTag != null) {
       tailSection = Heroine(
         tag: postTag,
+        motion: vetgoSocialHeroPostMotion,
+        flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
+        continuouslyTrackTarget: true,
         child: threadTailChildren.isEmpty
             ? const SizedBox.shrink()
-            : tailSection,
+            : _socialHeroPostTail(threadTailChildren),
       );
     }
 
@@ -306,7 +335,8 @@ class SocialPostCard extends StatelessWidget {
                 onPressed: onCommentTap ?? () {},
               ),
               const SizedBox(width: 18),
-              _maybeHeroine(
+              _maybeHeroineRepostAction(
+                scheme: scheme,
                 tag: heroineRepostFlightTag,
                 child: _SocialTrailingAction(
                   icon: Icons.repeat_rounded,
@@ -452,6 +482,9 @@ class _AuthorHeaderRow extends StatelessWidget {
     if (authorTag != null) {
       avatar = Heroine(
         tag: authorTag,
+        motion: vetgoSocialHeroAvatarMotion,
+        flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
+        continuouslyTrackTarget: true,
         child: SizedBox(
           width: _kAuthorAvatarRadius * 2,
           height: _kAuthorAvatarRadius * 2,

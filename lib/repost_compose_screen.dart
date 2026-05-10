@@ -9,6 +9,7 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_styles.dart';
+import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
 /// Quote-repost estilo Twitter/X: comentario Quill arriba, tarjeta citada, «Republicar» en píldora.
@@ -351,7 +352,12 @@ class _QuotedPostCard extends StatelessWidget {
     );
     final tag = heroineQuotedFlightTag;
     if (tag != null) {
-      card = Heroine(tag: tag, child: card);
+      card = Heroine(
+        tag: tag,
+        motion: vetgoSocialHeroQuotedCardMotion,
+        flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
+        child: card,
+      );
     }
     return card;
   }

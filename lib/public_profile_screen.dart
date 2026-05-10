@@ -12,6 +12,7 @@ import 'package:vetgo/repost_compose_screen.dart';
 import 'package:vetgo/social_post_detail_screen.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
+import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 
 const Color _vetgoGreenProfile = Color(0xFF1B8A4E);
 
@@ -674,7 +675,13 @@ class _ProfileAvatar extends StatelessWidget {
     );
     final tag = heroineFlightTag;
     if (tag != null) {
-      avatarCore = Heroine(tag: tag, child: avatarCore);
+      avatarCore = Heroine(
+        tag: tag,
+        motion: vetgoSocialHeroAvatarMotion,
+        flightShuttleBuilder: vetgoSocialHeroFadeThrough(scheme),
+        continuouslyTrackTarget: true,
+        child: avatarCore,
+      );
     }
     return Stack(
       clipBehavior: Clip.none,
