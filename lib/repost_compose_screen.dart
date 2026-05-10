@@ -205,12 +205,14 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                 ),
                 Material(
                   color: scheme.surface,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                  child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                    child: QuillSimpleToolbar(
-                      controller: _quoteController,
-                      config: vetgoSocialToolbarConfig(),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: QuillSimpleToolbar(
+                        controller: _quoteController,
+                        config: vetgoSocialToolbarConfig(theme),
+                      ),
                     ),
                   ),
                 ),
