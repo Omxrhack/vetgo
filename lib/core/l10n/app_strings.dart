@@ -13,6 +13,30 @@ abstract final class AppStrings {
   static const dashboardClienteTagline =
       'Servicios, mascotas y urgencias cuando los necesites.';
 
+  static const clienteDashboardSubtitle =
+      'Tu perfil, tus mascotas y su salud en un solo lugar.';
+
+  static const clientePerfilTitulo = 'Resumen de mi perfil';
+
+  static const clientePerfilSubtitulo =
+      'Consulta r\u00E1pido tu cuenta y el estado general de tus mascotas.';
+
+  static const clienteSaludTitulo = 'Recordatorios de salud';
+
+  static const clienteActividadTitulo = 'Actividad reciente';
+
+  static const clienteActividadVacia =
+      'A\u00FAn no hay actividad reciente en tu cuenta.';
+
+  static const clienteRecordatorioSinMascotas =
+      'Registra tu primera mascota para activar recordatorios personalizados.';
+
+  static const clienteRecordatorioSinCitas =
+      'No tienes citas futuras registradas. Agenda una revisi\u00F3n preventiva.';
+
+  static String clienteRecordatorioConCita(String fechaHora) =>
+      'Pr\u00F3xima atenci\u00F3n programada para $fechaHora.';
+
   static const dashboardClienteSeccionAcciones = 'Acciones';
 
   static const quickActionServiciosLabel = 'Servicios';

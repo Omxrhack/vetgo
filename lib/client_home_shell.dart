@@ -6,7 +6,6 @@ import 'package:vetgo/emergency_sos_screen.dart';
 import 'package:vetgo/models/client_demo_data.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/store_screen.dart';
-import 'package:vetgo/theme/client_pastel.dart';
 
 /// Contenedor cliente: inicio + tienda + acceso SOS (alineado con VetgoTheme).
 class ClientHomeShell extends StatefulWidget {
@@ -157,8 +156,8 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       ),
       floatingActionButton: FloatingActionButton.large(
         onPressed: _openSos,
-        backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.98),
-        foregroundColor: scheme.error.withValues(alpha: 0.9),
+        backgroundColor: scheme.errorContainer,
+        foregroundColor: scheme.onErrorContainer,
         elevation: 6,
         highlightElevation: 10,
         child: const Icon(Icons.sos_rounded, size: 36),

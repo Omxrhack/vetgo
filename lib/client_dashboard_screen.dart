@@ -2,20 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
-import 'package:vetgo/client/client_quick_access_hub_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
-import 'package:vetgo/live_tracking_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
-import 'package:vetgo/store_screen.dart';
-import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
-import 'package:vetgo/widgets/client/pastel_quick_action_card.dart';
 import 'package:vetgo/widgets/dashboard/dashboard_section.dart';
 import 'package:vetgo/widgets/profile_photo_avatar.dart';
 
-/// Home / dashboard principal del cliente (estetica pastel Vetgo).
+/// Home / dashboard principal del cliente en estilo clinico-profesional.
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({
     super.key,
@@ -102,46 +97,27 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     ]);
   }
 
-  Future<void> _openVisitTracking(BuildContext context) async {
-    final upcoming = _upcomingAppointments();
-    Map<String, dynamic>? first = upcoming.isNotEmpty ? upcoming.first : null;
-    var vetName = AppStrings.demoVetNombre;
-    var etaLabel = AppStrings.demoEta;
-    String? vetPhotoUrl;
-    if (first != null) {
-      final vet = first['vet'];
-      if (vet is Map<String, dynamic>) {
-        final n = vet['full_name']?.toString().trim();
-        if (n != null && n.isNotEmpty) vetName = n;
-        final av = vet['avatar_url']?.toString().trim();
-        if (av != null && av.isNotEmpty) vetPhotoUrl = av;
-      }
-      final rawT = first['scheduled_at']?.toString();
-      final dt = rawT != null ? DateTime.tryParse(rawT)?.toLocal() : null;
-      if (dt != null) {
-        final when =
-            '${DateFormat('EEEE d MMM', 'es').format(dt)} ${DateFormat.Hm('es').format(dt)}';
-        etaLabel = AppStrings.clienteVisitaProgramadaPara(when);
-      }
-    }
-    if (!context.mounted) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => LiveTrackingScreen(
-          vetName: vetName,
-          etaLabel: etaLabel,
-          vetPhotoUrl: vetPhotoUrl,
-        ),
-      ),
-    );
+  List<Map<String, dynamic>> _recentAppointments() {
+    final cloned = List<Map<String, dynamic>>.from(_appointmentsRaw);
+    cloned.sort((a, b) {
+      final ad = DateTime.tryParse(a['scheduled_at']?.toString() ?? '')?.toUtc();
+      final bd = DateTime.tryParse(b['scheduled_at']?.toString() ?? '')?.toUtc();
+      if (ad == null && bd == null) return 0;
+      if (ad == null) return 1;
+      if (bd == null) return -1;
+      return bd.compareTo(ad);
+    });
+    return cloned.take(4).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final muted = ClientPastelColors.mutedOn(context);
+    final muted = scheme.onSurface.withValues(alpha: 0.68);
     final displayName = widget.userName.trim().isEmpty ? 'amigo' : widget.userName.trim();
+    final petsCount = widget.pets.length;
+    final upcomingCount = _upcomingAppointments().length;
 
     return RefreshIndicator(
       color: scheme.primary,
@@ -184,7 +160,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          AppStrings.dashboardClienteTagline,
+                          AppStrings.clienteDashboardSubtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: muted,
                             fontWeight: FontWeight.w500,
@@ -200,8 +176,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                   ProfilePhotoAvatar(
                     heroTag: 'client_avatar',
                     imageUrl: widget.profilePhotoUrl,
-                    placeholderBackground: ClientPastelColors.mintSoft,
-                    placeholderIconColor: ClientPastelColors.mintDeep,
+                    placeholderBackground: scheme.primaryContainer,
+                    placeholderIconColor: scheme.primary,
                     radius: 26,
                     onUploaded: widget.onProfilePhotoUpdated,
                   ),
@@ -236,125 +212,27 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                       ),
                     ),
                   DashboardSection(
-                    title: AppStrings.recordatoriosTitulo,
+                    title: AppStrings.clientePerfilTitulo,
+                    subtitle: AppStrings.clientePerfilSubtitulo,
                     subtitleColor: muted,
                     bottomSpacing: 22,
                     spacingBeforeChild: 10,
-                    child: ClientSoftCard(
-                      color: ClientPastelColors.amberSoft.withValues(alpha: 0.5),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.notifications_active_rounded,
-                            color: ClientPastelColors.skyDeep,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              AppStrings.recordatoriosCuerpo,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: muted,
-                                height: 1.35,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _ProfileSummaryCard(
+                      userName: displayName,
+                      profilePhotoUrl: widget.profilePhotoUrl,
+                      petsCount: petsCount,
+                      upcomingCount: upcomingCount,
+                      onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
                     ),
                   )
                       .animate()
                       .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
                       .slideY(begin: 0.03, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
                   DashboardSection(
-                    title: AppStrings.clienteProximasCitas,
-                    subtitleColor: muted,
-                    bottomSpacing: 18,
-                    spacingBeforeChild: 10,
-                    child: _buildClientAppointmentsSection(theme, muted),
-                  )
-                      .animate()
-                      .fadeIn(delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.03, end: 0, delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic),
-                  DashboardSection(
-                    title: AppStrings.dashboardClienteSeccionAcciones,
-                    subtitle: AppStrings.accesosHubSubtitulo,
-                    subtitleColor: muted,
-                    bottomSpacing: 22,
-                    spacingBeforeChild: 14,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: PastelQuickActionCard(
-                                icon: Icons.apps_rounded,
-                                label: AppStrings.quickActionServiciosLabel,
-                                backgroundColor: ClientPastelColors.mintSoft.withValues(alpha: 0.72),
-                                iconColor: ClientPastelColors.mintDeep,
-                                onTap: () {
-                                  Navigator.of(context).push<void>(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ClientQuickAccessHubScreen(pets: widget.pets),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: PastelQuickActionCard(
-                                icon: Icons.storefront_rounded,
-                                label: AppStrings.quickActionTiendaLabel,
-                                backgroundColor: ClientPastelColors.amberSoft.withValues(alpha: 0.68),
-                                iconColor: scheme.secondary,
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute<void>(builder: (_) => const StoreScreen()),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: PastelQuickActionCard(
-                                icon: Icons.emergency_rounded,
-                                label: AppStrings.quickActionEmergenciaLabel,
-                                backgroundColor: ClientPastelColors.coralSoft.withValues(alpha: 0.62),
-                                iconColor: scheme.error.withValues(alpha: 0.85),
-                                onTap: widget.onOpenEmergency,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: PastelQuickActionCard(
-                                icon: Icons.location_searching_rounded,
-                                label: AppStrings.quickActionTrackingLabel,
-                                backgroundColor: ClientPastelColors.skySoft.withValues(alpha: 0.75),
-                                iconColor: ClientPastelColors.skyDeep,
-                                onTap: () => _openVisitTracking(context),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.04, end: 0, delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic),
-                  DashboardSection(
                     title: AppStrings.tusMascotas,
                     subtitleColor: muted,
-                    bottomSpacing: 20,
-                    spacingBeforeChild: 12,
+                    bottomSpacing: 22,
+                    spacingBeforeChild: 10,
                     trailing: TextButton(
                       onPressed: widget.pets.isEmpty
                           ? null
@@ -368,7 +246,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                       child: const Text(AppStrings.verExpediente),
                     ),
                     child: SizedBox(
-                      height: 148,
+                      height: 160,
                       child: widget.petsLoading && widget.pets.isEmpty
                           ? const Center(child: CircularProgressIndicator())
                           : widget.pets.isEmpty
@@ -400,6 +278,36 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                     ),
                   )
                       .animate()
+                      .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.03, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
+                  DashboardSection(
+                    title: AppStrings.clienteProximasCitas,
+                    subtitleColor: muted,
+                    bottomSpacing: 18,
+                    spacingBeforeChild: 10,
+                    child: _buildClientAppointmentsSection(theme, muted),
+                  )
+                      .animate()
+                      .fadeIn(delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.03, end: 0, delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic),
+                  DashboardSection(
+                    title: AppStrings.clienteSaludTitulo,
+                    subtitleColor: muted,
+                    bottomSpacing: 22,
+                    spacingBeforeChild: 10,
+                    child: _buildHealthRemindersSection(theme, muted),
+                  )
+                      .animate()
+                      .fadeIn(delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic)
+                      .slideY(begin: 0.04, end: 0, delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic),
+                  DashboardSection(
+                    title: AppStrings.clienteActividadTitulo,
+                    subtitleColor: muted,
+                    bottomSpacing: 16,
+                    spacingBeforeChild: 10,
+                    child: _buildRecentActivitySection(theme, muted),
+                  )
+                      .animate()
                       .fadeIn(delay: 100.ms, duration: 400.ms, curve: Curves.easeOutCubic)
                       .slideY(begin: 0.04, end: 0, delay: 100.ms, duration: 400.ms, curve: Curves.easeOutCubic),
                 ],
@@ -408,6 +316,95 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHealthRemindersSection(ThemeData theme, Color muted) {
+    final upcoming = _upcomingAppointments();
+    final reminders = <_HealthReminderModel>[];
+
+    if (widget.pets.isEmpty) {
+      reminders.add(
+        _HealthReminderModel(
+          icon: Icons.pets_outlined,
+          text: AppStrings.clienteRecordatorioSinMascotas,
+        ),
+      );
+    }
+
+    if (upcoming.isEmpty) {
+      reminders.add(
+        _HealthReminderModel(
+          icon: Icons.calendar_month_outlined,
+          text: AppStrings.clienteRecordatorioSinCitas,
+        ),
+      );
+    } else {
+      final first = upcoming.first;
+      final dt = DateTime.tryParse(first['scheduled_at']?.toString() ?? '')?.toLocal();
+      if (dt != null) {
+        final pretty =
+            '${DateFormat('d MMM', 'es').format(dt)} a las ${DateFormat.Hm('es').format(dt)}';
+        reminders.add(
+          _HealthReminderModel(
+            icon: Icons.health_and_safety_outlined,
+            text: AppStrings.clienteRecordatorioConCita(pretty),
+          ),
+        );
+      }
+    }
+
+    if (reminders.isEmpty) {
+      reminders.add(
+        _HealthReminderModel(
+          icon: Icons.check_circle_outline_rounded,
+          text: AppStrings.recordatoriosCuerpo,
+        ),
+      );
+    }
+
+    return ClientSoftCard(
+      color: theme.colorScheme.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < reminders.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _HealthReminderTile(reminder: reminders[i], muted: muted),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivitySection(ThemeData theme, Color muted) {
+    if (_apptLoading && _appointmentsRaw.isEmpty) {
+      return const SizedBox(
+        height: 96,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final recent = _recentAppointments();
+    if (recent.isEmpty) {
+      return ClientSoftCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Text(
+          AppStrings.clienteActividadVacia,
+          style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < recent.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _RecentActivityTile(row: recent[i], muted: muted),
+        ],
+      ],
     );
   }
 
@@ -475,6 +472,7 @@ class _ClientAppointmentSummaryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final scheduledRaw = row['scheduled_at']?.toString();
     final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
     final whenLabel = dt != null
@@ -509,7 +507,7 @@ class _ClientAppointmentSummaryTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.medical_information_outlined, size: 18, color: ClientPastelColors.skyDeep),
+              Icon(Icons.medical_information_outlined, size: 18, color: scheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -534,9 +532,11 @@ class _PetCarouselTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final secondary = pet.ageLabel.isNotEmpty ? pet.ageLabel : pet.speciesLabel;
 
     return SizedBox(
-      width: 118,
+      width: 148,
       child: ClientSoftCard(
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
         color: theme.colorScheme.surface,
@@ -547,10 +547,10 @@ class _PetCarouselTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 30,
-              backgroundColor: ClientPastelColors.mintSoft,
+              backgroundColor: scheme.primaryContainer,
               backgroundImage: pet.photoUrl != null && pet.photoUrl!.isNotEmpty ? NetworkImage(pet.photoUrl!) : null,
               child: pet.photoUrl == null || pet.photoUrl!.isEmpty
-                  ? Icon(Icons.pets_rounded, color: ClientPastelColors.mintDeep, size: 28)
+                  ? Icon(Icons.pets_rounded, color: scheme.primary, size: 28)
                   : null,
             ),
             const SizedBox(height: 10),
@@ -564,8 +564,262 @@ class _PetCarouselTile extends StatelessWidget {
                 height: 1.15,
               ),
             ),
+            const SizedBox(height: 5),
+            Text(
+              secondary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.68),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileSummaryCard extends StatelessWidget {
+  const _ProfileSummaryCard({
+    required this.userName,
+    required this.profilePhotoUrl,
+    required this.petsCount,
+    required this.upcomingCount,
+    this.onProfilePhotoUpdated,
+  });
+
+  final String userName;
+  final String? profilePhotoUrl;
+  final int petsCount;
+  final int upcomingCount;
+  final VoidCallback? onProfilePhotoUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return ClientSoftCard(
+      color: scheme.surface,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ProfilePhotoAvatar(
+                imageUrl: profilePhotoUrl,
+                placeholderBackground: scheme.primaryContainer,
+                placeholderIconColor: scheme.primary,
+                radius: 24,
+                onUploaded: onProfilePhotoUpdated,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppStrings.clienteDashboardSubtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.68),
+                        height: 1.3,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _StatBadge(
+                  icon: Icons.pets_rounded,
+                  value: '$petsCount',
+                  label: AppStrings.tusMascotas,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatBadge(
+                  icon: Icons.calendar_month_rounded,
+                  value: '$upcomingCount',
+                  label: AppStrings.clienteProximasCitas,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatBadge extends StatelessWidget {
+  const _StatBadge({required this.icon, required this.value, required this.label});
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.42),
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.68),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthReminderModel {
+  const _HealthReminderModel({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+}
+
+class _HealthReminderTile extends StatelessWidget {
+  const _HealthReminderTile({required this.reminder, required this.muted});
+
+  final _HealthReminderModel reminder;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(reminder.icon, size: 20, color: scheme.primary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            reminder.text,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: muted,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentActivityTile extends StatelessWidget {
+  const _RecentActivityTile({required this.row, required this.muted});
+
+  final Map<String, dynamic> row;
+  final Color muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    final scheduledRaw = row['scheduled_at']?.toString();
+    final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
+    final whenLabel = dt != null
+        ? '${DateFormat('d MMM yyyy', 'es').format(dt)} \u00B7 ${DateFormat.Hm('es').format(dt)}'
+        : '\u2014';
+
+    final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
+    final petName = petMap['name']?.toString().trim().isNotEmpty == true
+        ? petMap['name']!.toString().trim()
+        : AppStrings.vetMascota;
+
+    final status = row['status']?.toString().trim();
+    final statusLabel = status == null || status.isEmpty ? 'pendiente' : status;
+
+    return ClientSoftCard(
+      color: theme.colorScheme.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.history_rounded, size: 20, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  petName,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  whenLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Estado: $statusLabel',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.74),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
