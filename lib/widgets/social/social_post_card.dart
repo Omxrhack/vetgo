@@ -16,8 +16,8 @@ const double _kCardRadius = 16;
 double _bodyTextStartPadding(double horizontalPadding) =>
     horizontalPadding + _kAuthorAvatarRadius * 2 + _kGapAvatarToName;
 
-/// Cuerpo del post envuelto en [Heroine]: el overlay puede dar **maxHeight** finito aunque el
-/// [LayoutBuilder] vea altura infinita en algún frame; [FittedBox] encaja sin overflow.
+/// Cuerpo del post envuelto en [Heroine]: con altura máxima finita (overlay) usa scroll;
+/// [FittedBox] no garantiza evitar overflow del [Column] hijo en todos los layouts.
 Widget _socialHeroPostTail(List<Widget> children) {
   final column = Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -28,22 +28,35 @@ Widget _socialHeroPostTail(List<Widget> children) {
     builder: (context, constraints) {
       final maxW = constraints.maxWidth;
       final maxH = constraints.maxHeight;
-      final hasMaxW = maxW.isFinite && maxW < double.infinity;
-      final hasMaxH = maxH.isFinite && maxH < double.infinity;
-      if (!hasMaxW && !hasMaxH) {
+      final finiteW = maxW.isFinite && maxW < double.infinity;
+      final finiteH = maxH.isFinite && maxH < double.infinity;
+
+      if (!finiteW && !finiteH) {
         return column;
       }
-      return FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: hasMaxW ? maxW : double.infinity,
-            maxHeight: hasMaxH ? maxH : double.infinity,
+
+      Widget inner = column;
+      if (finiteW) {
+        inner = ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxW),
+          child: inner,
+        );
+      }
+
+      if (finiteH) {
+        return SizedBox(
+          height: maxH,
+          width: finiteW ? maxW : double.infinity,
+          child: ClipRect(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: inner,
+            ),
           ),
-          child: column,
-        ),
-      );
+        );
+      }
+
+      return inner;
     },
   );
 }
@@ -677,9 +690,12 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
           scale: _pressed ? 0.92 : 1.0,
           duration: _pressDuration,
           curve: Curves.easeOut,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               AnimatedSwitcher(
                 duration: _switchDuration,
                 switchInCurve: Curves.easeOutCubic,
@@ -726,6 +742,7 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
                 ),
               ],
             ],
+            ),
           ),
         ),
       ),
