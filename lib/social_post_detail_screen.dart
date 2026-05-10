@@ -215,8 +215,11 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                     ),
                   ),
                   if (_loadingComments)
-                    const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator()),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => _CommentSkeletonTile(scheme: scheme),
+                        childCount: 5,
+                      ),
                     )
                   else if (_commentsError != null)
                     SliverToBoxAdapter(
@@ -315,6 +318,64 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CommentSkeletonTile extends StatelessWidget {
+  const _CommentSkeletonTile({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = scheme.surfaceContainerHighest.withValues(alpha: 0.72);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: base, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 13,
+                  width: 140,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 12,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 12,
+                  width: 180,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
+import 'package:vetgo/core/auth/auth_session.dart';
 import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/create_post_screen.dart';
@@ -95,23 +97,16 @@ class _SocialScreenState extends State<SocialScreen> {
       _hasMore = true;
     });
 
-    // Start all requests in parallel with proper types
-    final feedFuture      = _api.getSocialFeed(page: 1);
-    final suggestFuture   = _api.getSuggestedProfiles(limit: 12);
-    final exploreFuture   = _api.getExplorePosts(limit: 10);
-    final sessionFuture   = AuthStorage.loadSession();
+    final feedFuture = _api.getSocialFeed(page: 1);
+    final suggestFuture = _api.getSuggestedProfiles(limit: 12);
+    final exploreFuture = _api.getExplorePosts(limit: 10);
+    final sessionFuture = AuthStorage.loadSession();
 
-    final feedResult    = await feedFuture;
-    final suggestResult = await suggestFuture;
-    final exploreResult = await exploreFuture;
-    final session       = await sessionFuture;
-
+    // Capa 1: feed primero
+    final feedResult = await feedFuture;
     if (!mounted) return;
 
     final (feedData, feedErr) = feedResult;
-    final (suggestData, _)    = suggestResult;
-    final (exploreData, _)    = exploreResult;
-
     if (feedErr != null || feedData == null) {
       setState(() {
         _error = feedErr ?? 'Error al cargar el feed';
@@ -120,19 +115,39 @@ class _SocialScreenState extends State<SocialScreen> {
       return;
     }
 
-    final feedList = _parseFeedEntries(feedData);
-    final suggestions = _parseSuggestions(suggestData);
-    final explore = _parseFeedEntries(exploreData ?? <String, dynamic>{});
+    final feedList = await _decodeFeedEntries(feedData);
+    if (!mounted) return;
 
     setState(() {
       _feedEntries = feedList;
-      _exploreEntries = explore;
-      _suggestions = suggestions;
-      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
+      _suggestions = [];
+      _exploreEntries = [];
       _hasMore = feedData['has_more'] == true;
       _page = 2;
       _loading = false;
-      _feedItems = _buildFeedItems(feedList, suggestions, explore);
+      _feedItems = _buildFeedItems(feedList, const [], const []);
+    });
+
+    // Capa 2: sugerencias, explore y sesión en paralelo
+    final layer2 = await Future.wait<dynamic>([
+      suggestFuture,
+      exploreFuture,
+      sessionFuture,
+    ]);
+    if (!mounted) return;
+
+    final suggestTuple = layer2[0] as (Map<String, dynamic>?, String?);
+    final exploreTuple = layer2[1] as (Map<String, dynamic>?, String?);
+    final session = layer2[2] as AuthSession?;
+
+    final suggestions = _parseSuggestions(suggestTuple.$1);
+    final explore = _parseFeedEntries(exploreTuple.$1 ?? <String, dynamic>{});
+
+    setState(() {
+      _suggestions = suggestions;
+      _exploreEntries = explore;
+      _myAvatarUrl = session?.profile?['avatar_url'] as String?;
+      _feedItems = _buildFeedItems(_feedEntries, suggestions, explore);
     });
   }
 
@@ -142,7 +157,7 @@ class _SocialScreenState extends State<SocialScreen> {
     final (data, _) = await _api.getSocialFeed(page: _page);
     if (!mounted) return;
     if (data != null) {
-      final more = _parseFeedEntries(data);
+      final more = await _decodeFeedEntries(data);
       final merged = [..._feedEntries, ...more];
       setState(() {
         _feedEntries = merged;
@@ -160,6 +175,16 @@ class _SocialScreenState extends State<SocialScreen> {
           .map(FeedEntryVm.fromJson)
           .toList() ??
       [];
+
+  /// Parseo del JSON del feed; usa [compute] si hay muchas filas (menos trabajo en el isolate de UI).
+  Future<List<FeedEntryVm>> _decodeFeedEntries(Map<String, dynamic> data) async {
+    final raw = data['posts'] as List<dynamic>?;
+    final n = raw?.length ?? 0;
+    if (n < 20) {
+      return _parseFeedEntries(data);
+    }
+    return compute(socialParseFeedEntriesIsolate, data);
+  }
 
   List<SuggestedProfileVm> _parseSuggestions(Map<String, dynamic>? data) =>
       (data?['suggestions'] as List<dynamic>?)
@@ -885,4 +910,13 @@ class _SuggestionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Top-level para [compute]: parseo de feed fuera del isolate de UI (listas largas).
+List<FeedEntryVm> socialParseFeedEntriesIsolate(Map<String, dynamic> data) {
+  return (data['posts'] as List<dynamic>?)
+          ?.whereType<Map<String, dynamic>>()
+          .map(FeedEntryVm.fromJson)
+          .toList() ??
+      [];
 }
