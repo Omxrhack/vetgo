@@ -241,11 +241,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                       padding: const EdgeInsets.only(bottom: 20),
                       child: _AssignedVetCard(
                         vet: _assignedVet!,
-                        appointments: _appointmentsRaw
-                            .where((a) =>
-                                a['vet_id']?.toString() ==
-                                _assignedVet!['id']?.toString())
-                            .toList(),
                         onBookTap: widget.onOpenEmergency,
                       ),
                     )
@@ -766,12 +761,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 class _AssignedVetCard extends StatelessWidget {
   const _AssignedVetCard({
     required this.vet,
-    required this.appointments,
     required this.onBookTap,
   });
 
   final Map<String, dynamic> vet;
-  final List<Map<String, dynamic>> appointments;
   final VoidCallback onBookTap;
 
   @override
