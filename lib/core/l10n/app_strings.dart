@@ -211,7 +211,10 @@ abstract final class AppStrings {
   static const vetRouteContextoDesconocido = 'Ruta en curso';
 
   // --- Store ---
-  static const storeTitle = 'Tienda Vetgo';
+  static const storeTitle = 'Tienda';
+
+  static const storeSubtitle =
+      'Alimento, higiene y accesorios para tu compa\u00F1ero.';
 
   static const storeBuscarHint = 'Buscar productos\u2026';
 

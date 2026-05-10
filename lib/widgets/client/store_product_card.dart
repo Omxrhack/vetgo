@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// Tarjeta de producto con botón "+ Agregar" animado (simula endpoint).
+/// Tarjeta de producto para la tienda (demo carrito).
 class StoreProductCard extends StatefulWidget {
   const StoreProductCard({
     super.key,
@@ -46,110 +45,134 @@ class _StoreProductCardState extends State<StoreProductCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final muted = ClientPastelColors.mutedOn(context);
 
     return ClientSoftCard(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(23),
+              ),
               child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
                   ? Image.network(
                       widget.imageUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
+                      height: double.infinity,
                       alignment: Alignment.center,
                     )
                   : ColoredBox(
-                      color: ClientPastelColors.skySoft.withValues(alpha: 0.75),
-                      child: Center(
-                        child: Icon(Icons.pets_rounded, size: 42, color: scheme.primary.withValues(alpha: 0.45)),
+                      color: scheme.surfaceContainerHighest
+                          .withValues(alpha: 0.65),
+                      child: Icon(
+                        Icons.pets_rounded,
+                        size: 44,
+                        color: scheme.primary.withValues(alpha: 0.42),
                       ),
                     ),
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            widget.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            widget.priceLabel,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: scheme.primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, anim) => FadeTransition(
-                opacity: anim,
-                child: ScaleTransition(scale: anim, child: child),
-              ),
-              child: _busy
-                  ? DecoratedBox(
-                      key: const ValueKey<String>('busy'),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: scheme.onPrimary,
-                          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.priceLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: scheme.primary,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                    )
-                  : _justAdded
-                      ? DecoratedBox(
-                          key: const ValueKey<String>('ok'),
-                          decoration: BoxDecoration(
-                            color: ClientPastelColors.mintSoft.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: ClientPastelColors.mintDeep.withValues(alpha: 0.35)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_rounded, color: ClientPastelColors.mintDeep, size: 20),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Añadido',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: ClientPastelColors.mintDeep,
+                    ),
+                    SizedBox(
+                      height: 40,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: ScaleTransition(scale: anim, child: child),
+                        ),
+                        child: _busy
+                            ? Padding(
+                                key: const ValueKey<String>('busy'),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: scheme.primary,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : TextButton(
-                          key: const ValueKey<String>('add'),
-                          style: TextButton.styleFrom(
-                            backgroundColor: ClientPastelColors.amberSoft.withValues(alpha: 0.55),
-                            foregroundColor: muted,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            padding: EdgeInsets.zero,
-                          ),
-                          onPressed: _tapAdd,
-                          child: const Text('+ Agregar', style: TextStyle(fontWeight: FontWeight.w800)),
-                        ),
+                              )
+                            : _justAdded
+                                ? DecoratedBox(
+                                    key: const ValueKey<String>('ok'),
+                                    decoration: BoxDecoration(
+                                      color: scheme.primaryContainer
+                                          .withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      child: Icon(
+                                        Icons.check_rounded,
+                                        size: 20,
+                                        color: scheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                  )
+                                : FilledButton.tonal(
+                                    key: const ValueKey<String>('add'),
+                                    onPressed: _tapAdd,
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size(40, 40),
+                                      maximumSize: const Size(44, 44),
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      foregroundColor: scheme.primary,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add_shopping_cart_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],

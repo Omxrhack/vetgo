@@ -18,11 +18,15 @@ class StoreCategoryPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = selected ? (selectedColor ?? scheme.primaryContainer) : scheme.surfaceContainerHighest.withValues(alpha: 0.65);
-    final fg = selected ? scheme.onPrimaryContainer : scheme.onSurface.withValues(alpha: 0.75);
+    final bg = selected
+        ? (selectedColor ?? scheme.primaryContainer.withValues(alpha: 0.72))
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.55);
+    final fg = selected
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface.withValues(alpha: 0.72);
 
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.only(right: 8),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -31,11 +35,16 @@ class StoreCategoryPill extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(99),
-              border: Border.all(color: scheme.outline.withValues(alpha: selected ? 0.35 : 0.18)),
+              border: Border.all(
+                color: selected
+                    ? scheme.primary.withValues(alpha: 0.42)
+                    : scheme.outline.withValues(alpha: 0.18),
+                width: selected ? 1.25 : 1,
+              ),
             ),
             child: Text(
               label,
