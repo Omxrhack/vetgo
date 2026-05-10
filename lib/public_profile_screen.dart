@@ -67,15 +67,29 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   }
 
   @override
+  void didUpdateWidget(PublicProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profileId != widget.profileId) {
+      _tabController?.dispose();
+      _tabController = null;
+      _load(resetLists: true);
+    }
+  }
+
+  @override
   void dispose() {
     _tabController?.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool resetLists = false}) async {
     setState(() {
       _loading = true;
       _error = null;
+      if (resetLists) {
+        _feedEntries = [];
+        _reviews = [];
+      }
     });
     final (data, err) = await _api.getPublicProfile(widget.profileId);
     if (!mounted) return;
@@ -285,19 +299,35 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
 
   Widget _buildProfile(BuildContext context) {
     final p = _profile!;
-    final tc = _tabController;
-    if (tc == null) {
+    final wantLen = p.isVet ? 4 : 3;
+    // Tras hot reload el TabController puede quedar con otra longitud que las pestañas actuales.
+    if (_tabController == null || _tabController!.length != wantLen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final prof = _profile;
+        if (prof == null) return;
+        _syncTabsForRole(prof.isVet);
+        if (mounted) setState(() {});
+      });
       return const Center(child: CircularProgressIndicator());
     }
+    final tc = _tabController!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
     return NestedScrollView(
+      // Permite que el avatar sobresalga del bloque blanco sin recorte respecto al banner.
+      clipBehavior: Clip.none,
       headerSliverBuilder: (ctx, _) => [
         // ── Banner SliverAppBar ──────────────────────────────────────────
         SliverAppBar(
           expandedHeight: 145,
-          pinned: true,
+          // Sin pinned: el bloque verde no se queda encima del contenido al hacer scroll
+          // y el avatar no queda “debajo” de la barra.
+          pinned: false,
+          floating: true,
+          snap: true,
+          clipBehavior: Clip.none,
           backgroundColor: scheme.surfaceContainerLowest,
           surfaceTintColor: Colors.transparent,
           // Back button with semi-transparent pill background
@@ -341,7 +371,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           ),
         ),
 
-        // ── Header content (card flota sobre el banner) ─────────────────
+        // ── Header content (card + avatar en Stack para superponer sin recorte) ─
         SliverToBoxAdapter(
           child: Container(
             decoration: BoxDecoration(
@@ -355,138 +385,164 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 ),
               ],
             ),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            clipBehavior: Clip.none,
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                // Avatar + action button row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Transform.translate(
-                      offset: const Offset(0, -44),
-                      child: _ProfileAvatar(
-                        avatarUrl: p.avatarUrl,
-                        isVet: p.isVet,
-                        scheme: scheme,
-                        heroineFlightTag: widget.heroineAvatarFlightTag,
-                      ),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _ActionButton(
-                        profile: p,
-                        isOwnProfile: widget.isOwnProfile,
-                        followLoading: _followLoading,
-                        onFollow: _toggleFollow,
-                        onBook: widget.onBookTap,
-                        onEdit: _openEditSheet,
-                        theme: theme,
-                        scheme: scheme,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Name + verification badge
-                Transform.translate(
-                  offset: const Offset(0, -32),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 50, 16, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Text(
-                              p.fullName,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                height: 1.1,
+                          const SizedBox(width: 102),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.topRight,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: _ActionButton(
+                                  profile: p,
+                                  isOwnProfile: widget.isOwnProfile,
+                                  followLoading: _followLoading,
+                                  onFollow: _toggleFollow,
+                                  onBook: widget.onBookTap,
+                                  onEdit: _openEditSheet,
+                                  theme: theme,
+                                  scheme: scheme,
+                                ),
                               ),
                             ),
                           ),
-                          if (p.isVet) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: scheme.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.check_rounded,
-                                  size: 11, color: Colors.white),
-                            ),
-                          ],
                         ],
                       ),
-
-                      // Rol: perfil profesional vs comunidad
-                      const SizedBox(height: 6),
-                      _ProfileRoleHeader(profile: p, scheme: scheme, theme: theme),
-
-                      // Specialty chip (solo MVZ)
-                      if (p.isVet && p.vet?.specialty != null) ...[
-                        const SizedBox(height: 5),
-                        _SpecialtyChip(
-                            specialty: p.vet!.specialty!,
-                            scheme: scheme,
-                            theme: theme),
-                      ],
-
-                      // Bio
-                      if (p.bio != null && p.bio!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          p.bio!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.75),
-                            height: 1.45,
-                          ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-
-                      // Location
-                      if (p.location != null && p.location!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
+                      Transform.translate(
+                        offset: const Offset(0, -26),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.place_outlined,
-                                size: 13,
-                                color:
-                                    scheme.onSurface.withValues(alpha: 0.4)),
-                            const SizedBox(width: 4),
-                            Text(
-                              p.location!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color:
-                                    scheme.onSurface.withValues(alpha: 0.55),
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    p.fullName,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                if (p.isVet) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.check_rounded,
+                                        size: 11, color: Colors.white),
+                                  ),
+                                ],
+                              ],
                             ),
+
+                            // Rol: perfil profesional vs comunidad
+                            const SizedBox(height: 6),
+                            _ProfileRoleHeader(
+                                profile: p, scheme: scheme, theme: theme),
+
+                            // Specialty chip (solo MVZ)
+                            if (p.isVet && p.vet?.specialty != null) ...[
+                              const SizedBox(height: 5),
+                              _SpecialtyChip(
+                                  specialty: p.vet!.specialty!,
+                                  scheme: scheme,
+                                  theme: theme),
+                            ],
+
+                            // Bio
+                            if (p.bio != null && p.bio!.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                p.bio!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onSurface.withValues(alpha: 0.75),
+                                  height: 1.45,
+                                ),
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+
+                            // Location
+                            if (p.location != null &&
+                                p.location!.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(Icons.place_outlined,
+                                      size: 13,
+                                      color: scheme.onSurface
+                                          .withValues(alpha: 0.4)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    p.location!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurface
+                                          .withValues(alpha: 0.55),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            // Follower counts — flat text style Threads
+                            const SizedBox(height: 10),
+                            _FollowCountRow(
+                                profile: p, theme: theme, scheme: scheme),
                           ],
-                        ),
+                        )
+                            .animate()
+                            .fadeIn(duration: 280.ms)
+                            .slideY(
+                              begin: 0.02,
+                              end: 0,
+                              duration: 280.ms,
+                              curve: Curves.easeOutCubic),
+                      ),
+
+                      // Vet stats — big numbers
+                      if (p.isVet && p.vet != null) ...[
+                        const SizedBox(height: 4),
+                        _VetBigStatsRow(
+                            vet: p.vet!, theme: theme, scheme: scheme),
+                        const SizedBox(height: 4),
                       ],
-
-                      // Follower counts — flat text style Threads
-                      const SizedBox(height: 10),
-                      _FollowCountRow(profile: p, theme: theme, scheme: scheme),
                     ],
-                  ).animate().fadeIn(duration: 280.ms).slideY(
-                      begin: 0.02,
-                      end: 0,
-                      duration: 280.ms,
-                      curve: Curves.easeOutCubic),
+                  ),
                 ),
-
-                // Vet stats — big numbers
-                if (p.isVet && p.vet != null) ...[
-                  const SizedBox(height: 4),
-                  _VetBigStatsRow(vet: p.vet!, theme: theme, scheme: scheme),
-                  const SizedBox(height: 4),
-                ],
+                Positioned(
+                  left: 16,
+                  top: -48,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    elevation: 20,
+                    shadowColor: Colors.black.withValues(alpha: 0.55),
+                    surfaceTintColor: Colors.transparent,
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.none,
+                    child: _ProfileAvatar(
+                      avatarUrl: p.avatarUrl,
+                      isVet: p.isVet,
+                      scheme: scheme,
+                      heroineFlightTag: widget.heroineAvatarFlightTag,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -497,6 +553,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           pinned: true,
           delegate: _TabBarDelegate(
             TabBar(
+              key: ValueKey<String>('profile_tabs_${p.id}_${p.isVet}'),
               controller: tc,
               labelColor: scheme.primary,
               unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.4),
@@ -543,17 +600,20 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           ),
         ),
       ],
-        body: TabBarView(
+      body: TabBarView(
+        key: ValueKey<String>('profile_body_${p.id}_${p.isVet}'),
         controller: tc,
+        clipBehavior: Clip.none,
         children: p.isVet
             ? [
                 _buildFeedTab(theme, scheme),
                 _PhotosTab(entries: _feedEntries, scheme: scheme),
                 _ReviewsTab(
-                    reviews: _reviews,
-                    isVet: true,
-                    theme: theme,
-                    scheme: scheme),
+                  reviews: _reviews,
+                  isVet: true,
+                  theme: theme,
+                  scheme: scheme,
+                ),
                 _ConsultorioTab(profile: p, theme: theme, scheme: scheme),
               ]
             : [
@@ -637,6 +697,34 @@ class _BannerBackground extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.06),
             ),
           ),
+        // Marca Vetgo en el banner (chip legible sobre el patrón).
+        Positioned(
+          right: 14,
+          bottom: 10,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Text(
+                'Vetgo',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.96),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  letterSpacing: 1.0,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -747,9 +835,9 @@ class _ProfileAvatar extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 3.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -949,9 +1037,9 @@ class _ProfileRoleHeader extends StatelessWidget {
 
     final (String label, IconData icon) = switch (profile.role) {
       'owner' => ('Dueño de mascotas', Icons.pets_rounded),
-      'client' => ('Familia Petixfy', Icons.family_restroom_rounded),
+      'client' => ('Familia Vetgo', Icons.family_restroom_rounded),
       'admin' => ('Equipo Vetgo', Icons.shield_outlined),
-      _ => ('Comunidad Petixfy', Icons.waving_hand_rounded),
+      _ => ('Comunidad Vetgo', Icons.waving_hand_rounded),
     };
 
     return Row(
