@@ -197,14 +197,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           quoteBody: quoteBody,
           brandGreen: _vetgoGreenProfile,
           heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
-          heroineAuthorFlightTag: vetgoSocialProfileHeroTag(display.author.id),
+          heroineAuthorFlightTag: vetgoSocialProfileHeroTagForPost(
+            display.author.id,
+            display.id,
+          ),
           onAuthorTap: () {
             Navigator.of(ctx).push<void>(
               VetgoSocialHeroineRoute<void>(
                 builder: (_) => PublicProfileScreen(
                   profileId: display.author.id,
-                  heroineAvatarFlightTag:
-                      vetgoSocialProfileHeroTag(display.author.id),
+                  heroineAvatarFlightTag: vetgoSocialProfileHeroTagForPost(
+                    display.author.id,
+                    display.id,
+                  ),
                 ),
               ),
             );
