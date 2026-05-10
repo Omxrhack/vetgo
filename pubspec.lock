@@ -589,6 +589,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  heroine:
+    dependency: "direct main"
+    description:
+      name: heroine
+      sha256: "77ffabb6ebc211198b8442eff692b89e8eeca89f5578ad19ddcb9a155d832425"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.2"
   hooks:
     dependency: transitive
     description:

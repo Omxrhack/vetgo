@@ -67,6 +67,9 @@ class _SocialScreenState extends State<SocialScreen> {
 
   /// Evita envíos duplicados de like en el mismo post mientras la API responde.
   final Set<String> _pendingLikePostIds = {};
+  /// Autores seguidos desde el botón + en posts «Descubre» (sesión).
+  final Set<String> _recommendedFollowedIds = {};
+  final Set<String> _recommendedFollowLoadingIds = {};
   int _page = 1;
   bool _hasMore = true;
 
@@ -89,6 +92,25 @@ class _SocialScreenState extends State<SocialScreen> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       _loadMore();
+    }
+  }
+
+  Future<void> _followRecommendedAuthor(String authorId) async {
+    if (_recommendedFollowLoadingIds.contains(authorId)) return;
+    if (_recommendedFollowedIds.contains(authorId)) return;
+    setState(() => _recommendedFollowLoadingIds.add(authorId));
+    final (_, err) = await _api.followUser(authorId);
+    if (!mounted) return;
+    setState(() {
+      _recommendedFollowLoadingIds.remove(authorId);
+      if (err == null) {
+        _recommendedFollowedIds.add(authorId);
+      }
+    });
+    if (err != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err)),
+      );
     }
   }
 
@@ -536,6 +558,10 @@ class _SocialScreenState extends State<SocialScreen> {
                           recommended: item.recommended,
                           theme: theme,
                           scheme: scheme,
+                          myUserId: _myUserId,
+                          recommendedFollowedIds: _recommendedFollowedIds,
+                          recommendedFollowLoadingIds: _recommendedFollowLoadingIds,
+                          onRecommendedFollow: _followRecommendedAuthor,
                           onDismissRecommended:
                               item.recommended ? () => _dismissRecommended(item.entry) : null,
                           onFeedUpdated: (entry) {
@@ -606,6 +632,10 @@ class _SocialFeedPostTile extends StatelessWidget {
     required this.recommended,
     required this.theme,
     required this.scheme,
+    this.myUserId,
+    this.recommendedFollowedIds,
+    this.recommendedFollowLoadingIds,
+    this.onRecommendedFollow,
     this.onDismissRecommended,
     required this.onFeedUpdated,
     required this.onLikePost,
@@ -617,6 +647,10 @@ class _SocialFeedPostTile extends StatelessWidget {
   final bool recommended;
   final ThemeData theme;
   final ColorScheme scheme;
+  final String? myUserId;
+  final Set<String>? recommendedFollowedIds;
+  final Set<String>? recommendedFollowLoadingIds;
+  final void Function(String authorId)? onRecommendedFollow;
   final VoidCallback? onDismissRecommended;
   final void Function(FeedEntryVm entry) onFeedUpdated;
   final Future<void> Function(PostVm post) onLikePost;
@@ -639,6 +673,12 @@ class _SocialFeedPostTile extends StatelessWidget {
         quoteBody = null;
     }
 
+    final authorId = display.author.id;
+    final followed = recommendedFollowedIds?.contains(authorId) ?? false;
+    final loading = recommendedFollowLoadingIds?.contains(authorId) ?? false;
+    final showRecommendedFollow =
+        recommended && myUserId != null && authorId != myUserId;
+
     return SocialPostCard(
       displayPost: display,
       theme: theme,
@@ -648,6 +688,14 @@ class _SocialFeedPostTile extends StatelessWidget {
       quoteBody: quoteBody,
       recommended: recommended,
       onDismissRecommended: onDismissRecommended,
+      recommendedFollowed: showRecommendedFollow && followed,
+      recommendedFollowLoading: showRecommendedFollow && loading,
+      onRecommendedFollowTap: showRecommendedFollow &&
+              !followed &&
+              !loading &&
+              onRecommendedFollow != null
+          ? () => onRecommendedFollow!(authorId)
+          : null,
       useElevatedChrome: true,
       brandGreen: _vetgoGreen,
       onAuthorTap: () => Navigator.of(context).push<void>(

@@ -35,6 +35,9 @@ class SocialPostCard extends StatelessWidget {
     this.brandGreen = const Color(0xFF1B8A4E),
     this.showBottomDivider = true,
     this.useElevatedChrome = true,
+    this.recommendedFollowed = false,
+    this.recommendedFollowLoading = false,
+    this.onRecommendedFollowTap,
   });
 
   /// Contenido principal (post original; en repost es el citado).
@@ -67,7 +70,22 @@ class SocialPostCard extends StatelessWidget {
   /// Superficie redondeada como la caja de composición; `false` en pantalla de detalle.
   final bool useElevatedChrome;
 
+  /// Feed «Descubre»: ya sigues al autor (muestra palomita en el avatar).
+  final bool recommendedFollowed;
+
+  /// Cargando seguimiento desde el botón + del avatar.
+  final bool recommendedFollowLoading;
+
+  /// Tap en + para seguir; si es null y [recommendedFollowed], solo se muestra la palomita.
+  final VoidCallback? onRecommendedFollowTap;
+
   static const double _hPad = 16;
+
+  bool get _showRecommendedFollowBadge =>
+      recommended &&
+          (recommendedFollowed ||
+              recommendedFollowLoading ||
+              onRecommendedFollowTap != null);
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +191,10 @@ class SocialPostCard extends StatelessWidget {
           scheme: scheme,
           timeLabel: timeLabel,
           onAuthorTap: onAuthorTap,
+          showRecommendedFollowBadge: _showRecommendedFollowBadge,
+          recommendedFollowed: recommendedFollowed,
+          recommendedFollowLoading: recommendedFollowLoading,
+          onRecommendedFollowTap: onRecommendedFollowTap,
         ),
       ),
       if (displayPost.body.isNotEmpty)
@@ -311,6 +333,10 @@ class _AuthorHeaderRow extends StatelessWidget {
     required this.scheme,
     required this.timeLabel,
     this.onAuthorTap,
+    this.showRecommendedFollowBadge = false,
+    this.recommendedFollowed = false,
+    this.recommendedFollowLoading = false,
+    this.onRecommendedFollowTap,
   });
 
   final PostVm post;
@@ -318,52 +344,91 @@ class _AuthorHeaderRow extends StatelessWidget {
   final ColorScheme scheme;
   final String timeLabel;
   final VoidCallback? onAuthorTap;
+  final bool showRecommendedFollowBadge;
+  final bool recommendedFollowed;
+  final bool recommendedFollowLoading;
+  final VoidCallback? onRecommendedFollowTap;
 
   @override
   Widget build(BuildContext context) {
-    final row = Row(
+    final nameBlock = Text.rich(
+      TextSpan(
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
+        children: [
+          TextSpan(text: post.author.fullName),
+          TextSpan(
+            text: ' · ',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w400,
+              color: scheme.onSurface.withValues(alpha: 0.45),
+            ),
+          ),
+          TextSpan(
+            text: timeLabel,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w400,
+              color: scheme.onSurface.withValues(alpha: 0.45),
+            ),
+          ),
+        ],
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final avatar = CircleAvatar(
+      radius: _kAuthorAvatarRadius,
+      backgroundColor: scheme.primaryContainer,
+      backgroundImage:
+          post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
+              ? NetworkImage(post.author.avatarUrl!)
+              : null,
+      child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
+          ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
+          : null,
+    );
+
+    final avatarLayer = SizedBox(
+      width: _kAuthorAvatarRadius * 2,
+      height: _kAuthorAvatarRadius * 2,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (onAuthorTap != null)
+            GestureDetector(onTap: onAuthorTap, child: avatar)
+          else
+            avatar,
+          if (showRecommendedFollowBadge)
+            Positioned(
+              right: -4,
+              bottom: -4,
+              child: _RecommendedFollowAvatarBadge(
+                scheme: scheme,
+                followed: recommendedFollowed,
+                loading: recommendedFollowLoading,
+                onTap: onRecommendedFollowTap,
+              ),
+            ),
+        ],
+      ),
+    );
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: _kAuthorAvatarRadius,
-          backgroundColor: scheme.primaryContainer,
-          backgroundImage:
-              post.author.avatarUrl != null && post.author.avatarUrl!.isNotEmpty
-                  ? NetworkImage(post.author.avatarUrl!)
-                  : null,
-          child: post.author.avatarUrl == null || post.author.avatarUrl!.isEmpty
-              ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
-              : null,
-        ),
+        avatarLayer,
         const SizedBox(width: _kGapAvatarToName),
         Expanded(
-          child: Text.rich(
-            TextSpan(
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-              children: [
-                TextSpan(text: post.author.fullName),
-                TextSpan(
-                  text: ' · ',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: scheme.onSurface.withValues(alpha: 0.45),
-                  ),
-                ),
-                TextSpan(
-                  text: timeLabel,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: scheme.onSurface.withValues(alpha: 0.45),
-                  ),
-                ),
-              ],
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          child: onAuthorTap != null
+              ? GestureDetector(
+                  onTap: onAuthorTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: nameBlock,
+                )
+              : nameBlock,
         ),
         IconButton(
           onPressed: () {},
@@ -377,12 +442,85 @@ class _AuthorHeaderRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
 
-    if (onAuthorTap == null) return row;
-    return GestureDetector(
-      onTap: onAuthorTap,
-      behavior: HitTestBehavior.opaque,
-      child: row,
+/// Botón + / palomita superpuesto en la esquina del avatar (posts recomendados).
+class _RecommendedFollowAvatarBadge extends StatelessWidget {
+  const _RecommendedFollowAvatarBadge({
+    required this.scheme,
+    required this.followed,
+    required this.loading,
+    this.onTap,
+  });
+
+  final ColorScheme scheme;
+  final bool followed;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  static const double _size = 26;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = Border.all(
+      color: followed ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.65),
+      width: 1.2,
+    );
+    final bg = followed ? scheme.primary : scheme.surface;
+    final fg = followed ? scheme.onPrimary : scheme.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: loading ? null : (followed ? null : onTap),
+        customBorder: const CircleBorder(),
+        child: Ink(
+          width: _size,
+          height: _size,
+          decoration: BoxDecoration(
+            color: bg,
+            shape: BoxShape.circle,
+            border: border,
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: 0.12),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: animation,
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: loading
+                  ? SizedBox(
+                      key: const ValueKey<String>('loading'),
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.primary,
+                      ),
+                    )
+                  : Icon(
+                      followed ? Icons.check_rounded : Icons.add_rounded,
+                      key: ValueKey<bool>(followed),
+                      size: 16,
+                      color: fg,
+                    ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
