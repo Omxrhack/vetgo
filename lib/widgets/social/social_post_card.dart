@@ -38,7 +38,7 @@ class SocialPostCard extends StatelessWidget {
 
   final bool showBottomDivider;
 
-  static const double _hPad = 14;
+  static const double _hPad = 16;
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +200,7 @@ class SocialPostCard extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.85),
+            color: scheme.outlineVariant.withValues(alpha: 0.4),
             width: 1,
           ),
         ),

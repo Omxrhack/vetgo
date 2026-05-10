@@ -8,10 +8,11 @@ import 'package:vetgo/create_post_screen.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/repost_compose_screen.dart';
-import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/social/social_post_card.dart';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Brand / helpers ──────────────────────────────────────────────────────────
+
+const Color _vetgoGreen = Color(0xFF1B8A4E);
 
 String _socialFeedRelativeTime(DateTime dt) {
   final diff = DateTime.now().difference(dt);
@@ -224,7 +225,7 @@ class _SocialScreenState extends State<SocialScreen> {
     final scheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: scheme.surfaceContainerLowest,
+      backgroundColor: scheme.surface,
       body: RefreshIndicator(
         onRefresh: _load,
         color: scheme.primary,
@@ -233,69 +234,151 @@ class _SocialScreenState extends State<SocialScreen> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: scheme.surfaceContainerLowest,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: scheme.surface,
               surfaceTintColor: Colors.transparent,
               title: Text(
                 'Social',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1B8A4E),
+                  color: _vetgoGreen,
                 ),
               ),
               centerTitle: false,
             ),
 
-            // ── Compose box — always visible ─────────────────────────────
+            // ── Compose strip (bloque redondeado; sin doble divisor duro) ──
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: _ComposeBox(
-                  avatarUrl: _myAvatarUrl,
-                  onTap: _openCreatePost,
-                  theme: theme,
-                  scheme: scheme,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _ComposeBox(
+                      avatarUrl: _myAvatarUrl,
+                      onTap: _openCreatePost,
+                      theme: theme,
+                      scheme: scheme,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      height: 1,
+                      color: scheme.outlineVariant.withValues(alpha: 0.14),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
               ),
             ),
 
             if (_loading)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+              SliverFillRemaining(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Cargando…',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
             else if (_error != null)
               SliverFillRemaining(
                 child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      FilledButton(onPressed: _load, child: const Text('Reintentar')),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          size: 48,
+                          color: scheme.onSurface.withValues(alpha: 0.28),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No pudimos cargar el feed',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: _load,
+                          style: FilledButton.styleFrom(
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                          ),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               )
             else if (_feedItems.isEmpty)
               SliverFillRemaining(
                 child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.people_outline_rounded,
-                          size: 48, color: scheme.onSurface.withValues(alpha: 0.2)),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Sigue a alguien para ver su actividad aquí',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.45)),
-                      ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.people_outline_rounded,
+                          size: 48,
+                          color: scheme.onSurface.withValues(alpha: 0.22),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tu línea de tiempo está lista',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sigue a alguien para ver su actividad aquí.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.5),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               )
             else ...[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
                 sliver: SliverList.separated(
                   itemCount: _feedItems.length,
                   separatorBuilder: (_, _) => const SizedBox.shrink(),
@@ -426,38 +509,63 @@ class _ComposeBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: scheme.primaryContainer,
-              backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                  ? NetworkImage(avatarUrl!)
-                  : null,
-              child: avatarUrl == null || avatarUrl!.isEmpty
-                  ? Icon(Icons.person_rounded, size: 18, color: scheme.primary)
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                child: Text(
-                  '¿Qué está pasando?',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.4),
+    final radius = BorderRadius.circular(16);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: radius,
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          splashColor: scheme.primary.withValues(alpha: 0.08),
+          highlightColor: scheme.primary.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: scheme.primaryContainer,
+                  backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+                      ? NetworkImage(avatarUrl!)
+                      : null,
+                  child: avatarUrl == null || avatarUrl!.isEmpty
+                      ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      '¿Qué está pasando?',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.45),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Icon(
+                    Icons.edit_note_rounded,
+                    size: 26,
+                    color: scheme.primary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Icon(Icons.photo_camera_outlined, size: 20, color: scheme.primary),
-          ],
+          ),
         ),
       ),
     );
@@ -503,52 +611,59 @@ class _SuggestionCarouselState extends State<_SuggestionCarousel> {
   Widget build(BuildContext context) {
     final scheme = widget.scheme;
     final theme = widget.theme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.people_alt_outlined, size: 16, color: scheme.primary),
-              const SizedBox(width: 6),
               Text(
                 'Personas que quizás conozcas',
-                style: theme.textTheme.labelMedium?.copyWith(
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: scheme.onSurface.withValues(alpha: 0.7),
+                  color: scheme.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 142,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.profiles.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) {
+                    final p = widget.profiles[i];
+                    final isFollowing = _following.contains(p.id);
+                    final isLoading = _loading.contains(p.id);
+                    return _SuggestionCard(
+                      profile: p,
+                      isFollowing: isFollowing,
+                      isLoading: isLoading,
+                      theme: theme,
+                      scheme: scheme,
+                      onTap: () => Navigator.of(ctx).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => PublicProfileScreen(profileId: p.id),
+                        ),
+                      ),
+                      onFollowTap: () => _toggle(p.id),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
-        SizedBox(
-          height: 172,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: widget.profiles.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
-            itemBuilder: (ctx, i) {
-              final p = widget.profiles[i];
-              final isFollowing = _following.contains(p.id);
-              final isLoading = _loading.contains(p.id);
-              return _SuggestionCard(
-                profile: p,
-                isFollowing: isFollowing,
-                isLoading: isLoading,
-                theme: theme,
-                scheme: scheme,
-                onTap: () => Navigator.of(ctx).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => PublicProfileScreen(profileId: p.id),
-                  ),
-                ),
-                onFollowTap: () => _toggle(p.id),
-              );
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -574,87 +689,77 @@ class _SuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClientSoftCard(
-      padding: const EdgeInsets.all(12),
-      child: SizedBox(
-        width: 120,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            GestureDetector(
-              onTap: onTap,
-              child: CircleAvatar(
-                radius: 30,
-                backgroundColor: scheme.primaryContainer,
-                backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                    ? NetworkImage(profile.avatarUrl!)
-                    : null,
-                child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
-                    ? Icon(Icons.person_rounded, size: 28, color: scheme.primary)
-                    : null,
+    return SizedBox(
+      width: 104,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: scheme.primaryContainer,
+              backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                  ? NetworkImage(profile.avatarUrl!)
+                  : null,
+              child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+                  ? Icon(Icons.person_rounded, size: 24, color: scheme.primary)
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              profile.fullName,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withValues(alpha: 0.88),
               ),
             ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: onTap,
-              child: Text(
-                profile.fullName,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                profile.isVet ? 'Veterinario' : 'Cliente',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 30,
-              width: double.infinity,
-              child: isLoading
-                  ? Center(
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
-                      ),
-                    )
-                  : isFollowing
-                      ? OutlinedButton(
-                          onPressed: onFollowTap,
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-                            side: BorderSide(color: scheme.outline),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                          child: const Text('Siguiendo'),
-                        )
-                      : FilledButton(
-                          onPressed: onFollowTap,
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                          child: const Text('Seguir'),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 30,
+            width: double.infinity,
+            child: isLoading
+                ? Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                    ),
+                  )
+                : isFollowing
+                    ? OutlinedButton(
+                        onPressed: onFollowTap,
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                          side: BorderSide(color: scheme.outline.withValues(alpha: 0.45)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
-            ),
-          ],
-        ),
+                        child: const Text('Siguiendo'),
+                      )
+                    : FilledButton(
+                        onPressed: onFollowTap,
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        child: const Text('Seguir'),
+                      ),
+          ),
+        ],
       ),
     );
   }
