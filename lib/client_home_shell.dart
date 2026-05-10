@@ -107,13 +107,11 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
     final screens = <Widget>[
       ClientDashboardScreen(
         userName: widget.userName,
-        profilePhotoUrl: widget.profilePhotoUrl,
         pets: _pets,
         petsLoading: _petsLoading,
         petsError: _petsError,
         onRefreshPets: _loadPets,
         onOpenEmergency: _openSos,
-        onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
       ),
       const SocialScreen(),
       const StoreScreen(),
