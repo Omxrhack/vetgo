@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:heroine/heroine.dart';
 import 'package:markdown_quill/markdown_quill.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/navigation/social_heroine_tags.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/widgets/social/vetgo_social_quill_controller.dart';
@@ -163,15 +165,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: scheme.primaryContainer,
-                    backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
-                        ? NetworkImage(_myAvatarUrl!)
-                        : null,
-                    child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
-                        ? Icon(Icons.person_rounded, color: scheme.primary)
-                        : null,
+                  Heroine(
+                    tag: vetgoSocialComposeHeroTag,
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: scheme.primaryContainer,
+                      backgroundImage: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
+                          ? NetworkImage(_myAvatarUrl!)
+                          : null,
+                      child: _myAvatarUrl == null || _myAvatarUrl!.isEmpty
+                          ? Icon(Icons.person_rounded, color: scheme.primary)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

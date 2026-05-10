@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:heroine/heroine.dart';
 
 import 'package:vetgo/models/social_models.dart';
 
@@ -13,6 +14,11 @@ const double _kCardRadius = 16;
 /// Izquierda del texto del post alineada con el nombre: padding card + avatar + hueco.
 double _bodyTextStartPadding(double horizontalPadding) =>
     horizontalPadding + _kAuthorAvatarRadius * 2 + _kGapAvatarToName;
+
+Widget _maybeHeroine({required String? tag, required Widget child}) {
+  if (tag == null) return child;
+  return Heroine(tag: tag, child: child);
+}
 
 /// Tarjeta de publicación estilo feed (cabecera, texto Markdown, medios, acciones).
 class SocialPostCard extends StatelessWidget {
@@ -38,6 +44,9 @@ class SocialPostCard extends StatelessWidget {
     this.recommendedFollowed = false,
     this.recommendedFollowLoading = false,
     this.onRecommendedFollowTap,
+    this.heroinePostFlightTag,
+    this.heroineAuthorFlightTag,
+    this.heroineRepostFlightTag,
   });
 
   /// Contenido principal (post original; en repost es el citado).
@@ -78,6 +87,11 @@ class SocialPostCard extends StatelessWidget {
 
   /// Tap en + para seguir; si es null y [recommendedFollowed], solo se muestra la palomita.
   final VoidCallback? onRecommendedFollowTap;
+
+  /// Tags [Heroine] opcionales (transiciones con `VetgoSocialHeroineRoute`).
+  final String? heroinePostFlightTag;
+  final String? heroineAuthorFlightTag;
+  final String? heroineRepostFlightTag;
 
   static const double _hPad = 16;
 
@@ -195,6 +209,7 @@ class SocialPostCard extends StatelessWidget {
           recommendedFollowed: recommendedFollowed,
           recommendedFollowLoading: recommendedFollowLoading,
           onRecommendedFollowTap: onRecommendedFollowTap,
+          heroineAuthorFlightTag: heroineAuthorFlightTag,
         ),
       ),
       if (displayPost.body.isNotEmpty)
@@ -232,6 +247,10 @@ class SocialPostCard extends StatelessWidget {
         child: threadSection,
       );
     }
+    final postTag = heroinePostFlightTag;
+    if (postTag != null) {
+      threadSection = Heroine(tag: postTag, child: threadSection);
+    }
 
     final inner = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,15 +272,18 @@ class SocialPostCard extends StatelessWidget {
                 onPressed: onCommentTap ?? () {},
               ),
               const SizedBox(width: 18),
-              _SocialTrailingAction(
-                icon: Icons.repeat_rounded,
-                activeIcon: Icons.repeat_rounded,
-                theme: theme,
-                scheme: scheme,
-                count: displayPost.repostCount,
-                activeAsBrand: displayPost.viewerHasReposted,
-                brandGreen: brandGreen,
-                onPressed: onRepost ?? () {},
+              _maybeHeroine(
+                tag: heroineRepostFlightTag,
+                child: _SocialTrailingAction(
+                  icon: Icons.repeat_rounded,
+                  activeIcon: Icons.repeat_rounded,
+                  theme: theme,
+                  scheme: scheme,
+                  count: displayPost.repostCount,
+                  activeAsBrand: displayPost.viewerHasReposted,
+                  brandGreen: brandGreen,
+                  onPressed: onRepost ?? () {},
+                ),
               ),
               const SizedBox(width: 18),
               _SocialTrailingAction(
@@ -337,6 +359,7 @@ class _AuthorHeaderRow extends StatelessWidget {
     this.recommendedFollowed = false,
     this.recommendedFollowLoading = false,
     this.onRecommendedFollowTap,
+    this.heroineAuthorFlightTag,
   });
 
   final PostVm post;
@@ -348,6 +371,7 @@ class _AuthorHeaderRow extends StatelessWidget {
   final bool recommendedFollowed;
   final bool recommendedFollowLoading;
   final VoidCallback? onRecommendedFollowTap;
+  final String? heroineAuthorFlightTag;
 
   @override
   Widget build(BuildContext context) {
@@ -379,7 +403,7 @@ class _AuthorHeaderRow extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
 
-    final avatar = CircleAvatar(
+    Widget avatar = CircleAvatar(
       radius: _kAuthorAvatarRadius,
       backgroundColor: scheme.primaryContainer,
       backgroundImage:
@@ -390,6 +414,17 @@ class _AuthorHeaderRow extends StatelessWidget {
           ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
           : null,
     );
+    final authorTag = heroineAuthorFlightTag;
+    if (authorTag != null) {
+      avatar = Heroine(
+        tag: authorTag,
+        child: SizedBox(
+          width: _kAuthorAvatarRadius * 2,
+          height: _kAuthorAvatarRadius * 2,
+          child: avatar,
+        ),
+      );
+    }
 
     final avatarLayer = SizedBox(
       width: _kAuthorAvatarRadius * 2,

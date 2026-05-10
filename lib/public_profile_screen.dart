@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:heroine/heroine.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:vetgo/core/navigation/social_heroine_tags.dart';
+import 'package:vetgo/core/navigation/vetgo_social_heroine_route.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/repost_compose_screen.dart';
@@ -20,11 +23,15 @@ class PublicProfileScreen extends StatefulWidget {
     required this.profileId,
     this.isOwnProfile = false,
     this.onBookTap,
+    this.heroineAvatarFlightTag,
   });
 
   final String profileId;
   final bool isOwnProfile;
   final VoidCallback? onBookTap;
+
+  /// Coincide con el [Heroine] del avatar al abrir el perfil desde el feed Social.
+  final String? heroineAvatarFlightTag;
 
   @override
   State<PublicProfileScreen> createState() => _PublicProfileScreenState();
@@ -181,7 +188,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     }
 
     final updated = await Navigator.of(context).push<PostVm>(
-      MaterialPageRoute<PostVm>(
+      VetgoSocialHeroineRoute<PostVm>(
         builder: (ctx) => SocialPostDetailScreen(
           api: _api,
           initialPost: display,
@@ -189,10 +196,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           reposter: reposter,
           quoteBody: quoteBody,
           brandGreen: _vetgoGreenProfile,
+          heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
+          heroineAuthorFlightTag: vetgoSocialProfileHeroTag(display.author.id),
           onAuthorTap: () {
             Navigator.of(ctx).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => PublicProfileScreen(profileId: display.author.id),
+              VetgoSocialHeroineRoute<void>(
+                builder: (_) => PublicProfileScreen(
+                  profileId: display.author.id,
+                  heroineAvatarFlightTag:
+                      vetgoSocialProfileHeroTag(display.author.id),
+                ),
               ),
             );
           },
@@ -344,6 +357,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                         avatarUrl: p.avatarUrl,
                         isVet: p.isVet,
                         scheme: scheme,
+                        heroineFlightTag: widget.heroineAvatarFlightTag,
                       ),
                     ),
                     const Spacer(),
@@ -626,39 +640,46 @@ class _ProfileAvatar extends StatelessWidget {
     required this.avatarUrl,
     required this.isVet,
     required this.scheme,
+    this.heroineFlightTag,
   });
 
   final String? avatarUrl;
   final bool isVet;
   final ColorScheme scheme;
+  final String? heroineFlightTag;
 
   @override
   Widget build(BuildContext context) {
     final hasImg = avatarUrl != null && avatarUrl!.isNotEmpty;
+    Widget avatarCore = Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: CircleAvatar(
+        radius: 44,
+        backgroundColor: scheme.primaryContainer,
+        backgroundImage: hasImg ? NetworkImage(avatarUrl!) : null,
+        child: !hasImg
+            ? Icon(Icons.person_rounded, size: 44, color: scheme.primary)
+            : null,
+      ),
+    );
+    final tag = heroineFlightTag;
+    if (tag != null) {
+      avatarCore = Heroine(tag: tag, child: avatarCore);
+    }
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: CircleAvatar(
-            radius: 44,
-            backgroundColor: scheme.primaryContainer,
-            backgroundImage: hasImg ? NetworkImage(avatarUrl!) : null,
-            child: !hasImg
-                ? Icon(Icons.person_rounded, size: 44, color: scheme.primary)
-                : null,
-          ),
-        ),
+        avatarCore,
         if (isVet)
           Positioned(
             bottom: 2,
@@ -1094,6 +1115,8 @@ class _FeedTab extends StatelessWidget {
               quoteBody: quoteBody,
               useElevatedChrome: true,
               brandGreen: brandGreen,
+              heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
+              heroineRepostFlightTag: vetgoSocialRepostHeroTag(display.id),
               onAuthorTap: null,
               onLikeTap: () => onLikePost(display),
               onCommentTap: () => onOpenPostDetail(entry),
@@ -1101,8 +1124,12 @@ class _FeedTab extends StatelessWidget {
               onShareTap: () => onSharePost(display),
               onRepost: () async {
                 final res = await Navigator.of(context).push<FeedEntryVm>(
-                  MaterialPageRoute<FeedEntryVm>(
-                    builder: (_) => RepostComposeScreen(original: display),
+                  VetgoSocialHeroineRoute<FeedEntryVm>(
+                    builder: (_) => RepostComposeScreen(
+                      original: display,
+                      heroineQuotedFlightTag:
+                          vetgoSocialRepostHeroTag(display.id),
+                    ),
                   ),
                 );
                 if (res != null && context.mounted) onRepostDone(res);

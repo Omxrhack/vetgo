@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:heroine/heroine.dart';
 import 'package:intl/intl.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
+import 'package:vetgo/core/navigation/social_heroine_tags.dart';
+import 'package:vetgo/core/navigation/vetgo_social_heroine_route.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/create_post_screen.dart';
 import 'package:vetgo/models/social_models.dart';
@@ -336,7 +339,7 @@ class _SocialScreenState extends State<SocialScreen> {
     }
 
     final updated = await Navigator.of(context).push<PostVm>(
-      MaterialPageRoute<PostVm>(
+      VetgoSocialHeroineRoute<PostVm>(
         builder: (ctx) => SocialPostDetailScreen(
           api: _api,
           initialPost: display,
@@ -345,10 +348,16 @@ class _SocialScreenState extends State<SocialScreen> {
           quoteBody: quoteBody,
           recommended: recommended,
           brandGreen: _vetgoGreen,
+          heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
+          heroineAuthorFlightTag: vetgoSocialProfileHeroTag(display.author.id),
           onAuthorTap: () {
             Navigator.of(ctx).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => PublicProfileScreen(profileId: display.author.id),
+              VetgoSocialHeroineRoute<void>(
+                builder: (_) => PublicProfileScreen(
+                  profileId: display.author.id,
+                  heroineAvatarFlightTag:
+                      vetgoSocialProfileHeroTag(display.author.id),
+                ),
               ),
             );
           },
@@ -377,7 +386,9 @@ class _SocialScreenState extends State<SocialScreen> {
 
   Future<void> _openCreatePost() async {
     final result = await Navigator.of(context).push<FeedEntryVm>(
-      MaterialPageRoute<FeedEntryVm>(builder: (_) => const CreatePostScreen()),
+      VetgoSocialHeroineRoute<FeedEntryVm>(
+        builder: (_) => const CreatePostScreen(),
+      ),
     );
     if (result != null && mounted) {
       setState(() {
@@ -698,15 +709,25 @@ class _SocialFeedPostTile extends StatelessWidget {
           : null,
       useElevatedChrome: true,
       brandGreen: _vetgoGreen,
+      heroinePostFlightTag: vetgoSocialPostHeroTag(display.id),
+      heroineAuthorFlightTag: vetgoSocialProfileHeroTag(display.author.id),
+      heroineRepostFlightTag: vetgoSocialRepostHeroTag(display.id),
       onAuthorTap: () => Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => PublicProfileScreen(profileId: display.author.id),
+        VetgoSocialHeroineRoute<void>(
+          builder: (_) => PublicProfileScreen(
+            profileId: display.author.id,
+            heroineAvatarFlightTag:
+                vetgoSocialProfileHeroTag(display.author.id),
+          ),
         ),
       ),
       onRepost: () async {
         final res = await Navigator.of(context).push<FeedEntryVm>(
-          MaterialPageRoute<FeedEntryVm>(
-            builder: (_) => RepostComposeScreen(original: display),
+          VetgoSocialHeroineRoute<FeedEntryVm>(
+            builder: (_) => RepostComposeScreen(
+              original: display,
+              heroineQuotedFlightTag: vetgoSocialRepostHeroTag(display.id),
+            ),
           ),
         );
         if (res != null && context.mounted) onFeedUpdated(res);
@@ -759,15 +780,18 @@ class _ComposeBox extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: scheme.primaryContainer,
-                  backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                      ? NetworkImage(avatarUrl!)
-                      : null,
-                  child: avatarUrl == null || avatarUrl!.isEmpty
-                      ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
-                      : null,
+                Heroine(
+                  tag: vetgoSocialComposeHeroTag,
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: scheme.primaryContainer,
+                    backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+                        ? NetworkImage(avatarUrl!)
+                        : null,
+                    child: avatarUrl == null || avatarUrl!.isEmpty
+                        ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -878,8 +902,12 @@ class _SuggestionCarouselState extends State<_SuggestionCarousel> {
                       theme: theme,
                       scheme: scheme,
                       onTap: () => Navigator.of(ctx).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => PublicProfileScreen(profileId: p.id),
+                        VetgoSocialHeroineRoute<void>(
+                          builder: (_) => PublicProfileScreen(
+                            profileId: p.id,
+                            heroineAvatarFlightTag:
+                                vetgoSocialProfileHeroTag(p.id),
+                          ),
                         ),
                       ),
                       onFollowTap: () => _toggle(p.id),
@@ -924,15 +952,18 @@ class _SuggestionCard extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: onTap,
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: scheme.primaryContainer,
-              backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
-                  ? NetworkImage(profile.avatarUrl!)
-                  : null,
-              child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
-                  ? Icon(Icons.person_rounded, size: 24, color: scheme.primary)
-                  : null,
+            child: Heroine(
+              tag: vetgoSocialProfileHeroTag(profile.id),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: scheme.primaryContainer,
+                backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                    ? NetworkImage(profile.avatarUrl!)
+                    : null,
+                child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+                    ? Icon(Icons.person_rounded, size: 24, color: scheme.primary)
+                    : null,
+              ),
             ),
           ),
           const SizedBox(height: 8),

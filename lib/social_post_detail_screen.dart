@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:vetgo/core/navigation/social_heroine_tags.dart';
+import 'package:vetgo/core/navigation/vetgo_social_heroine_route.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/social_models.dart';
 import 'package:vetgo/repost_compose_screen.dart';
@@ -18,6 +20,8 @@ class SocialPostDetailScreen extends StatefulWidget {
     this.quoteBody,
     this.recommended = false,
     this.brandGreen = const Color(0xFF1B8A4E),
+    this.heroinePostFlightTag,
+    this.heroineAuthorFlightTag,
   });
 
   final VetgoApiClient api;
@@ -28,6 +32,8 @@ class SocialPostDetailScreen extends StatefulWidget {
   final String? quoteBody;
   final bool recommended;
   final Color brandGreen;
+  final String? heroinePostFlightTag;
+  final String? heroineAuthorFlightTag;
 
   @override
   State<SocialPostDetailScreen> createState() => _SocialPostDetailScreenState();
@@ -154,8 +160,11 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
 
   Future<void> _handleRepost() async {
     final res = await Navigator.of(context).push<FeedEntryVm>(
-      MaterialPageRoute<FeedEntryVm>(
-        builder: (_) => RepostComposeScreen(original: _post),
+      VetgoSocialHeroineRoute<FeedEntryVm>(
+        builder: (_) => RepostComposeScreen(
+          original: _post,
+          heroineQuotedFlightTag: vetgoSocialRepostHeroTag(_post.id),
+        ),
       ),
     );
     if (!mounted || res == null) return;
@@ -214,6 +223,9 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                       brandGreen: widget.brandGreen,
                       useElevatedChrome: false,
                       showBottomDivider: false,
+                      heroinePostFlightTag: widget.heroinePostFlightTag,
+                      heroineAuthorFlightTag: widget.heroineAuthorFlightTag,
+                      heroineRepostFlightTag: vetgoSocialRepostHeroTag(_post.id),
                       onOpenThread: null,
                       onAuthorTap: widget.onAuthorTap,
                       onLikeTap: _handleLike,

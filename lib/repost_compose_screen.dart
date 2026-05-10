@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:heroine/heroine.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:markdown_quill/markdown_quill.dart';
 
@@ -12,9 +13,16 @@ import 'package:vetgo/widgets/social/vetgo_social_quill_toolbar.dart';
 
 /// Quote-repost estilo Twitter/X: comentario Quill arriba, tarjeta citada, «Republicar» en píldora.
 class RepostComposeScreen extends StatefulWidget {
-  const RepostComposeScreen({super.key, required this.original});
+  const RepostComposeScreen({
+    super.key,
+    required this.original,
+    this.heroineQuotedFlightTag,
+  });
 
   final PostVm original;
+
+  /// Par con el botón repost del feed / detalle (`SocialHeroineTags`).
+  final String? heroineQuotedFlightTag;
 
   @override
   State<RepostComposeScreen> createState() => _RepostComposeScreenState();
@@ -248,6 +256,7 @@ class _RepostComposeScreenState extends State<RepostComposeScreen> {
                 accent: _brandGreen,
                 theme: theme,
                 scheme: scheme,
+                heroineQuotedFlightTag: widget.heroineQuotedFlightTag,
               ),
             ),
           ),
@@ -263,16 +272,18 @@ class _QuotedPostCard extends StatelessWidget {
     required this.accent,
     required this.theme,
     required this.scheme,
+    this.heroineQuotedFlightTag,
   });
 
   final PostVm original;
   final Color accent;
   final ThemeData theme;
   final ColorScheme scheme;
+  final String? heroineQuotedFlightTag;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    Widget card = DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
         borderRadius: BorderRadius.circular(12),
@@ -338,5 +349,10 @@ class _QuotedPostCard extends StatelessWidget {
         ),
       ),
     );
+    final tag = heroineQuotedFlightTag;
+    if (tag != null) {
+      card = Heroine(tag: tag, child: card);
+    }
+    return card;
   }
 }
