@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
@@ -119,39 +121,52 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           SliverAppBar(
             pinned: true,
             floating: false,
+            toolbarHeight: 72,
             backgroundColor: theme.scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
-            expandedHeight: 80,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-              title: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.holaNombre(displayName),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      height: 1.1,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            centerTitle: false,
+            titleSpacing: 20,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Vetgo',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    letterSpacing: -0.8,
+                    height: 1.1,
+                    color: scheme.primary,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    AppStrings.clienteDashboardSubtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: muted,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  displayName,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                    letterSpacing: 0,
+                    height: 1.3,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+            actions: [
+              IconButton(
+                icon: const FaIcon(FontAwesomeIcons.magnifyingGlass, size: 18),
+                color: scheme.onSurfaceVariant,
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const FaIcon(FontAwesomeIcons.bell, size: 18),
+                color: scheme.onSurfaceVariant,
+                onPressed: () {},
+              ),
+              const SizedBox(width: 4),
+            ],
           ),
           SliverToBoxAdapter(
             child: Padding(
