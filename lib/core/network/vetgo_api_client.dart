@@ -923,6 +923,30 @@ class VetgoApiClient {
       return (null, _vetDioMessage(e));
     }
   }
+
+  Future<VetJsonResult> getSuggestedProfiles({int limit = 10}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/profiles/suggestions',
+        queryParameters: <String, dynamic>{'limit': limit},
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  Future<VetJsonResult> getExplorePosts({int limit = 5}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/posts/explore',
+        queryParameters: <String, dynamic>{'limit': limit},
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
 }
 
 class HealthCheckResult {

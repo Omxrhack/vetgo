@@ -140,6 +140,29 @@ class ReviewerVm {
       );
 }
 
+class SuggestedProfileVm {
+  const SuggestedProfileVm({
+    required this.id,
+    required this.fullName,
+    this.avatarUrl,
+    required this.role,
+  });
+
+  final String id;
+  final String fullName;
+  final String? avatarUrl;
+  final String role;
+
+  bool get isVet => role == 'vet';
+
+  factory SuggestedProfileVm.fromJson(Map<String, dynamic> j) => SuggestedProfileVm(
+        id: j['id'] as String,
+        fullName: j['full_name'] as String? ?? '',
+        avatarUrl: j['avatar_url'] as String?,
+        role: j['role'] as String? ?? 'client',
+      );
+}
+
 class ReviewVm {
   const ReviewVm({
     required this.id,
