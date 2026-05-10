@@ -399,7 +399,7 @@ class _SocialFeedPostTile extends StatelessWidget {
       ),
       onRepost: () async {
         final res = await Navigator.of(context).push<FeedEntryVm>(
-          MaterialPageRoute<void>(
+          MaterialPageRoute<FeedEntryVm>(
             builder: (_) => RepostComposeScreen(original: display),
           ),
         );
