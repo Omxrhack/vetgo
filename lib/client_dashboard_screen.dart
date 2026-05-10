@@ -40,10 +40,25 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   bool _apptLoading = true;
   String? _apptError;
 
+  Map<String, dynamic>? _assignedVet;
+  bool _vetLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadAppointments();
+    _loadAssignedVet();
+  }
+
+  Future<void> _loadAssignedVet() async {
+    final (data, _) = await _api.getMyVet();
+    if (!mounted) return;
+    setState(() {
+      _assignedVet = data?['vet'] is Map<String, dynamic>
+          ? data!['vet'] as Map<String, dynamic>
+          : null;
+      _vetLoading = false;
+    });
   }
 
   Future<void> _loadAppointments() async {
@@ -89,6 +104,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     await Future.wait<void>([
       widget.onRefreshPets(),
       _loadAppointments(),
+      _loadAssignedVet(),
     ]);
   }
 
@@ -174,6 +190,58 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_vetLoading)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: ClientSoftCard(
+                        padding: const EdgeInsets.all(18),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: scheme.surfaceContainerHighest,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 14,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      color: scheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    height: 11,
+                                    width: 80,
+                                    decoration: BoxDecoration(
+                                      color: scheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (_assignedVet != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _AssignedVetCard(vet: _assignedVet!),
+                    )
+                        .animate()
+                        .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
+                        .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutCubic),
                   if (widget.petsError != null && widget.petsError!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -553,6 +621,104 @@ class _ClientAppointmentSummaryTile extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssignedVetCard extends StatelessWidget {
+  const _AssignedVetCard({required this.vet});
+
+  final Map<String, dynamic> vet;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final name = vet['full_name']?.toString() ?? '';
+    final avatarUrl = vet['avatar_url']?.toString();
+    final specialty = vet['specialty']?.toString().isNotEmpty == true
+        ? vet['specialty'].toString()
+        : 'Medicina veterinaria general';
+    final since = DateTime.tryParse(vet['relationship_since']?.toString() ?? '');
+    final sinceLabel = since != null
+        ? 'Cliente desde ${DateFormat('MMMM yyyy', 'es').format(since)}'
+        : 'Tu veterinario de confianza';
+
+    return ClientSoftCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: scheme.primaryContainer,
+            backgroundImage:
+                avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+            child: avatarUrl == null || avatarUrl.isEmpty
+                ? Icon(Icons.person_rounded, size: 28, color: scheme.primary)
+                : null,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tu veterinario',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  specialty,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.favorite_rounded, size: 12, color: scheme.primary),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        sinceLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 14,
+            color: scheme.onSurface.withValues(alpha: 0.3),
           ),
         ],
       ),

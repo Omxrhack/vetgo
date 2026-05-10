@@ -493,6 +493,21 @@ class VetgoApiClient {
     }
   }
 
+  /// `GET /api/appointments/my-vet` — veterinario principal del cliente autenticado.
+  Future<VetJsonResult> getMyVet() async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/appointments/my-vet',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/tracking/:id`
   Future<VetJsonResult> getTrackingSession({required String sessionId}) async {
     final opts = await _authorizedOptions();
