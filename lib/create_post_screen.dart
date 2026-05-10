@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:heroine/heroine.dart';
 import 'package:markdown_quill/markdown_quill.dart';
@@ -25,15 +26,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   bool _saving = false;
+  bool _uploadingGallery = false;
   String? _myAvatarUrl;
+  final List<String> _imageUrls = [];
 
   static const int _maxChars = 2000;
+  static const int _maxImages = 4;
 
   bool get _canPost {
-    if (_saving) return false;
+    if (_saving || _uploadingGallery) return false;
     final plain = _quillController.document.toPlainText();
-    if (plain.trim().isEmpty) return false;
-    if (plain.trim().characters.length > _maxChars) return false;
+    final textLen = plain.trim().characters.length;
+    if (textLen > _maxChars) return false;
+    if (textLen == 0 && _imageUrls.isEmpty) return false;
     return true;
   }
 
@@ -67,6 +72,55 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAndUploadPhotos() async {
+    final remaining = _maxImages - _imageUrls.length;
+    if (remaining <= 0 || _uploadingGallery) return;
+
+    final picker = ImagePicker();
+    List<XFile> files = [];
+    try {
+      files = await picker.pickMultiImage(
+        maxWidth: 2048,
+        imageQuality: 85,
+        limit: remaining,
+      );
+    } catch (_) {
+      final one = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        imageQuality: 85,
+      );
+      if (one != null) files = [one];
+    }
+
+    if (files.isEmpty || !mounted) return;
+
+    setState(() => _uploadingGallery = true);
+    final api = VetgoApiClient();
+    try {
+      for (final x in files.take(remaining)) {
+        final bytes = await x.readAsBytes();
+        final name = x.name.trim().isNotEmpty ? x.name.trim() : 'photo.jpg';
+        final (url, err) = await api.uploadPostImage(bytes: bytes, filename: name);
+        if (!mounted) return;
+        if (err != null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+          break;
+        }
+        if (url != null && url.isNotEmpty) {
+          setState(() => _imageUrls.add(url));
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingGallery = false);
+    }
+  }
+
+  void _removeImageAt(int index) {
+    if (index < 0 || index >= _imageUrls.length) return;
+    setState(() => _imageUrls.removeAt(index));
+  }
+
   Future<void> _publish() async {
     if (!_canPost) return;
     final trimmedPlain = _quillController.document.toPlainText().trim();
@@ -74,10 +128,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     final markdown =
         DeltaToMarkdown().convert(_quillController.document.toDelta()).trim();
-    if (markdown.isEmpty) return;
+    if (markdown.isEmpty && _imageUrls.isEmpty) return;
 
     setState(() => _saving = true);
-    final (data, err) = await VetgoApiClient().createPost(body: markdown);
+    final (data, err) = await VetgoApiClient().createPost(
+      body: markdown,
+      imageUrls: List<String>.from(_imageUrls),
+    );
     if (!mounted) return;
     setState(() => _saving = false);
     if (err != null || data == null) {
@@ -183,14 +240,89 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: QuillEditor.basic(
-                      controller: _quillController,
-                      focusNode: _focusNode,
-                      scrollController: _scrollController,
-                      config: vetgoSocialQuillEditorConfig(
-                        context,
-                        placeholder: 'Escribe tu publicación',
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: QuillEditor.basic(
+                            controller: _quillController,
+                            focusNode: _focusNode,
+                            scrollController: _scrollController,
+                            config: vetgoSocialQuillEditorConfig(
+                              context,
+                              placeholder: 'Escribe tu publicación',
+                            ),
+                          ),
+                        ),
+                        if (_imageUrls.isNotEmpty || _uploadingGallery) ...[
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 88,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _imageUrls.length + (_uploadingGallery ? 1 : 0),
+                              separatorBuilder: (context, index) => const SizedBox(width: 8),
+                              itemBuilder: (context, i) {
+                                if (_uploadingGallery && i == _imageUrls.length) {
+                                  return SizedBox(
+                                    width: 88,
+                                    height: 88,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final url = _imageUrls[i];
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.network(
+                                        url,
+                                        width: 88,
+                                        height: 88,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => ColoredBox(
+                                          color: scheme.surfaceContainerHighest,
+                                          child: Icon(Icons.broken_image_outlined, color: scheme.outline),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: -6,
+                                      right: -6,
+                                      child: Material(
+                                        color: scheme.surface,
+                                        shape: const CircleBorder(),
+                                        elevation: 1,
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () => _removeImageAt(i),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4),
+                                            child: Icon(Icons.close_rounded, size: 18, color: scheme.error),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -201,12 +333,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             color: scheme.surface,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: QuillSimpleToolbar(
-                  controller: _quillController,
-                  config: vetgoSocialToolbarConfig(theme),
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: 'Fotos (${_imageUrls.length}/$_maxImages)',
+                    onPressed: _saving ||
+                            _uploadingGallery ||
+                            _imageUrls.length >= _maxImages
+                        ? null
+                        : _pickAndUploadPhotos,
+                    icon: Icon(
+                      Icons.image_outlined,
+                      color: _imageUrls.length >= _maxImages
+                          ? scheme.onSurface.withValues(alpha: 0.35)
+                          : scheme.primary,
+                    ),
+                  ),
+                  Expanded(
+                    child: QuillSimpleToolbar(
+                      controller: _quillController,
+                      config: vetgoSocialToolbarConfig(theme),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

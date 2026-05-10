@@ -875,6 +875,30 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/posts/upload-image` — multipart campo `photo`; respuesta `{ url }`.
+  Future<(String? url, String? error)> uploadPostImage({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final formData = FormData.fromMap({
+        'photo': MultipartFile.fromBytes(bytes, filename: filename),
+      });
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts/upload-image',
+        data: formData,
+        options: opts,
+      );
+      final url = r.data?['url']?.toString().trim();
+      if (url == null || url.isEmpty) return (null, 'Respuesta inválida del servidor.');
+      return (url, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `POST /api/posts/:id/repost`
   Future<VetJsonResult> createRepost(
     String postId, {
