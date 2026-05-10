@@ -234,7 +234,7 @@ class SocialPostCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(
             _bodyTextStartPadding(_hPad),
-            reposter != null ? 10 : (recommended ? 6 : 14),
+            reposter != null ? 6 : (recommended ? 4 : 10),
             _hPad,
             0,
           ),
@@ -273,12 +273,12 @@ class SocialPostCard extends StatelessWidget {
     final threadTailChildren = <Widget>[
       if (displayPost.body.isNotEmpty)
         Padding(
-          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 1, _hPad, 0),
+          padding: EdgeInsets.fromLTRB(_bodyTextStartPadding(_hPad), 2, _hPad, 0),
           child: MarkdownBody(
             data: displayPost.body,
             shrinkWrap: true,
             styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              blockSpacing: 6,
+              blockSpacing: 4,
               h1: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               h2: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               h3: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -289,8 +289,8 @@ class SocialPostCard extends StatelessWidget {
           ),
         ),
       if (displayPost.imageUrls.isNotEmpty) ...[
-        SizedBox(height: displayPost.body.isNotEmpty ? 14 : 10),
-        SocialPostImageGrid(urls: displayPost.imageUrls),
+        SizedBox(height: displayPost.body.isNotEmpty ? 8 : 6),
+        SocialPostImageCarousel(urls: displayPost.imageUrls, scheme: scheme),
       ],
     ];
 
@@ -332,51 +332,63 @@ class SocialPostCard extends StatelessWidget {
         ?discoverBanner,
         threadSection,
         Padding(
-          padding: const EdgeInsets.fromLTRB(_hPad, 10, _hPad, 8),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _SocialTrailingAction(
-                icon: Icons.chat_bubble_outline_rounded,
-                activeIcon: Icons.chat_bubble_outline_rounded,
-                theme: theme,
-                scheme: scheme,
-                count: displayPost.commentCount,
-                onPressed: onCommentTap ?? () {},
-              ),
-              const SizedBox(width: 18),
-              _maybeHeroineRepostAction(
-                scheme: scheme,
-                tag: heroineRepostFlightTag,
-                child: _SocialTrailingAction(
-                  icon: Icons.repeat_rounded,
-                  activeIcon: Icons.repeat_rounded,
-                  theme: theme,
-                  scheme: scheme,
-                  count: displayPost.repostCount,
-                  activeAsBrand: displayPost.viewerHasReposted,
-                  brandGreen: brandGreen,
-                  onPressed: onRepost ?? () {},
+              Expanded(
+                child: Center(
+                  child: _SocialTrailingAction(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    activeIcon: Icons.chat_bubble_outline_rounded,
+                    theme: theme,
+                    scheme: scheme,
+                    count: displayPost.commentCount,
+                    onPressed: onCommentTap ?? () {},
+                  ),
                 ),
               ),
-              const SizedBox(width: 18),
-              _SocialTrailingAction(
-                icon: Icons.favorite_border_rounded,
-                activeIcon: Icons.favorite_rounded,
-                theme: theme,
-                scheme: scheme,
-                count: displayPost.likeCount,
-                activeAsBrand: displayPost.viewerHasLiked,
-                brandGreen: brandGreen,
-                onPressed: onLikeTap ?? () {},
+              Expanded(
+                child: Center(
+                  child: _maybeHeroineRepostAction(
+                    scheme: scheme,
+                    tag: heroineRepostFlightTag,
+                    child: _SocialTrailingAction(
+                      icon: Icons.repeat_rounded,
+                      activeIcon: Icons.repeat_rounded,
+                      theme: theme,
+                      scheme: scheme,
+                      count: displayPost.repostCount,
+                      activeAsBrand: displayPost.viewerHasReposted,
+                      brandGreen: brandGreen,
+                      onPressed: onRepost ?? () {},
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(width: 18),
-              _SocialTrailingAction(
-                icon: Icons.share_outlined,
-                activeIcon: Icons.share_outlined,
-                theme: theme,
-                scheme: scheme,
-                onPressed: onShareTap ?? () {},
+              Expanded(
+                child: Center(
+                  child: _SocialTrailingAction(
+                    icon: Icons.favorite_border_rounded,
+                    activeIcon: Icons.favorite_rounded,
+                    theme: theme,
+                    scheme: scheme,
+                    count: displayPost.likeCount,
+                    activeAsBrand: displayPost.viewerHasLiked,
+                    brandGreen: brandGreen,
+                    onPressed: onLikeTap ?? () {},
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: _SocialTrailingAction(
+                    icon: Icons.share_outlined,
+                    activeIcon: Icons.share_outlined,
+                    theme: theme,
+                    scheme: scheme,
+                    onPressed: onShareTap ?? () {},
+                  ),
+                ),
               ),
             ],
           ),
@@ -416,9 +428,9 @@ class SocialPostCard extends StatelessWidget {
   }
 
   double _topPaddingForAuthor(bool rec, PostAuthorVm? rep, String? quote) {
-    if (rep != null) return quote != null && quote.trim().isNotEmpty ? 12 : 10;
-    if (rec) return 6;
-    return 10;
+    if (rep != null) return quote != null && quote.trim().isNotEmpty ? 8 : 8;
+    if (rec) return 4;
+    return 8;
   }
 }
 
@@ -747,44 +759,117 @@ class _SocialTrailingActionState extends State<_SocialTrailingAction> {
   }
 }
 
-/// Rejilla / imagen única a ancho completo del post (sin padding lateral).
-class SocialPostImageGrid extends StatelessWidget {
-  const SocialPostImageGrid({super.key, required this.urls});
+/// Carrusel horizontal a **ancho completo** de la tarjeta (sin huecos laterales internos).
+class SocialPostImageCarousel extends StatefulWidget {
+  const SocialPostImageCarousel({
+    super.key,
+    required this.urls,
+    required this.scheme,
+  });
 
   final List<String> urls;
+  final ColorScheme scheme;
+
+  @override
+  State<SocialPostImageCarousel> createState() => _SocialPostImageCarouselState();
+}
+
+class _SocialPostImageCarouselState extends State<SocialPostImageCarousel> {
+  late final PageController _pageController;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (urls.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(_kCardRadius),
-        child: AspectRatio(
+    final urls = widget.urls;
+    if (urls.isEmpty) return const SizedBox.shrink();
+
+    final scheme = widget.scheme;
+    final dotActive = scheme.primary;
+    final dotMuted = scheme.onSurface.withValues(alpha: 0.28);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AspectRatio(
           aspectRatio: 16 / 9,
-          child: Image.network(
-            urls.first,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            alignment: Alignment.center,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: urls.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, index) {
+                  return Image.network(
+                    urls[index],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    alignment: Alignment.center,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return ColoredBox(
+                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                        child: Center(
+                          child: SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: scheme.primary.withValues(alpha: 0.65),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return ColoredBox(
+                        color: scheme.surfaceContainerHighest,
+                        child: Icon(Icons.broken_image_outlined, color: scheme.outline, size: 40),
+                      );
+                    },
+                  );
+                },
+              ),
+              if (urls.length > 1)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(urls.length, (i) {
+                      final on = i == _page;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: on ? 18 : 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: on ? dotActive : dotMuted,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+            ],
           ),
         ),
-      );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(_kCardRadius),
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 2,
-        crossAxisSpacing: 2,
-        childAspectRatio: 1,
-        children: urls
-            .take(4)
-            .map(
-              (url) => Image.network(url, fit: BoxFit.cover),
-            )
-            .toList(),
-      ),
+      ],
     );
   }
 }
