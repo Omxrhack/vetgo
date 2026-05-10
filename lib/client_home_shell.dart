@@ -8,6 +8,7 @@ import 'package:vetgo/emergency_sos_screen.dart';
 import 'package:vetgo/models/client_demo_data.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/profile_screen.dart';
+import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/social_screen.dart';
 import 'package:vetgo/store_screen.dart';
 
@@ -95,6 +96,24 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
     if (_tab != index) setState(() => _tab = index);
   }
 
+  Widget _buildProfileTab() {
+    final id = widget.ownerUserId?.trim();
+    if (id != null && id.isNotEmpty) {
+      return PublicProfileScreen(
+        profileId: id,
+        isOwnProfile: true,
+        showBackButton: false,
+        onLogout: widget.onLogout,
+      );
+    }
+    return ProfileScreen(
+      userName: widget.userName,
+      profilePhotoUrl: widget.profilePhotoUrl,
+      onLogout: widget.onLogout,
+      onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
+    );
+  }
+
   // bar positions: 0=Inicio, 1=Social, 2=SOS(no tab), 3=Tienda, 4=Perfil
   static const _barPosToTab = <int>[0, 1, -1, 2, 3];
 
@@ -115,12 +134,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       ),
       const SocialScreen(),
       const StoreScreen(),
-      ProfileScreen(
-        userName: widget.userName,
-        profilePhotoUrl: widget.profilePhotoUrl,
-        onLogout: widget.onLogout,
-        onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
-      ),
+      _buildProfileTab(),
     ];
 
     Widget buildBarItem({
@@ -257,26 +271,12 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       ),
     );
 
-    final content = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.03),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-          ),
-          child: child,
-        ),
-      ),
-      child: KeyedSubtree(
-        key: ValueKey(_tab),
-        child: screens[_tab],
-      ),
+    // Sin AnimatedSwitcher: el perfil usa NestedScrollView + slivers; animar el
+    // cambio de pestaña superponía desmontajes y podía disparar
+    // semantics.parentDataDirty en el framework.
+    final content = KeyedSubtree(
+      key: ValueKey<int>(_tab),
+      child: screens[_tab],
     );
 
     return Scaffold(

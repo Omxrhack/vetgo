@@ -237,6 +237,13 @@ abstract final class AppStrings {
 
   static const emergencySolicitarAyuda = 'Solicitar ayuda\nurgente';
 
+  /// CTA principal (una línea; pantalla SOS rediseñada).
+  static const emergencyCtaPrincipal = 'Solicitar ayuda urgente';
+
+  /// Ayuda bajo el botón SOS (ubicación).
+  static const emergencyUbicacionNota =
+      'Se usar\u00E1 tu ubicaci\u00F3n para alertar al equipo veterinario.';
+
   static const emergencyDetalleRapido = 'Detalle r\u00E1pido (opcional)';
 
   static const emergencySinMascotas =
@@ -264,8 +271,6 @@ abstract final class AppStrings {
   static const emergencyRegistrada = 'Emergencia registrada. Te contactamos en segundos.';
 
   static const emergencyDefaultSosBoton = 'Emergencia SOS \u2014 bot\u00F3n principal';
-
-  static const emergencyDefaultSosForm = 'Emergencia SOS \u2014 formulario';
 
   // --- Schedule flow ---
   static const scheduleSolicitudDemo = 'Solicitud registrada (demo).';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:vetgo/client/choose_vet_screen.dart';
@@ -8,11 +7,13 @@ import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/core/storage/preferred_vet_prefs.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
-import 'package:vetgo/widgets/client/async_endpoint_button.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
-/// SOS Emergencia 24/7: envia `POST /api/emergencies` con ubicacion y mascota.
+/// SOS Emergencia 24/7: envía `POST /api/emergencies` con ubicación y mascota.
+///
+/// Un solo envío desde el CTA principal: si hay texto en síntomas se usa; si no,
+/// [AppStrings.emergencyDefaultSosBoton] (un solo endpoint; evita duplicar envíos).
 class EmergencySOSScreen extends StatefulWidget {
   const EmergencySOSScreen({super.key, required this.pets});
 
@@ -65,7 +66,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     return (pos.latitude, pos.longitude, null);
   }
 
-  Future<void> _submitEmergency({required String defaultSymptoms}) async {
+  Future<void> _submitEmergency() async {
     if (widget.pets.isEmpty || _selectedPet == null) {
       if (!mounted) return;
       VetgoNotice.show(context, message: AppStrings.emergencyRegistraMascota, isError: true);
@@ -73,7 +74,8 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     }
 
     final detail = _symptoms.text.trim();
-    final symptoms = detail.isNotEmpty ? detail : defaultSymptoms;
+    final symptoms =
+        detail.isNotEmpty ? detail : AppStrings.emergencyDefaultSosBoton;
 
     final (lat, lng, locErr) = await _resolveLocation();
     if (locErr != null) {
@@ -107,227 +109,291 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
   }
 
   Future<void> _onSosPressed() async {
+    if (_searching) return;
     setState(() => _searching = true);
-    await _submitEmergency(defaultSymptoms: AppStrings.emergencyDefaultSosBoton);
+    await _submitEmergency();
     if (mounted) setState(() => _searching = false);
+  }
+
+  Future<void> _openChooseVet() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => const ChooseVetScreen(),
+      ),
+    );
+    await _refreshPreferredVet();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      backgroundColor: scheme.surfaceContainerLowest,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: scheme.surface,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 1,
+        surfaceTintColor: scheme.surfaceTint.withValues(alpha: 0.35),
+        foregroundColor: scheme.onSurface,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              ClientPastelColors.skySoft.withValues(alpha: 0.55),
-              ClientPastelColors.peachSoft.withValues(alpha: 0.85),
-              ClientPastelColors.amberSoft.withValues(alpha: 0.45),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  AppStrings.emergencyTitulo,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppStrings.emergencySubtitulo,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: ClientPastelColors.mutedOn(context)),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _preferredVetName != null && _preferredVetName!.isNotEmpty
-                      ? AppStrings.emergencyVetLinePref(_preferredVetName!)
-                      : AppStrings.emergencyVetLineAuto,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: ClientPastelColors.mutedOn(context),
-                    height: 1.35,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: scheme.outlineVariant.withValues(alpha: 0.35),
                   ),
                 ),
-                TextButton(
-                  onPressed: _searching
-                      ? null
-                      : () async {
-                          await Navigator.of(context).push<bool>(
-                            MaterialPageRoute<bool>(
-                              builder: (_) => const ChooseVetScreen(),
-                            ),
-                          );
-                          await _refreshPreferredVet();
-                        },
-                  child: const Text(AppStrings.emergencyVetElegir),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: AnimatedScale(
-                    scale: _searching ? 0.94 : 1,
-                    duration: const Duration(milliseconds: 420),
-                    curve: Curves.easeOutCubic,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: _searching || widget.pets.isEmpty ? null : _onSosPressed,
-                        child: Ink(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.white.withValues(alpha: 0.95),
-                                ClientPastelColors.coralSoft.withValues(alpha: 0.92),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.colorScheme.error.withValues(alpha: 0.22),
-                                blurRadius: 28,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 14),
-                              ),
-                            ],
-                          ),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 280),
-                            child: _searching
-                                ? Column(
-                                    key: const ValueKey<String>('load'),
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 42,
-                                        height: 42,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 3,
-                                          color: theme.colorScheme.error.withValues(alpha: 0.85),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 14),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: Text(
-                                          AppStrings.emergencyEnviandoAlerta,
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Column(
-                                    key: const ValueKey<String>('idle'),
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.sos_rounded, size: 56, color: theme.colorScheme.error.withValues(alpha: 0.88)),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        AppStrings.emergencySolicitarAyuda,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, height: 1.15),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppStrings.emergencyTitulo,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 400.ms, curve: Curves.easeOutCubic),
-                const SizedBox(height: 40),
-                Text(
-                  AppStrings.emergencyDetalleRapido,
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 12),
-                ClientSoftCard(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (widget.pets.isEmpty)
-                        Text(
-                          AppStrings.emergencySinMascotas,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: ClientPastelColors.mutedOn(context)),
-                        )
-                      else
-                        DropdownButtonFormField<ClientPetVm>(
-                          // ignore: deprecated_member_use
-                          value: _selectedPet,
-                          decoration: const InputDecoration(
-                            labelText: AppStrings.emergencyLabelMascota,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
-                          ),
-                          items: widget.pets
-                              .map(
-                                (ClientPetVm p) => DropdownMenuItem(value: p, child: Text(p.name)),
-                              )
-                              .toList(),
-                          onChanged: _searching
-                              ? null
-                              : (v) {
-                                  if (v != null) setState(() => _selectedPet = v);
-                                },
+                      const SizedBox(height: 8),
+                      Text(
+                        AppStrings.emergencySubtitulo,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.35,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _PreferredVetRow(
+                preferredName: _preferredVetName,
+                searching: _searching,
+                onChooseVet: _openChooseVet,
+              ),
+              const SizedBox(height: 18),
+              _PrimarySosButton(
+                loading: _searching,
+                hasPets: widget.pets.isNotEmpty,
+                onPressed: _onSosPressed,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                AppStrings.emergencyUbicacionNota,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                AppStrings.emergencyDetalleRapido,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ClientSoftCard(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.pets.isEmpty)
+                      Column(
+                        children: [
+                          Icon(
+                            Icons.pets_outlined,
+                            size: 40,
+                            color: scheme.onSurfaceVariant.withValues(alpha: 0.65),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            AppStrings.emergencySinMascotas,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: ClientPastelColors.mutedOn(context),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      )
+                    else ...[
+                      DropdownButtonFormField<ClientPetVm>(
+                        // ignore: deprecated_member_use
+                        value: _selectedPet,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.emergencyLabelMascota,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          filled: true,
+                          fillColor: scheme.surface,
+                        ),
+                        items: widget.pets
+                            .map(
+                              (ClientPetVm p) =>
+                                  DropdownMenuItem(value: p, child: Text(p.name)),
+                            )
+                            .toList(),
+                        onChanged: _searching
+                            ? null
+                            : (v) {
+                                if (v != null) setState(() => _selectedPet = v);
+                              },
+                      ),
                       const SizedBox(height: 14),
                       TextField(
                         controller: _symptoms,
                         enabled: !_searching,
                         maxLines: 3,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: AppStrings.emergencyLabelSintomas,
                           alignLabelWithHint: true,
                           hintText: AppStrings.emergencyHintSintomas,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          filled: true,
+                          fillColor: scheme.surface,
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      AsyncEndpointButton(
-                        label: AppStrings.emergencyEnviarSos,
-                        icon: Icons.send_rounded,
-                        loadingLabel: AppStrings.emergencyEnviando,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ClientPastelColors.mintDeep,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: widget.pets.isEmpty || _searching
-                            ? null
-                            : () async {
-                                await _submitEmergency(defaultSymptoms: AppStrings.emergencyDefaultSosForm);
-                              },
                       ),
                     ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferredVetRow extends StatelessWidget {
+  const _PreferredVetRow({
+    required this.preferredName,
+    required this.searching,
+    required this.onChooseVet,
+  });
+
+  final String? preferredName;
+  final bool searching;
+  final VoidCallback onChooseVet;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final line = preferredName != null && preferredName!.isNotEmpty
+        ? AppStrings.emergencyVetLinePref(preferredName!)
+        : AppStrings.emergencyVetLineAuto;
+
+    return Material(
+      color: scheme.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.medical_services_outlined,
+                size: 22, color: scheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                line,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                  height: 1.3,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: searching ? null : onChooseVet,
+              child: const Text(AppStrings.emergencyVetElegir),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimarySosButton extends StatelessWidget {
+  const _PrimarySosButton({
+    required this.loading,
+    required this.hasPets,
+    required this.onPressed,
+  });
+
+  final bool loading;
+  final bool hasPets;
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return FilledButton(
+      onPressed: !hasPets
+          ? null
+          : () {
+              if (loading) return;
+              onPressed();
+            },
+      style: FilledButton.styleFrom(
+        backgroundColor: scheme.error,
+        foregroundColor: scheme.onError,
+        disabledBackgroundColor: scheme.surfaceContainerHighest,
+        disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+        minimumSize: const Size(double.infinity, 54),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child: loading
+          ? SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: scheme.onError,
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.sos_rounded, size: 26, color: scheme.onError),
+                const SizedBox(width: 10),
+                Text(
+                  AppStrings.emergencyCtaPrincipal,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onError,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
     );
   }
 }

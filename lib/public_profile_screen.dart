@@ -16,6 +16,9 @@ import 'package:vetgo/widgets/social/vetgo_social_heroine_motion.dart';
 
 const Color _vetgoGreenProfile = Color(0xFF1B8A4E);
 
+/// Coincide con el ancho reservado al botón atrás en Material AppBar / SliverAppBar.
+const double _kAppBarLeadingWidth = 56;
+
 /// Pantalla de perfil público estilo profesional.
 /// Reutilizable para vets, clientes, y el propio usuario (isOwnProfile = true).
 class PublicProfileScreen extends StatefulWidget {
@@ -25,6 +28,8 @@ class PublicProfileScreen extends StatefulWidget {
     this.isOwnProfile = false,
     this.onBookTap,
     this.heroineAvatarFlightTag,
+    this.showBackButton = true,
+    this.onLogout,
   });
 
   final String profileId;
@@ -33,6 +38,12 @@ class PublicProfileScreen extends StatefulWidget {
 
   /// Coincide con el [Heroine] del avatar al abrir el perfil desde el feed Social.
   final String? heroineAvatarFlightTag;
+
+  /// En tabs (p. ej. [ClientHomeShell]) no hay stack que cerrar: oculta el botón atrás.
+  final bool showBackButton;
+
+  /// Si se pasa, se muestra en la AppBar (perfil propio) para cerrar sesión.
+  final VoidCallback? onLogout;
 
   @override
   State<PublicProfileScreen> createState() => _PublicProfileScreenState();
@@ -56,8 +67,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   void _syncTabsForRole(bool isVet) {
     final len = isVet ? 4 : 3;
     if (_tabController != null && _tabController!.length == len) return;
+    final prev = _tabController?.index ?? 0;
     _tabController?.dispose();
-    _tabController = TabController(length: len, vsync: this);
+    _tabController = TabController(
+      length: len,
+      vsync: this,
+      initialIndex: prev.clamp(0, len - 1),
+    );
   }
 
   @override
@@ -314,245 +330,182 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     final tc = _tabController!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final narrowTabs = MediaQuery.sizeOf(context).width < 340;
 
     return NestedScrollView(
-      // Permite que el avatar sobresalga del bloque blanco sin recorte respecto al banner.
-      clipBehavior: Clip.none,
       headerSliverBuilder: (ctx, _) => [
-        // ── Banner SliverAppBar ──────────────────────────────────────────
+        // Barra compacta fija: sin banner ni flexibleSpace (evita saltos con NestedScrollView).
         SliverAppBar(
-          expandedHeight: 145,
-          // Sin pinned: el bloque verde no se queda encima del contenido al hacer scroll
-          // y el avatar no queda “debajo” de la barra.
-          pinned: false,
-          floating: true,
-          snap: true,
-          clipBehavior: Clip.none,
+          pinned: true,
+          elevation: 0,
+          scrolledUnderElevation: 1,
           backgroundColor: scheme.surfaceContainerLowest,
-          surfaceTintColor: Colors.transparent,
-          // Back button with semi-transparent pill background
-          leading: Padding(
-            padding: const EdgeInsets.all(8),
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 18, color: Colors.white),
-              ),
-            ),
-          ),
+          surfaceTintColor: scheme.surfaceTint.withValues(alpha: 0.35),
+          foregroundColor: scheme.onSurface,
+          leadingWidth: widget.showBackButton ? _kAppBarLeadingWidth : 0,
+          leading: widget.showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                  tooltip: 'Volver',
+                  onPressed: () => Navigator.maybePop(context),
+                )
+              : const SizedBox.shrink(),
           actions: [
-            if (widget.isOwnProfile)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: _openEditSheet,
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.28),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.edit_outlined,
-                        size: 17, color: Colors.white),
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _VetgoWordmarkChip(),
+            ),
+            if (widget.isOwnProfile && widget.onLogout != null)
+              IconButton(
+                icon: Icon(Icons.logout_rounded, color: scheme.error),
+                tooltip: 'Cerrar sesión',
+                onPressed: widget.onLogout,
               ),
           ],
-          // Title only visible when collapsed
-          title: _CollapsedTitle(fullName: p.fullName, theme: theme),
-          flexibleSpace: FlexibleSpaceBar(
-            background: _BannerBackground(isVet: p.isVet),
-          ),
         ),
 
-        // ── Header content (card + avatar en Stack para superponer sin recorte) ─
+        // Perfil: avatar + datos en fila (sin solape sobre banner).
         SliverToBoxAdapter(
-          child: Container(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLowest,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.none,
-            child: Stack(
-              clipBehavior: Clip.none,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 50, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Material(
+                      type: MaterialType.transparency,
+                      elevation: 6,
+                      shadowColor: Colors.black.withValues(alpha: 0.2),
+                      surfaceTintColor: Colors.transparent,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.none,
+                      child: _ProfileAvatar(
+                        avatarUrl: p.avatarUrl,
+                        isVet: p.isVet,
+                        scheme: scheme,
+                        heroineFlightTag: widget.heroineAvatarFlightTag,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(width: 102),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: _ActionButton(
-                                  profile: p,
-                                  isOwnProfile: widget.isOwnProfile,
-                                  followLoading: _followLoading,
-                                  onFollow: _toggleFollow,
-                                  onBook: widget.onBookTap,
-                                  onEdit: _openEditSheet,
-                                  theme: theme,
-                                  scheme: scheme,
-                                ),
-                              ),
+                          Text(
+                            p.fullName,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _ActionButton(
+                              profile: p,
+                              isOwnProfile: widget.isOwnProfile,
+                              followLoading: _followLoading,
+                              onFollow: _toggleFollow,
+                              onBook: widget.onBookTap,
+                              onEdit: _openEditSheet,
+                              theme: theme,
+                              scheme: scheme,
                             ),
                           ),
-                        ],
-                      ),
-                      Transform.translate(
-                        offset: const Offset(0, -26),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                          const SizedBox(height: 10),
+                          if (p.isVet)
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    p.fullName,
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.1,
-                                    ),
+                                _ProfileRoleHeader(
+                                  profile: p,
+                                  scheme: scheme,
+                                  theme: theme,
+                                ),
+                                if (p.vet?.specialty != null)
+                                  _SpecialtyChip(
+                                    specialty: p.vet!.specialty!,
+                                    scheme: scheme,
+                                    theme: theme,
+                                  ),
+                              ],
+                            )
+                          else
+                            _ProfileRoleHeader(
+                              profile: p,
+                              scheme: scheme,
+                              theme: theme,
+                            ),
+                          if (p.bio != null && p.bio!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              p.bio!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color:
+                                    scheme.onSurface.withValues(alpha: 0.75),
+                                height: 1.45,
+                              ),
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          if (p.location != null &&
+                              p.location!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(Icons.place_outlined,
+                                    size: 13,
+                                    color: scheme.onSurface
+                                        .withValues(alpha: 0.4)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  p.location!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.onSurface
+                                        .withValues(alpha: 0.55),
                                   ),
                                 ),
-                                if (p.isVet) ...[
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.all(3),
-                                    decoration: BoxDecoration(
-                                      color: scheme.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.check_rounded,
-                                        size: 11, color: Colors.white),
-                                  ),
-                                ],
                               ],
                             ),
-
-                            // Rol: perfil profesional vs comunidad
-                            const SizedBox(height: 6),
-                            _ProfileRoleHeader(
-                                profile: p, scheme: scheme, theme: theme),
-
-                            // Specialty chip (solo MVZ)
-                            if (p.isVet && p.vet?.specialty != null) ...[
-                              const SizedBox(height: 5),
-                              _SpecialtyChip(
-                                  specialty: p.vet!.specialty!,
-                                  scheme: scheme,
-                                  theme: theme),
-                            ],
-
-                            // Bio
-                            if (p.bio != null && p.bio!.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                p.bio!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withValues(alpha: 0.75),
-                                  height: 1.45,
-                                ),
-                                maxLines: 4,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-
-                            // Location
-                            if (p.location != null &&
-                                p.location!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Icon(Icons.place_outlined,
-                                      size: 13,
-                                      color: scheme.onSurface
-                                          .withValues(alpha: 0.4)),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    p.location!,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: scheme.onSurface
-                                          .withValues(alpha: 0.55),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-
-                            // Follower counts — flat text style Threads
-                            const SizedBox(height: 10),
-                            _FollowCountRow(
-                                profile: p, theme: theme, scheme: scheme),
                           ],
-                        )
-                            .animate()
-                            .fadeIn(duration: 280.ms)
-                            .slideY(
-                              begin: 0.02,
-                              end: 0,
-                              duration: 280.ms,
-                              curve: Curves.easeOutCubic),
-                      ),
-
-                      // Vet stats — big numbers
-                      if (p.isVet && p.vet != null) ...[
-                        const SizedBox(height: 4),
-                        _VetBigStatsRow(
-                            vet: p.vet!, theme: theme, scheme: scheme),
-                        const SizedBox(height: 4),
-                      ],
-                    ],
-                  ),
-                ),
-                Positioned(
-                  left: 16,
-                  top: -48,
-                  child: Material(
-                    type: MaterialType.transparency,
-                    elevation: 20,
-                    shadowColor: Colors.black.withValues(alpha: 0.55),
-                    surfaceTintColor: Colors.transparent,
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.none,
-                    child: _ProfileAvatar(
-                      avatarUrl: p.avatarUrl,
-                      isVet: p.isVet,
-                      scheme: scheme,
-                      heroineFlightTag: widget.heroineAvatarFlightTag,
+                          const SizedBox(height: 10),
+                          _FollowCountRow(
+                              profile: p, theme: theme, scheme: scheme),
+                        ],
+                      )
+                          .animate()
+                          .fadeIn(duration: 280.ms)
+                          .slideY(
+                            begin: 0.02,
+                            end: 0,
+                            duration: 280.ms,
+                            curve: Curves.easeOutCubic),
                     ),
-                  ),
+                  ],
                 ),
+                if (p.isVet && p.vet != null) ...[
+                  const SizedBox(height: 12),
+                  _VetBigStatsRow(
+                      vet: p.vet!, theme: theme, scheme: scheme),
+                ],
               ],
             ),
           ),
         ),
 
-        // ── Pinned TabBar ────────────────────────────────────────────────
+        // ── Pinned TabBar (ancho completo, pestañas repartidas a partes iguales) ─
         SliverPersistentHeader(
           pinned: true,
           delegate: _TabBarDelegate(
-            TabBar(
+            child: TabBar(
               key: ValueKey<String>('profile_tabs_${p.id}_${p.isVet}'),
               controller: tc,
               labelColor: scheme.primary,
@@ -566,8 +519,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               labelStyle: theme.textTheme.labelSmall
                   ?.copyWith(fontWeight: FontWeight.w700),
               unselectedLabelStyle: theme.textTheme.labelSmall,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
+              isScrollable: narrowTabs,
+              tabAlignment:
+                  narrowTabs ? TabAlignment.start : TabAlignment.fill,
               tabs: p.isVet
                   ? const [
                       Tab(
@@ -654,159 +608,33 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   }
 }
 
-// ─── Banner background ────────────────────────────────────────────────────────
+// ─── Marca Vetgo en la AppBar ─────────────────────────────────────────────────
 
-class _BannerBackground extends StatelessWidget {
-  const _BannerBackground({required this.isVet});
-
-  /// Veterinario: verde clínico + patas. Comunidad: tonos más cálidos + corazones.
-  final bool isVet;
+class _VetgoWordmarkChip extends StatelessWidget {
+  const _VetgoWordmarkChip();
 
   @override
   Widget build(BuildContext context) {
-    final gradient = isVet
-        ? const LinearGradient(
-            colors: [Color(0xFF1B8A4E), Color(0xFF0D5C34)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : const LinearGradient(
-            colors: [Color(0xFF2D9B62), Color(0xFF6BBF8A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(decoration: BoxDecoration(gradient: gradient)),
-        Opacity(
-          opacity: isVet ? 0.07 : 0.09,
-          child: CustomPaint(
-            painter:
-                isVet ? _PawPatternPainter() : _HeartPatternPainter(),
-          ),
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: scheme.primary.withValues(alpha: 0.35),
         ),
-        if (isVet)
-          Positioned(
-            right: -20,
-            top: 24,
-            child: Icon(
-              Icons.medical_services_outlined,
-              size: 120,
-              color: Colors.white.withValues(alpha: 0.06),
-            ),
-          ),
-        // Marca Vetgo en el banner (chip legible sobre el patrón).
-        Positioned(
-          right: 14,
-          bottom: 10,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35),
-                width: 1,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Text(
+          'Vetgo',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Text(
-                'Vetgo',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.96),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  letterSpacing: 1.0,
-                  height: 1,
-                ),
-              ),
-            ),
-          ),
         ),
-      ],
-    );
-  }
-}
-
-/// Patrón suave de corazones para perfiles de comunidad (no clínico).
-class _HeartPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    const step = 52.0;
-    for (double x = -step; x < size.width + step; x += step) {
-      for (double y = -step; y < size.height + step; y += step) {
-        final ox = x + ((y / step).floor() % 2) * (step / 2);
-        _drawTinyHeart(canvas, Offset(ox + step * 0.35, y + step * 0.4), 5.5, paint);
-      }
-    }
-  }
-
-  void _drawTinyHeart(Canvas canvas, Offset c, double r, Paint paint) {
-    final path = Path()
-      ..moveTo(c.dx, c.dy + r * 0.35)
-      ..cubicTo(c.dx - r, c.dy - r * 0.9, c.dx - r * 1.2, c.dy + r * 0.2, c.dx, c.dy + r * 1.1)
-      ..cubicTo(c.dx + r * 1.2, c.dy + r * 0.2, c.dx + r, c.dy - r * 0.9, c.dx, c.dy + r * 0.35)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _PawPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    const spacing = 60.0;
-    const pawRadius = 7.0;
-    const toeRadius = 4.0;
-
-    for (double x = 0; x < size.width + spacing; x += spacing) {
-      for (double y = 0; y < size.height + spacing; y += spacing) {
-        final cx = x + (y / spacing).floor() % 2 * (spacing / 2);
-        // Main pad
-        canvas.drawCircle(Offset(cx, y), pawRadius, paint);
-        // 4 toes
-        final toePositions = [
-          Offset(cx - 10, y - 10),
-          Offset(cx - 4, y - 13),
-          Offset(cx + 4, y - 13),
-          Offset(cx + 10, y - 10),
-        ];
-        for (final pos in toePositions) {
-          canvas.drawCircle(pos, toeRadius, paint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_PawPatternPainter old) => false;
-}
-
-// ─── Collapsed title (visible only when AppBar is pinned/collapsed) ───────────
-
-class _CollapsedTitle extends StatelessWidget {
-  const _CollapsedTitle({required this.fullName, required this.theme});
-
-  final String fullName;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      fullName,
-      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
@@ -910,49 +738,55 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isOwnProfile) {
-      return OutlinedButton(
-        onPressed: onEdit,
-        style: OutlinedButton.styleFrom(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          side: BorderSide(color: scheme.outline.withValues(alpha: 0.7)),
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          onPressed: onEdit,
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          label: Text(
+            'Editar perfil',
+            style: theme.textTheme.labelLarge
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            side: BorderSide(color: scheme.outline.withValues(alpha: 0.75)),
+          ),
         ),
-        child: Text('Editar perfil',
-            style: theme.textTheme.labelMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (onBook != null) ...[
+        if (onBook != null)
           OutlinedButton.icon(
             onPressed: onBook,
-            icon: const Icon(Icons.calendar_today_rounded, size: 14),
+            icon: const Icon(Icons.calendar_today_rounded, size: 16),
             label: const Text('Agendar'),
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
               side: BorderSide(color: scheme.primary),
               foregroundColor: scheme.primary,
               textStyle: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
-          const SizedBox(width: 8),
-        ],
         FilledButton(
           onPressed: followLoading ? null : onFollow,
           style: FilledButton.styleFrom(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             backgroundColor: profile.isFollowing
                 ? scheme.surfaceContainerHigh
                 : scheme.primary,
@@ -964,10 +798,11 @@ class _ActionButton extends StatelessWidget {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: profile.isFollowing
-                          ? scheme.onSurface
-                          : scheme.onPrimary),
+                    strokeWidth: 2,
+                    color: profile.isFollowing
+                        ? scheme.onSurface
+                        : scheme.onPrimary,
+                  ),
                 )
               : Text(
                   profile.isFollowing ? 'Siguiendo' : 'Seguir',
@@ -1294,35 +1129,51 @@ class _StatDivider extends StatelessWidget {
 // ─── Tab bar delegate ─────────────────────────────────────────────────────────
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  _TabBarDelegate(this.tabBar,
-      {required this.color, required this.borderColor});
+  _TabBarDelegate({
+    required this.child,
+    required this.color,
+    required this.borderColor,
+  });
 
-  final TabBar tabBar;
+  /// Debe coincidir con la altura real pintada (SizedBox abajo); TabBar icono+texto ~74 + divisor 1 + margen.
+  static const double _kExtentTotal = 78;
+
+  final Widget child;
   final Color color;
   final Color borderColor;
 
   @override
-  double get minExtent => tabBar.preferredSize.height + 1;
+  double get minExtent => _kExtentTotal;
+
   @override
-  double get maxExtent => tabBar.preferredSize.height + 1;
+  double get maxExtent => _kExtentTotal;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return ColoredBox(
       color: color,
-      child: Column(
-        children: [
-          tabBar,
-          Divider(height: 1, thickness: 1, color: borderColor),
-        ],
+      child: SizedBox(
+        height: _kExtentTotal,
+        width: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            child,
+            Divider(height: 1, thickness: 1, color: borderColor),
+          ],
+        ),
       ),
     );
   }
 
   @override
-  bool shouldRebuild(_TabBarDelegate old) =>
-      old.tabBar != tabBar || old.color != color;
+  bool shouldRebuild(covariant _TabBarDelegate old) =>
+      old.child != child ||
+      old.color != color ||
+      old.borderColor != borderColor;
 }
 
 // ─── Feed tab ─────────────────────────────────────────────────────────────────
