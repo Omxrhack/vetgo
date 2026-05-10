@@ -648,19 +648,20 @@ class _AssignedVetCard extends StatelessWidget {
         : 'Tu veterinario de confianza';
 
     return ClientSoftCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            radius: 28,
+            radius: 36,
             backgroundColor: scheme.primaryContainer,
             backgroundImage:
                 avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
             child: avatarUrl == null || avatarUrl.isEmpty
-                ? Icon(Icons.person_rounded, size: 28, color: scheme.primary)
+                ? Icon(Icons.person_rounded, size: 36, color: scheme.primary)
                 : null,
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,20 +671,21 @@ class _AssignedVetCard extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: scheme.onSurface.withValues(alpha: 0.45),
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   name,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
+                    letterSpacing: -0.3,
+                    height: 1.1,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   specialty,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -693,23 +695,27 @@ class _AssignedVetCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.favorite_rounded, size: 12, color: scheme.primary),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.favorite_rounded, size: 11, color: scheme.primary),
+                      const SizedBox(width: 5),
+                      Text(
                         sinceLabel,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: scheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -718,7 +724,7 @@ class _AssignedVetCard extends StatelessWidget {
           Icon(
             Icons.arrow_forward_ios_rounded,
             size: 14,
-            color: scheme.onSurface.withValues(alpha: 0.3),
+            color: scheme.onSurface.withValues(alpha: 0.25),
           ),
         ],
       ),
