@@ -45,13 +45,18 @@ class StoreOrderVm {
     required this.total,
     required this.createdAt,
     required this.items,
+    this.ownerId,
     this.deliveryAddressText,
     this.contactName,
     this.contactPhone,
     this.notes,
+    this.confirmedAt,
+    this.fulfilledAt,
+    this.cancelledAt,
   });
 
   final String id;
+  final String? ownerId;
   final String status;
   final String fulfillmentMethod;
   final double total;
@@ -61,6 +66,9 @@ class StoreOrderVm {
   final String? contactName;
   final String? contactPhone;
   final String? notes;
+  final DateTime? confirmedAt;
+  final DateTime? fulfilledAt;
+  final DateTime? cancelledAt;
 
   String get totalLabel => formatStoreMoney(total);
   bool get canCancel => status == 'pending_confirmation';
@@ -96,12 +104,16 @@ class StoreOrderVm {
     final rawItems = json['items'];
     return StoreOrderVm(
       id: json['id']?.toString() ?? '',
+      ownerId: json['owner_id']?.toString(),
       status: json['status']?.toString() ?? '',
       fulfillmentMethod: json['fulfillment_method']?.toString() ?? '',
       total: totalRaw is num
           ? totalRaw.toDouble()
           : double.tryParse(totalRaw?.toString() ?? '') ?? 0,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      confirmedAt: DateTime.tryParse(json['confirmed_at']?.toString() ?? ''),
+      fulfilledAt: DateTime.tryParse(json['fulfilled_at']?.toString() ?? ''),
+      cancelledAt: DateTime.tryParse(json['cancelled_at']?.toString() ?? ''),
       deliveryAddressText: json['delivery_address_text']?.toString(),
       contactName: json['contact_name']?.toString(),
       contactPhone: json['contact_phone']?.toString(),

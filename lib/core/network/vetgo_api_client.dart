@@ -923,6 +923,92 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/vet/products`
+  Future<VetJsonResult> createVetProduct({
+    required Map<String, dynamic> body,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/vet/products',
+        data: body,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/vet/products/:id`
+  Future<VetJsonResult> updateVetProduct({
+    required String productId,
+    required Map<String, dynamic> body,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/products/$productId',
+        data: body,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `DELETE /api/vet/products/:id` — desactiva el producto.
+  Future<String?> deleteVetProduct({required String productId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return 'Sesión no disponible.';
+    try {
+      await _api.delete<void>('/vet/products/$productId', options: opts);
+      return null;
+    } on DioException catch (e) {
+      return _vetDioMessage(e);
+    }
+  }
+
+  /// `GET /api/vet/store/orders`
+  Future<VetJsonResult> listVetStoreOrders({String? status}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/vet/store/orders',
+        queryParameters: status != null && status.isNotEmpty
+            ? <String, dynamic>{'status': status}
+            : null,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/vet/store/orders/:id/status`
+  Future<VetJsonResult> updateVetStoreOrderStatus({
+    required String orderId,
+    required String status,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/store/orders/$orderId/status',
+        data: <String, dynamic>{'status': status},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `PATCH /api/vet/appointments/:id/status`
   Future<VetJsonResult> updateVetAppointmentStatus({
     required String appointmentId,

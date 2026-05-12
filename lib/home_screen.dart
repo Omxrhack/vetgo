@@ -37,9 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_sessionReady) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final session = _session;
@@ -58,9 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await AuthStorage.clear();
         if (context.mounted) widget.onLoggedOut?.call();
       });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (role == 'vet') {
@@ -68,7 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final vetAvatar = session.profile?['avatar_url']?.toString();
       return VetShell(
         profileFirstName: vetName,
-        profilePhotoUrl: vetAvatar != null && vetAvatar.isNotEmpty ? vetAvatar : null,
+        ownerUserId: uid,
+        profilePhotoUrl: vetAvatar != null && vetAvatar.isNotEmpty
+            ? vetAvatar
+            : null,
         onProfilePhotoUpdated: () {
           _loadSession();
         },
@@ -84,7 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return ClientHomeShell(
       userName: clientName,
-      profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty ? avatarUrl : null,
+      profilePhotoUrl: avatarUrl != null && avatarUrl.isNotEmpty
+          ? avatarUrl
+          : null,
       ownerUserId: uid,
       onProfilePhotoUpdated: () {
         _loadSession();

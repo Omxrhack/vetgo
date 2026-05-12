@@ -9,13 +9,16 @@ import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/store_product_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
+import 'package:vetgo/vet/store/vet_store_admin_screen.dart';
 import 'package:vetgo/widgets/client/store_category_pill.dart';
 import 'package:vetgo/widgets/client/store_product_card.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
 /// Tienda Vetgo: catálogo desde `GET /api/products`.
 class StoreScreen extends StatefulWidget {
-  const StoreScreen({super.key});
+  const StoreScreen({super.key, this.isVet = false});
+
+  final bool isVet;
 
   @override
   State<StoreScreen> createState() => _StoreScreenState();
@@ -198,6 +201,13 @@ class _StoreScreenState extends State<StoreScreen> {
     await _loadProducts();
   }
 
+  Future<void> _openVetAdmin() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const VetStoreAdminScreen()),
+    );
+    await _loadProducts();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -240,6 +250,12 @@ class _StoreScreenState extends State<StoreScreen> {
           ],
         ),
         actions: [
+          if (widget.isVet)
+            IconButton(
+              tooltip: 'Gestionar tienda',
+              onPressed: _openVetAdmin,
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+            ),
           IconButton(
             tooltip: 'Mis pedidos',
             onPressed: _openOrders,

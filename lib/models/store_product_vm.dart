@@ -13,6 +13,7 @@ class StoreProductVm {
     required this.category,
     required this.price,
     required this.stock,
+    this.active = true,
     this.imageUrl,
   });
 
@@ -22,6 +23,7 @@ class StoreProductVm {
   final String category;
   final double price;
   final int stock;
+  final bool active;
   final String? imageUrl;
 
   String get priceLabel => _storeMoney.format(price);
@@ -42,6 +44,7 @@ class StoreProductVm {
       stock: stockRaw is num
           ? stockRaw.toInt()
           : int.tryParse(stockRaw?.toString() ?? '') ?? 0,
+      active: json['active'] != false,
       imageUrl: image == null || image.isEmpty ? null : image,
     );
   }

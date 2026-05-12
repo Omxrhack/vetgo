@@ -7,7 +7,11 @@ import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/core/supabase/vetgo_supabase.dart';
+import 'package:vetgo/public_profile_screen.dart';
+import 'package:vetgo/social_screen.dart';
+import 'package:vetgo/store_screen.dart';
 import 'package:vetgo/vet_dashboard_screen.dart';
+import 'package:vetgo/vet_emergency_center_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
 import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
@@ -17,12 +21,14 @@ class VetShell extends StatefulWidget {
   const VetShell({
     super.key,
     required this.profileFirstName,
+    required this.ownerUserId,
     this.profilePhotoUrl,
     this.onProfilePhotoUpdated,
     required this.onLoggedOut,
   });
 
   final String profileFirstName;
+  final String ownerUserId;
   final String? profilePhotoUrl;
   final VoidCallback? onProfilePhotoUpdated;
   final VoidCallback onLoggedOut;
@@ -43,6 +49,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
 
   final VetgoApiClient _api = VetgoApiClient();
   int _tabIndex = 0;
+  int _refreshSignal = 0;
   Timer? _emergencyPoll;
   RealtimeChannel? _emergencyRealtimeChannel;
 
@@ -74,7 +81,10 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
     }
 
     _emergencyPoll?.cancel();
-    _emergencyPoll = Timer.periodic(Duration(seconds: pollSeconds), (_) => _pollEmergencies());
+    _emergencyPoll = Timer.periodic(
+      Duration(seconds: pollSeconds),
+      (_) => _pollEmergencies(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _pollEmergencies());
   }
 
@@ -131,12 +141,21 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
     });
   }
 
+  void _selectTab(int index) {
+    setState(() {
+      _tabIndex = index;
+      _refreshSignal++;
+    });
+  }
+
   (double, double) _resolveVetCoordinates() {
     return (_vetLat ?? _defaultLat, _vetLng ?? _defaultLng);
   }
 
   VetEmergencyVm _mapEmergency(Map<String, dynamic> e) {
-    final pet = e['pet'] is Map<String, dynamic> ? e['pet'] as Map<String, dynamic> : {};
+    final pet = e['pet'] is Map<String, dynamic>
+        ? e['pet'] as Map<String, dynamic>
+        : {};
     final dist = e['distance_km'];
     return VetEmergencyVm(
       id: e['id']?.toString() ?? '',
@@ -179,7 +198,10 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       context: context,
       emergency: _mapEmergency(first),
       onAccept: () async {
-        final (_, errRespond) = await _api.respondVetEmergency(emergencyId: id, accept: true);
+        final (_, errRespond) = await _api.respondVetEmergency(
+          emergencyId: id,
+          accept: true,
+        );
         if (errRespond != null) {
           throw Exception(errRespond);
         }
@@ -199,7 +221,10 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
         routeSessionAfterSheet = sid;
       },
       onReject: () async {
-        final (_, err) = await _api.respondVetEmergency(emergencyId: id, accept: false);
+        final (_, err) = await _api.respondVetEmergency(
+          emergencyId: id,
+          accept: false,
+        );
         if (err != null) {
           throw Exception(err);
         }
@@ -219,6 +244,9 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
           ),
         ),
       );
+      if (mounted) {
+        setState(() => _refreshSignal++);
+      }
     }
   }
 
@@ -239,10 +267,25 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
             onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
             onVetBaseResolved: _onVetBaseResolved,
             onLogout: widget.onLoggedOut,
+            refreshSignal: _refreshSignal,
           ),
           VetScheduleScreen(
             api: _api,
             resolveVetCoordinates: _resolveVetCoordinates,
+            onLogout: widget.onLoggedOut,
+            refreshSignal: _refreshSignal,
+          ),
+          VetEmergencyCenterScreen(
+            api: _api,
+            resolveVetCoordinates: _resolveVetCoordinates,
+            refreshSignal: _refreshSignal,
+          ),
+          const SocialScreen(),
+          const StoreScreen(isVet: true),
+          PublicProfileScreen(
+            profileId: widget.ownerUserId,
+            isOwnProfile: true,
+            showBackButton: false,
             onLogout: widget.onLoggedOut,
           ),
         ],
@@ -252,7 +295,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
         backgroundColor: scheme.surface,
         indicatorColor: scheme.primary.withValues(alpha: 0.22),
         surfaceTintColor: Colors.transparent,
-        onDestinationSelected: (i) => setState(() => _tabIndex = i),
+        onDestinationSelected: _selectTab,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -263,6 +306,26 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month_rounded),
             label: AppStrings.vetNavAgenda,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.emergency_outlined),
+            selectedIcon: Icon(Icons.emergency_rounded),
+            label: 'SOS',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline_rounded),
+            selectedIcon: Icon(Icons.people_rounded),
+            label: 'Social',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront_rounded),
+            label: 'Tienda',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Perfil',
           ),
         ],
       ),
