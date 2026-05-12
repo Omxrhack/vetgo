@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:vetgo/core/auth/auth_storage.dart';
@@ -142,6 +144,7 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   }
 
   void _selectTab(int index) {
+    if (_tabIndex == index) return;
     setState(() {
       _tabIndex = index;
       _refreshSignal++;
@@ -254,80 +257,214 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: IndexedStack(
-        index: _tabIndex,
+    Widget buildBarItem({
+      required int tabIndex,
+      required IconData iconOutlined,
+      required IconData iconFilled,
+      required String label,
+    }) {
+      final selected = _tabIndex == tabIndex;
+      final color = selected ? scheme.primary : muted;
+
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => _selectTab(tabIndex),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.1 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(
+                      selected ? iconFilled : iconOutlined,
+                      size: 23,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: color,
+                      letterSpacing: 0.1,
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    width: selected ? 14 : 4,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: selected ? scheme.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final content = IndexedStack(
+      index: _tabIndex,
+      children: [
+        VetDashboardScreen(
+          api: _api,
+          profileName: widget.profileFirstName,
+          profilePhotoUrl: widget.profilePhotoUrl,
+          onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
+          onVetBaseResolved: _onVetBaseResolved,
+          onLogout: widget.onLoggedOut,
+          refreshSignal: _refreshSignal,
+        ),
+        VetScheduleScreen(
+          api: _api,
+          resolveVetCoordinates: _resolveVetCoordinates,
+          onLogout: widget.onLoggedOut,
+          refreshSignal: _refreshSignal,
+        ),
+        VetEmergencyCenterScreen(
+          api: _api,
+          resolveVetCoordinates: _resolveVetCoordinates,
+          refreshSignal: _refreshSignal,
+        ),
+        const SocialScreen(),
+        const StoreScreen(isVet: true),
+        PublicProfileScreen(
+          profileId: widget.ownerUserId,
+          isOwnProfile: true,
+          showBackButton: false,
+          onLogout: widget.onLoggedOut,
+        ),
+      ],
+    );
+
+    final barWidget = SizedBox(
+      height: 68,
+      child: Row(
         children: [
-          VetDashboardScreen(
-            api: _api,
-            profileName: widget.profileFirstName,
-            profilePhotoUrl: widget.profilePhotoUrl,
-            onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
-            onVetBaseResolved: _onVetBaseResolved,
-            onLogout: widget.onLoggedOut,
-            refreshSignal: _refreshSignal,
-          ),
-          VetScheduleScreen(
-            api: _api,
-            resolveVetCoordinates: _resolveVetCoordinates,
-            onLogout: widget.onLoggedOut,
-            refreshSignal: _refreshSignal,
-          ),
-          VetEmergencyCenterScreen(
-            api: _api,
-            resolveVetCoordinates: _resolveVetCoordinates,
-            refreshSignal: _refreshSignal,
-          ),
-          const SocialScreen(),
-          const StoreScreen(isVet: true),
-          PublicProfileScreen(
-            profileId: widget.ownerUserId,
-            isOwnProfile: true,
-            showBackButton: false,
-            onLogout: widget.onLoggedOut,
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        backgroundColor: scheme.surface,
-        indicatorColor: scheme.primary.withValues(alpha: 0.22),
-        surfaceTintColor: Colors.transparent,
-        onDestinationSelected: _selectTab,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
+          buildBarItem(
+            tabIndex: 0,
+            iconOutlined: Icons.home_outlined,
+            iconFilled: Icons.home_rounded,
             label: AppStrings.vetNavInicio,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month_rounded),
+          buildBarItem(
+            tabIndex: 1,
+            iconOutlined: Icons.calendar_month_outlined,
+            iconFilled: Icons.calendar_month_rounded,
             label: AppStrings.vetNavAgenda,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.emergency_outlined),
-            selectedIcon: Icon(Icons.emergency_rounded),
-            label: 'SOS',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: GestureDetector(
+              onTap: () => _selectTab(2),
+              child:
+                  Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: scheme.errorContainer,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: scheme.error.withValues(alpha: 0.28),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: _tabIndex == 2
+                                ? scheme.error.withValues(alpha: 0.45)
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.sos_rounded,
+                          size: 26,
+                          color: scheme.onErrorContainer,
+                        ),
+                      )
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .scaleXY(
+                        begin: 1,
+                        end: 1.05,
+                        duration: 1800.ms,
+                        curve: Curves.easeInOutSine,
+                      ),
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded),
-            selectedIcon: Icon(Icons.people_rounded),
+          buildBarItem(
+            tabIndex: 3,
+            iconOutlined: Icons.people_outline_rounded,
+            iconFilled: Icons.people_rounded,
             label: 'Social',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront_rounded),
+          buildBarItem(
+            tabIndex: 4,
+            iconOutlined: Icons.storefront_outlined,
+            iconFilled: Icons.storefront_rounded,
             label: 'Tienda',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
+          buildBarItem(
+            tabIndex: 5,
+            iconOutlined: Icons.person_outline_rounded,
+            iconFilled: Icons.person_rounded,
             label: 'Perfil',
           ),
         ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: BottomBar(
+        body: content,
+        showIcon: false,
+        layout: BottomBarLayout(
+          width: screenWidth - 24,
+          offset: 12,
+          borderRadius: BorderRadius.circular(32),
+          fit: StackFit.expand,
+        ),
+        theme: BottomBarThemeData(
+          barDecoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+        ),
+        child: barWidget,
       ),
     );
   }
