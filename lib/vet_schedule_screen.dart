@@ -251,6 +251,9 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
               : AppStrings.vetScheduleSinColonia;
           final notes = row['notes']?.toString().trim() ?? '';
           final statusRaw = row['status']?.toString() ?? '';
+          final appointmentType =
+              row['appointment_type']?.toString().trim() ?? '';
+          final reason = row['reason']?.toString().trim() ?? '';
 
           return Padding(
             padding: EdgeInsets.only(bottom: i == list.length - 1 ? 24 : 14),
@@ -426,6 +429,23 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                              if (appointmentType.isNotEmpty ||
+                                  reason.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  [
+                                    if (appointmentType.isNotEmpty)
+                                      appointmentType,
+                                    if (reason.isNotEmpty) reason,
+                                  ].join(' · '),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: VetOperatorColors.mintDeep,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ],
                           ),
                           children: [

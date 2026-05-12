@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:vetgo/client/appointment_detail_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/live_tracking_screen.dart';
@@ -118,6 +119,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     ]);
   }
 
+  Future<void> _openAppointmentDetail(Map<String, dynamic> row) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AppointmentDetailScreen(appointment: row),
+      ),
+    );
+    if (changed == true) {
+      await _loadAppointments();
+    }
+  }
+
   Future<void> _openTracking() async {
     final (data, err) = await _api.listActiveTrackingSessions();
     if (!mounted) return;
@@ -196,6 +208,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             return ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event_note_rounded),
+              onTap: () {
+                Navigator.of(context).pop();
+                _openAppointmentDetail(row);
+              },
               title: Text(
                 petName,
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -815,80 +831,108 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Hero card — primera cita
-            ClientSoftCard(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.28),
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(22),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                onTap: () => _openAppointmentDetail(first),
+                child: ClientSoftCard(
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.28,
+                  ),
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
                     children: [
-                      Text(
-                        monthAbbr,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            monthAbbr,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            dayNum,
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        width: 1,
+                        height: 52,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.18,
                         ),
                       ),
-                      Text(
-                        dayNum,
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w800,
-                          height: 1.0,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              timeLabel,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              petName,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (first['appointment_type']
+                                    ?.toString()
+                                    .trim()
+                                    .isNotEmpty ==
+                                true) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                first['appointment_type'].toString(),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                            if (vetName.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                vetName,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.55,
+                                  ),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.25,
                         ),
                       ),
                     ],
                   ),
-                  Container(
-                    width: 1,
-                    height: 52,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    color: theme.colorScheme.primary.withValues(alpha: 0.18),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          timeLabel,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          petName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (vetName.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            vetName,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.55,
-                              ),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                  ),
-                ],
+                ),
               ),
             ),
             // Citas adicionales en scroll horizontal

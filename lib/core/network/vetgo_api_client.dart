@@ -481,6 +481,8 @@ class VetgoApiClient {
   Future<VetJsonResult> createAppointment({
     required String petId,
     required String scheduledAtIso,
+    String? appointmentType,
+    String? reason,
     String? notes,
     String? vetId,
     double? visitLatitude,
@@ -494,6 +496,9 @@ class VetgoApiClient {
         data: <String, dynamic>{
           'pet_id': petId,
           'scheduled_at': scheduledAtIso,
+          if (appointmentType != null && appointmentType.isNotEmpty)
+            'appointment_type': appointmentType,
+          if (reason != null && reason.isNotEmpty) 'reason': reason,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
           if (vetId != null && vetId.isNotEmpty) 'vet_id': vetId,
           if (visitLatitude != null &&

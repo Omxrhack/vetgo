@@ -5,6 +5,7 @@ import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/core/storage/preferred_vet_prefs.dart';
+import 'package:vetgo/live_tracking_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/client_soft_card.dart';
@@ -69,13 +70,18 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
   Future<void> _submitEmergency() async {
     if (widget.pets.isEmpty || _selectedPet == null) {
       if (!mounted) return;
-      VetgoNotice.show(context, message: AppStrings.emergencyRegistraMascota, isError: true);
+      VetgoNotice.show(
+        context,
+        message: AppStrings.emergencyRegistraMascota,
+        isError: true,
+      );
       return;
     }
 
     final detail = _symptoms.text.trim();
-    final symptoms =
-        detail.isNotEmpty ? detail : AppStrings.emergencyDefaultSosBoton;
+    final symptoms = detail.isNotEmpty
+        ? detail
+        : AppStrings.emergencyDefaultSosBoton;
 
     final (lat, lng, locErr) = await _resolveLocation();
     if (locErr != null) {
@@ -104,8 +110,106 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
     final id = data?['id']?.toString() ?? '';
     VetgoNotice.show(
       context,
-      message: id.isNotEmpty ? AppStrings.emergencyRegistradaRef(id) : AppStrings.emergencyRegistrada,
+      message: id.isNotEmpty
+          ? AppStrings.emergencyRegistradaRef(id)
+          : AppStrings.emergencyRegistrada,
     );
+    if (id.isNotEmpty) {
+      await _showEmergencyFollowup(id, data);
+    }
+  }
+
+  Future<void> _showEmergencyFollowup(
+    String emergencyId,
+    Map<String, dynamic>? data,
+  ) async {
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final assigned = data?['assigned_vet_id']?.toString();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Emergencia enviada',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  assigned != null && assigned.isNotEmpty
+                      ? 'Ya hay un veterinario asignado. Cuando inicie ruta podrás rastrearlo aquí.'
+                      : 'Estamos buscando un veterinario disponible. Mantén la app abierta.',
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await _openEmergencyTracking(emergencyId);
+                  },
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('Ver estado o rastrear'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openEmergencyTracking(String emergencyId) async {
+    final (data, err) = await _api.listActiveTrackingSessions();
+    if (!mounted) return;
+    if (err != null) {
+      VetgoNotice.show(context, message: err, isError: true);
+      return;
+    }
+    final sessions = data?['sessions'];
+    Map<String, dynamic>? match;
+    if (sessions is List) {
+      for (final item in sessions.whereType<Map<String, dynamic>>()) {
+        if (item['emergency_id']?.toString() == emergencyId) {
+          match = item;
+          break;
+        }
+      }
+    }
+    final sessionId = match?['id']?.toString();
+    if (sessionId == null || sessionId.isEmpty) {
+      VetgoNotice.show(
+        context,
+        message:
+            'El veterinario aún no inicia ruta. Intenta de nuevo en unos segundos.',
+      );
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LiveTrackingScreen(
+          trackingSessionId: sessionId,
+          vetName: 'Veterinario en camino',
+          etaLabel: _etaLabel(match),
+        ),
+      ),
+    );
+  }
+
+  String _etaLabel(Map<String, dynamic>? session) {
+    final raw = session?['eta_minutes'];
+    final minutes = raw is num
+        ? raw.round()
+        : int.tryParse(raw?.toString() ?? '');
+    return minutes == null ? 'ETA pendiente' : '$minutes min';
   }
 
   Future<void> _onSosPressed() async {
@@ -117,9 +221,7 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
 
   Future<void> _openChooseVet() async {
     await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => const ChooseVetScreen(),
-      ),
+      MaterialPageRoute<bool>(builder: (_) => const ChooseVetScreen()),
     );
     await _refreshPreferredVet();
   }
@@ -220,7 +322,9 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                           Icon(
                             Icons.pets_outlined,
                             size: 40,
-                            color: scheme.onSurfaceVariant.withValues(alpha: 0.65),
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.65,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -247,8 +351,10 @@ class _EmergencySOSScreenState extends State<EmergencySOSScreen> {
                         ),
                         items: widget.pets
                             .map(
-                              (ClientPetVm p) =>
-                                  DropdownMenuItem(value: p, child: Text(p.name)),
+                              (ClientPetVm p) => DropdownMenuItem(
+                                value: p,
+                                child: Text(p.name),
+                              ),
                             )
                             .toList(),
                         onChanged: _searching
@@ -315,8 +421,11 @@ class _PreferredVetRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.medical_services_outlined,
-                size: 22, color: scheme.primary),
+            Icon(
+              Icons.medical_services_outlined,
+              size: 22,
+              color: scheme.primary,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

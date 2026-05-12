@@ -15,6 +15,16 @@ import 'package:vetgo/widgets/client/simple_osm_map.dart';
 import 'package:vetgo/widgets/vetgo_notice.dart';
 
 final LatLng _fallbackVisitMapCenter = LatLng(19.4326, -99.1332);
+const List<String> _appointmentTypes = <String>[
+  'Consulta general',
+  'Vacunación',
+  'Seguimiento',
+  'Dental',
+  'Dermatología',
+  'Nutrición',
+  'Esterilización',
+  'Otro',
+];
 
 /// Flujo para agendar visita: mascota, fecha/hora/ubicación en mapa, confirmación y API.
 class ScheduleVisitFlowScreen extends StatefulWidget {
@@ -23,16 +33,19 @@ class ScheduleVisitFlowScreen extends StatefulWidget {
   final List<ClientPetVm> pets;
 
   @override
-  State<ScheduleVisitFlowScreen> createState() => _ScheduleVisitFlowScreenState();
+  State<ScheduleVisitFlowScreen> createState() =>
+      _ScheduleVisitFlowScreenState();
 }
 
 class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   final PageController _page = PageController();
   final VetgoApiClient _api = VetgoApiClient();
+  final TextEditingController _reason = TextEditingController();
   final TextEditingController _notes = TextEditingController();
 
   int _step = 0;
   ClientPetVm? _pet;
+  String _appointmentType = _appointmentTypes.first;
   DateTime? _visitDate;
   TimeOfDay? _visitTime;
   String? _preferredVetName;
@@ -57,6 +70,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   @override
   void dispose() {
     _page.dispose();
+    _reason.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -88,7 +102,8 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
         return;
       }
       final pos = await Geolocator.getCurrentPosition();
@@ -111,15 +126,14 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: last,
     );
-    if (d != null) setState(() => _visitDate = DateTime(d.year, d.month, d.day));
+    if (d != null) {
+      setState(() => _visitDate = DateTime(d.year, d.month, d.day));
+    }
   }
 
   Future<void> _pickTime() async {
     _ensureVisitDefaults();
-    final t = await showTimePicker(
-      context: context,
-      initialTime: _visitTime!,
-    );
+    final t = await showTimePicker(context: context, initialTime: _visitTime!);
     if (t != null) setState(() => _visitTime = t);
   }
 
@@ -128,20 +142,39 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     return _pet != null;
   }
 
+  bool _canAdvanceFromReasonStep() {
+    return _appointmentType.isNotEmpty && _reason.text.trim().isNotEmpty;
+  }
+
   void _next() {
     if (_step == 1 && !_canAdvanceFromPetStep()) return;
-    if (_step == 2) {
+    if (_step == 2 && !_canAdvanceFromReasonStep()) {
+      VetgoNotice.show(
+        context,
+        message: 'Cuéntanos el motivo de la cita programada.',
+        isError: true,
+      );
+      return;
+    }
+    if (_step == 3) {
       _ensureVisitDefaults();
       if (!_visitDateTimeIsFuture()) {
-        VetgoNotice.show(context, message: AppStrings.scheduleFechaPasada, isError: true);
+        VetgoNotice.show(
+          context,
+          message: AppStrings.scheduleFechaPasada,
+          isError: true,
+        );
         return;
       }
     }
-    if (_step < 3) {
+    if (_step < 4) {
       final nextStep = _step + 1;
       setState(() => _step = nextStep);
-      _page.nextPage(duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
-      if (nextStep == 2) {
+      _page.nextPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+      if (nextStep == 3) {
         _ensureVisitDefaults();
         _tryLoadVisitLocation();
       }
@@ -151,7 +184,10 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   void _back() {
     if (_step > 0) {
       setState(() => _step--);
-      _page.previousPage(duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+      _page.previousPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
@@ -168,7 +204,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStrings.schedulePasoNDeM(_step + 1, 4)),
+        title: Text(AppStrings.schedulePasoNDeM(_step + 1, 5)),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -179,7 +215,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
             child: Row(
-              children: List.generate(4, (i) {
+              children: List.generate(5, (i) {
                 final active = i <= _step;
                 return Expanded(
                   child: Padding(
@@ -189,7 +225,9 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                       height: 6,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(99),
-                        color: active ? scheme.primary : scheme.outline.withValues(alpha: 0.28),
+                        color: active
+                            ? scheme.primary
+                            : scheme.outline.withValues(alpha: 0.28),
                       ),
                     ),
                   ),
@@ -204,6 +242,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               children: [
                 _stepIntro(context),
                 _stepPet(context),
+                _stepReason(context),
                 _stepWhenWhere(context),
                 _stepConfirm(context),
               ],
@@ -220,15 +259,17 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                       child: Text(AppStrings.scheduleAtras),
                     ),
                   const Spacer(),
-                  if (_step < 3)
+                  if (_step < 4)
                     FilledButton(
                       onPressed: _step == 0
                           ? _next
                           : _step == 1
-                              ? (_canAdvanceFromPetStep() ? _next : null)
-                              : _step == 2
-                                  ? _next
-                                  : null,
+                          ? (_canAdvanceFromPetStep() ? _next : null)
+                          : _step == 2
+                          ? (_canAdvanceFromReasonStep() ? _next : null)
+                          : _step == 3
+                          ? _next
+                          : null,
                       child: Text(
                         _step == 0
                             ? AppStrings.scheduleContinuar
@@ -244,6 +285,57 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     );
   }
 
+  Widget _stepReason(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final muted = ClientPastelColors.mutedOn(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(22),
+      children: [
+        Text(
+          '¿Qué tipo de cita quieres agendar?',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Esto ayuda al veterinario a prepararse. Para síntomas graves usa SOS.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: muted,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final type in _appointmentTypes)
+              ChoiceChip(
+                label: Text(type),
+                selected: _appointmentType == type,
+                onSelected: (_) => setState(() => _appointmentType = type),
+                selectedColor: scheme.primaryContainer,
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        TextField(
+          controller: _reason,
+          onChanged: (_) => setState(() {}),
+          maxLength: 160,
+          decoration: InputDecoration(
+            labelText: 'Motivo de la visita',
+            hintText: 'Ej. refuerzo de vacuna, control dental, seguimiento...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _stepIntro(BuildContext context) {
     final muted = ClientPastelColors.mutedOn(context);
 
@@ -256,12 +348,16 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           children: [
             Text(
               AppStrings.scheduleAgendarVisitaTitulo,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Text(
               AppStrings.scheduleIntroBody,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: muted, height: 1.4),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: muted, height: 1.4),
             ),
           ],
         ),
@@ -288,14 +384,18 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
       children: [
         Text(
           AppStrings.schedulePasoMascotaTitulo,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 16),
         ...widget.pets.map(
           (ClientPetVm p) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Material(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
@@ -305,7 +405,9 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _pet?.id == p.id ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                        _pet?.id == p.id
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 12),
@@ -313,10 +415,17 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.name, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                            Text(
+                              p.name,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
                             Text(
                               '${p.speciesLabel} \u00B7 ${p.breedLabel}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ClientPastelColors.mutedOn(context)),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: ClientPastelColors.mutedOn(context),
+                                  ),
                             ),
                           ],
                         ),
@@ -337,21 +446,25 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     final muted = ClientPastelColors.mutedOn(context);
     _ensureVisitDefaults();
 
-    final timeDisplay = DateFormat.Hm('es').format(
-      DateTime(1970, 1, 1, _visitTime!.hour, _visitTime!.minute),
-    );
+    final timeDisplay = DateFormat.Hm(
+      'es',
+    ).format(DateTime(1970, 1, 1, _visitTime!.hour, _visitTime!.minute));
 
     return ListView(
       padding: const EdgeInsets.all(22),
       children: [
         Text(
           AppStrings.scheduleCuandoUbicacionTitulo,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         Text(
           AppStrings.scheduleMapaHint,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
         ),
         const SizedBox(height: 16),
         Row(
@@ -414,23 +527,45 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           children: [
             Text(
               AppStrings.scheduleConfirmacionTitulo,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Text(
               '${AppStrings.scheduleResumenMascota} ${_pet?.name ?? '\u2014'}',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tipo: $_appointmentType',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.35),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Motivo: ${_reason.text.trim()}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
             const SizedBox(height: 8),
             Text(
               '${AppStrings.scheduleResumenCuando} ${_formattedVisitSummary()}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.35),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
             if (_notes.text.trim().isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 '${AppStrings.scheduleResumenNotas} ${_notes.text.trim()}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ClientPastelColors.mutedOn(context)),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: ClientPastelColors.mutedOn(context),
+                ),
               ),
             ],
             const SizedBox(height: 12),
@@ -438,7 +573,9 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               _preferredVetName != null && _preferredVetName!.isNotEmpty
                   ? AppStrings.scheduleVetLinePref(_preferredVetName!)
                   : AppStrings.scheduleVetLineAuto,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ClientPastelColors.mutedOn(context)),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ClientPastelColors.mutedOn(context),
+              ),
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -473,16 +610,22 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
               label: AppStrings.scheduleEnviarSolicitud,
               icon: Icons.check_rounded,
               loadingLabel: AppStrings.scheduleEnviando,
-              style: FilledButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary),
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+              ),
               onPressed: _pet == null
                   ? null
                   : () async {
                       final at = _combinedLocalDateTime().toUtc();
                       final vetId = await PreferredVetPrefs.readId();
                       final notes = _notes.text.trim();
+                      final reason = _reason.text.trim();
                       final (data, err) = await _api.createAppointment(
                         petId: _pet!.id,
                         scheduledAtIso: at.toIso8601String(),
+                        appointmentType: _appointmentType,
+                        reason: reason.isEmpty ? null : reason,
                         vetId: vetId,
                         notes: notes.isEmpty ? null : notes,
                         visitLatitude: _visitLocation.latitude,
@@ -496,7 +639,9 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                       final id = data?['id']?.toString() ?? '';
                       VetgoNotice.show(
                         context,
-                        message: id.isNotEmpty ? AppStrings.scheduleCitaRegistrada(id) : AppStrings.scheduleCitaOkSinRef,
+                        message: id.isNotEmpty
+                            ? AppStrings.scheduleCitaRegistrada(id)
+                            : AppStrings.scheduleCitaOkSinRef,
                       );
                       Navigator.of(context).popUntil((r) => r.isFirst);
                     },
