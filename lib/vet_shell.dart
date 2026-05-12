@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,7 +12,6 @@ import 'package:vetgo/public_profile_screen.dart';
 import 'package:vetgo/social_screen.dart';
 import 'package:vetgo/store_screen.dart';
 import 'package:vetgo/vet_dashboard_screen.dart';
-import 'package:vetgo/vet_emergency_center_screen.dart';
 import 'package:vetgo/vet_route_screen.dart';
 import 'package:vetgo/vet_schedule_screen.dart';
 import 'package:vetgo/widgets/vet/emergency_alert_sheet.dart';
@@ -328,38 +326,35 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
       );
     }
 
-    final content = IndexedStack(
-      index: _tabIndex,
-      children: [
-        VetDashboardScreen(
-          api: _api,
-          profileName: widget.profileFirstName,
-          profilePhotoUrl: widget.profilePhotoUrl,
-          onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
-          onVetBaseResolved: _onVetBaseResolved,
-          onLogout: widget.onLoggedOut,
-          refreshSignal: _refreshSignal,
-        ),
-        VetScheduleScreen(
-          api: _api,
-          resolveVetCoordinates: _resolveVetCoordinates,
-          onLogout: widget.onLoggedOut,
-          refreshSignal: _refreshSignal,
-        ),
-        VetEmergencyCenterScreen(
-          api: _api,
-          resolveVetCoordinates: _resolveVetCoordinates,
-          refreshSignal: _refreshSignal,
-        ),
-        const SocialScreen(),
-        const StoreScreen(isVet: true),
-        PublicProfileScreen(
-          profileId: widget.ownerUserId,
-          isOwnProfile: true,
-          showBackButton: false,
-          onLogout: widget.onLoggedOut,
-        ),
-      ],
+    final screens = <Widget>[
+      VetDashboardScreen(
+        api: _api,
+        profileName: widget.profileFirstName,
+        profilePhotoUrl: widget.profilePhotoUrl,
+        onProfilePhotoUpdated: widget.onProfilePhotoUpdated,
+        onVetBaseResolved: _onVetBaseResolved,
+        onLogout: widget.onLoggedOut,
+        refreshSignal: _refreshSignal,
+      ),
+      VetScheduleScreen(
+        api: _api,
+        resolveVetCoordinates: _resolveVetCoordinates,
+        onLogout: widget.onLoggedOut,
+        refreshSignal: _refreshSignal,
+      ),
+      const SocialScreen(),
+      const StoreScreen(isVet: true),
+      PublicProfileScreen(
+        profileId: widget.ownerUserId,
+        isOwnProfile: true,
+        showBackButton: false,
+        onLogout: widget.onLoggedOut,
+      ),
+    ];
+
+    final content = KeyedSubtree(
+      key: ValueKey<int>(_tabIndex),
+      child: screens[_tabIndex],
     );
 
     final barWidget = SizedBox(
@@ -378,60 +373,20 @@ class _VetShellState extends State<VetShell> with WidgetsBindingObserver {
             iconFilled: Icons.calendar_month_rounded,
             label: AppStrings.vetNavAgenda,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: GestureDetector(
-              onTap: () => _selectTab(2),
-              child:
-                  Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: scheme.errorContainer,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: scheme.error.withValues(alpha: 0.28),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                          border: Border.all(
-                            color: _tabIndex == 2
-                                ? scheme.error.withValues(alpha: 0.45)
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.sos_rounded,
-                          size: 26,
-                          color: scheme.onErrorContainer,
-                        ),
-                      )
-                      .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .scaleXY(
-                        begin: 1,
-                        end: 1.05,
-                        duration: 1800.ms,
-                        curve: Curves.easeInOutSine,
-                      ),
-            ),
-          ),
           buildBarItem(
-            tabIndex: 3,
+            tabIndex: 2,
             iconOutlined: Icons.people_outline_rounded,
             iconFilled: Icons.people_rounded,
             label: 'Social',
           ),
           buildBarItem(
-            tabIndex: 4,
+            tabIndex: 3,
             iconOutlined: Icons.storefront_outlined,
             iconFilled: Icons.storefront_rounded,
             label: 'Tienda',
           ),
           buildBarItem(
-            tabIndex: 5,
+            tabIndex: 4,
             iconOutlined: Icons.person_outline_rounded,
             iconFilled: Icons.person_rounded,
             label: 'Perfil',

@@ -72,7 +72,9 @@ class _AppFlowState extends State<AppFlow> {
 
     String? otpEmail;
     if (dest == SessionBootstrapResult.needsOtp) {
-      otpEmail = await AuthStorage.readPendingOtpEmail() ?? await AuthStorage.readEmail();
+      otpEmail =
+          await AuthStorage.readPendingOtpEmail() ??
+          await AuthStorage.readEmail();
       if (otpEmail == null || otpEmail.isEmpty) {
         if (!mounted) return;
         setState(() {
@@ -257,6 +259,7 @@ abstract final class SessionBootstrap {
         tokenType: fresh.tokenType,
         user: fresh.user ?? session!.user,
         profile: fresh.profile ?? session!.profile,
+        details: fresh.details ?? session!.details,
       );
       await AuthStorage.saveSession(session!);
       return true;
@@ -298,7 +301,11 @@ abstract final class SessionBootstrap {
     }
 
     if (me != null && me!.user != null) {
-      session = session!.merge(user: me!.user!, profile: me!.profile);
+      session = session!.merge(
+        user: me!.user!,
+        profile: me!.profile,
+        details: me!.details,
+      );
       await AuthStorage.saveSession(session!);
     } else {
       if (authRejected) {

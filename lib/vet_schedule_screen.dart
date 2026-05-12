@@ -17,13 +17,13 @@ class VetScheduleScreen extends StatefulWidget {
     required this.api,
     required this.resolveVetCoordinates,
     required this.onLogout,
-    required this.refreshSignal,
+    this.refreshSignal,
   });
 
   final VetgoApiClient api;
   final (double lat, double lng) Function() resolveVetCoordinates;
   final VoidCallback onLogout;
-  final int refreshSignal;
+  final int? refreshSignal;
 
   @override
   State<VetScheduleScreen> createState() => _VetScheduleScreenState();
@@ -47,7 +47,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
   @override
   void didUpdateWidget(covariant VetScheduleScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.refreshSignal != oldWidget.refreshSignal) {
+    if ((widget.refreshSignal ?? 0) != (oldWidget.refreshSignal ?? 0)) {
       _load();
     }
   }

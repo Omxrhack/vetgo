@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vetgo/core/auth/auth_storage.dart';
 import 'package:vetgo/core/location/onboarding_location_fill.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/models/store_product_vm.dart';
@@ -30,12 +31,69 @@ class _StoreCheckoutScreenState extends State<StoreCheckoutScreen> {
       widget.lines.fold<double>(0, (sum, line) => sum + line.lineTotal);
 
   @override
+  void initState() {
+    super.initState();
+    _prefillFromOnboarding();
+  }
+
+  @override
   void dispose() {
     _address.dispose();
     _contactName.dispose();
     _contactPhone.dispose();
     _notes.dispose();
     super.dispose();
+  }
+
+  Future<void> _prefillFromOnboarding() async {
+    final session = await AuthStorage.loadSession();
+    if (!mounted) return;
+    final profile = session?.profile;
+    final details = session?.details;
+    final clientDetails = details?['client_details'];
+    if (clientDetails is! Map) return;
+
+    final address = clientDetails['address_text']?.toString().trim();
+    final contactName = clientDetails['default_contact_name']
+        ?.toString()
+        .trim();
+    final contactPhone = clientDetails['default_contact_phone']
+        ?.toString()
+        .trim();
+    final preferred = clientDetails['preferred_fulfillment_method']
+        ?.toString()
+        .trim();
+    final deliveryNotes = clientDetails['delivery_notes']?.toString().trim();
+
+    setState(() {
+      if (_address.text.trim().isEmpty &&
+          address != null &&
+          address.isNotEmpty) {
+        _address.text = address;
+      }
+      if (_contactName.text.trim().isEmpty) {
+        final fallback = contactName?.isNotEmpty == true
+            ? contactName
+            : profile?['full_name']?.toString().trim();
+        if (fallback != null && fallback.isNotEmpty)
+          _contactName.text = fallback;
+      }
+      if (_contactPhone.text.trim().isEmpty) {
+        final fallback = contactPhone?.isNotEmpty == true
+            ? contactPhone
+            : profile?['phone']?.toString().trim();
+        if (fallback != null && fallback.isNotEmpty)
+          _contactPhone.text = fallback;
+      }
+      if (_notes.text.trim().isEmpty &&
+          deliveryNotes != null &&
+          deliveryNotes.isNotEmpty) {
+        _notes.text = deliveryNotes;
+      }
+      if (preferred == 'delivery' || preferred == 'pickup_contact') {
+        _fulfillment = preferred!;
+      }
+    });
   }
 
   Future<void> _fillAddress() async {

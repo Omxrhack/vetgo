@@ -7,6 +7,7 @@ class AuthSession {
     this.tokenType,
     this.user,
     this.profile,
+    this.details,
   });
 
   final String? accessToken;
@@ -15,9 +16,9 @@ class AuthSession {
   final String? tokenType;
   final Map<String, dynamic>? user;
   final Map<String, dynamic>? profile;
+  final Map<String, dynamic>? details;
 
-  bool get hasAccessToken =>
-      accessToken != null && accessToken!.isNotEmpty;
+  bool get hasAccessToken => accessToken != null && accessToken!.isNotEmpty;
 
   /// Flags del snapshot `user` del backend (`userPayload`).
   bool get isVerified => user?['is_verified'] == true;
@@ -36,6 +37,9 @@ class AuthSession {
       profile: json['profile'] is Map<String, dynamic>
           ? json['profile'] as Map<String, dynamic>
           : null,
+      details: json['details'] is Map<String, dynamic>
+          ? json['details'] as Map<String, dynamic>
+          : null,
     );
   }
 
@@ -47,6 +51,7 @@ class AuthSession {
     String? tokenType,
     Map<String, dynamic>? user,
     Map<String, dynamic>? profile,
+    Map<String, dynamic>? details,
   }) {
     return AuthSession(
       accessToken: accessToken ?? this.accessToken,
@@ -55,6 +60,7 @@ class AuthSession {
       tokenType: tokenType ?? this.tokenType,
       user: user ?? this.user,
       profile: profile ?? this.profile,
+      details: details ?? this.details,
     );
   }
 }

@@ -269,6 +269,9 @@ class VetgoApiClient {
           profile: data['profile'] is Map<String, dynamic>
               ? data['profile'] as Map<String, dynamic>
               : null,
+          details: data['details'] is Map<String, dynamic>
+              ? data['details'] as Map<String, dynamic>
+              : null,
         ),
         false,
       );
@@ -301,6 +304,9 @@ class VetgoApiClient {
             : null,
         profile: data['profile'] is Map<String, dynamic>
             ? data['profile'] as Map<String, dynamic>
+            : null,
+        details: data['details'] is Map<String, dynamic>
+            ? data['details'] as Map<String, dynamic>
             : null,
       );
     } on DioException {

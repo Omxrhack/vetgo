@@ -54,6 +54,7 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
         prev.merge(
           user: res.user ?? prev.user,
           profile: res.profile ?? prev.profile,
+          details: res.details ?? prev.details,
         ),
       );
     }
@@ -87,9 +88,9 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
                       onPressed: _loading
                           ? null
                           : () => setState(() {
-                                _role = null;
-                                _error = null;
-                              }),
+                              _role = null;
+                              _error = null;
+                            }),
                       icon: Icon(
                         Icons.arrow_back_rounded,
                         color: scheme.onSurface,
@@ -125,15 +126,16 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
                 return FadeTransition(
                   opacity: animation,
                   child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(beginX, 0),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
+                    position:
+                        Tween<Offset>(
+                          begin: Offset(beginX, 0),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   ),
                 );
@@ -141,10 +143,7 @@ class _ProfileOnboardingFlowState extends State<ProfileOnboardingFlow> {
               layoutBuilder: (currentChild, previousChildren) {
                 return Stack(
                   alignment: Alignment.topCenter,
-                  children: <Widget>[
-                    ...previousChildren,
-                    ?currentChild,
-                  ],
+                  children: <Widget>[...previousChildren, ?currentChild],
                 );
               },
               child: _role == null
@@ -239,7 +238,8 @@ class _RolePicker extends StatelessWidget {
           children: [
             const AuthBrandHeader(
               title: 'Completa tu perfil',
-              subtitle: 'Cuéntanos cómo vas a usar Vetgo para personalizar tu experiencia.',
+              subtitle:
+                  'Cuéntanos cómo vas a usar Vetgo para personalizar tu experiencia.',
             ),
             const SizedBox(height: 28),
             _RoleCard(
@@ -290,9 +290,7 @@ class _RoleCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: scheme.outline.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: scheme.outline.withValues(alpha: 0.3)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(18),

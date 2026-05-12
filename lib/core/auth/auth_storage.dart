@@ -12,7 +12,9 @@ abstract final class AuthStorage {
   static const _keyTokenType = 'vetgo_token_type';
   static const _keyUserJson = 'vetgo_user_json';
   static const _keyProfileJson = 'vetgo_profile_json';
+  static const _keyDetailsJson = 'vetgo_details_json';
   static const _keyAccessExpiresAtMs = 'vetgo_access_expires_at_ms';
+
   /// Registro / login sin verificar: recordar correo para abrir pantalla OTP al reiniciar.
   static const _keyPendingOtpEmail = 'vetgo_pending_otp_email';
 
@@ -56,7 +58,8 @@ abstract final class AuthStorage {
     }
     if (session.expiresIn != null) {
       await p.setInt(_keyExpiresIn, session.expiresIn!);
-      final expiresAt = DateTime.now().millisecondsSinceEpoch +
+      final expiresAt =
+          DateTime.now().millisecondsSinceEpoch +
           session.expiresIn! * 1000 -
           _expirySkewMs;
       await p.setInt(_keyAccessExpiresAtMs, expiresAt);
@@ -78,6 +81,11 @@ abstract final class AuthStorage {
       await p.setString(_keyProfileJson, jsonEncode(session.profile));
     } else {
       await p.remove(_keyProfileJson);
+    }
+    if (session.details != null) {
+      await p.setString(_keyDetailsJson, jsonEncode(session.details));
+    } else {
+      await p.remove(_keyDetailsJson);
     }
 
     await VetgoSupabase.syncSession(
@@ -114,7 +122,8 @@ abstract final class AuthStorage {
     final p = await VetgoPrefs.backend;
     final access = p.getString(_keyAccess);
     final refresh = p.getString(_keyRefresh);
-    if ((access == null || access.isEmpty) && (refresh == null || refresh.isEmpty)) {
+    if ((access == null || access.isEmpty) &&
+        (refresh == null || refresh.isEmpty)) {
       return null;
     }
 
@@ -134,6 +143,14 @@ abstract final class AuthStorage {
       } catch (_) {}
     }
 
+    Map<String, dynamic>? details;
+    final rawDetails = p.getString(_keyDetailsJson);
+    if (rawDetails != null) {
+      try {
+        details = jsonDecode(rawDetails) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+
     return AuthSession(
       accessToken: access,
       refreshToken: refresh,
@@ -141,6 +158,7 @@ abstract final class AuthStorage {
       tokenType: p.getString(_keyTokenType),
       user: user,
       profile: profile,
+      details: details,
     );
   }
 
@@ -153,6 +171,7 @@ abstract final class AuthStorage {
     await p.remove(_keyTokenType);
     await p.remove(_keyUserJson);
     await p.remove(_keyProfileJson);
+    await p.remove(_keyDetailsJson);
     await p.remove(_keyAccessExpiresAtMs);
     await p.remove(_keyPendingOtpEmail);
   }
