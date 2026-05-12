@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:vetgo/client/choose_vet_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
+import 'package:vetgo/core/location/onboarding_location_fill.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/core/storage/preferred_vet_prefs.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
@@ -49,9 +49,11 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
   DateTime? _visitDate;
   TimeOfDay? _visitTime;
   String? _preferredVetName;
+  String? _visitAddressText;
 
   LatLng _visitLocation = _fallbackVisitMapCenter;
   bool _triedLocation = false;
+  bool _loadingAddress = false;
 
   @override
   void initState() {
@@ -92,27 +94,52 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
     return _combinedLocalDateTime().isAfter(DateTime.now());
   }
 
-  Future<void> _tryLoadVisitLocation() async {
+  Future<void> _tryLoadVisitLocation({bool showNotice = false}) async {
     if (_triedLocation) return;
     _triedLocation = true;
+    await _loadVisitAddress(showNotice: showNotice);
+  }
+
+  Future<void> _loadVisitAddress({bool showNotice = true}) async {
+    if (_loadingAddress) return;
+    setState(() => _loadingAddress = true);
     try {
-      final enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled || !mounted) return;
-      var perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
-        perm = await Geolocator.requestPermission();
-      }
-      if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever) {
+      final result = await loadAddressFromDeviceLocation();
+      if (!mounted) {
         return;
       }
-      final pos = await Geolocator.getCurrentPosition();
-      if (!mounted) return;
+      if (!result.ok ||
+          result.latitude == null ||
+          result.longitude == null ||
+          result.addressText == null) {
+        if (showNotice) {
+          VetgoNotice.show(
+            context,
+            message: result.errorMessage ?? 'No se pudo obtener el domicilio.',
+            isError: true,
+          );
+        }
+        return;
+      }
       setState(() {
-        _visitLocation = LatLng(pos.latitude, pos.longitude);
+        _visitLocation = LatLng(result.latitude!, result.longitude!);
+        _visitAddressText = result.addressText!.trim();
       });
+      if (showNotice) {
+        VetgoNotice.show(context, message: 'Domicilio obtenido.');
+      }
     } catch (_) {
-      // Mantiene centro por defecto.
+      if (mounted && showNotice) {
+        VetgoNotice.show(
+          context,
+          message: 'No se pudo obtener el domicilio. Intenta de nuevo.',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loadingAddress = false);
+      }
     }
   }
 
@@ -499,6 +526,51 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(color: muted),
         ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _loadingAddress ? null : () => _loadVisitAddress(),
+          icon: _loadingAddress
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.primary,
+                  ),
+                )
+              : const Icon(Icons.my_location_rounded),
+          label: Text(
+            _loadingAddress ? 'Obteniendo domicilio...' : 'Obtener domicilio',
+          ),
+        ),
+        if (_visitAddressText != null && _visitAddressText!.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.home_outlined, size: 19, color: scheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _visitAddressText!,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 18),
         TextField(
           controller: _notes,
@@ -559,6 +631,16 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                 context,
               ).textTheme.bodyMedium?.copyWith(height: 1.35),
             ),
+            if (_visitAddressText != null && _visitAddressText!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Domicilio: $_visitAddressText',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: ClientPastelColors.mutedOn(context),
+                  height: 1.35,
+                ),
+              ),
+            ],
             if (_notes.text.trim().isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
@@ -630,6 +712,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                         notes: notes.isEmpty ? null : notes,
                         visitLatitude: _visitLocation.latitude,
                         visitLongitude: _visitLocation.longitude,
+                        visitAddressText: _visitAddressText,
                       );
                       if (!context.mounted) return;
                       if (err != null) {
@@ -643,7 +726,7 @@ class _ScheduleVisitFlowScreenState extends State<ScheduleVisitFlowScreen> {
                             ? AppStrings.scheduleCitaRegistrada(id)
                             : AppStrings.scheduleCitaOkSinRef,
                       );
-                      Navigator.of(context).popUntil((r) => r.isFirst);
+                      Navigator.of(context).pop(true);
                     },
             ),
           ],

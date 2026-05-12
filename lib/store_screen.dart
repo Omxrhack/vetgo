@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
 
+import 'package:vetgo/client/store_cart_screen.dart';
+import 'package:vetgo/client/store_checkout_screen.dart';
+import 'package:vetgo/client/store_orders_screen.dart';
+import 'package:vetgo/client/store_product_detail_screen.dart';
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/models/store_product_vm.dart';
 import 'package:vetgo/theme/client_pastel.dart';
 import 'package:vetgo/widgets/client/store_category_pill.dart';
 import 'package:vetgo/widgets/client/store_product_card.dart';
@@ -24,14 +28,11 @@ class _StoreScreenState extends State<StoreScreen> {
   int _categoryIndex = 0;
   List<String> _categories = <String>[AppStrings.storeCategoriaTodos];
 
-  List<_ProductRow> _products = <_ProductRow>[];
+  List<StoreProductVm> _products = <StoreProductVm>[];
+  final Map<String, StoreProductVm> _productCache = <String, StoreProductVm>{};
+  final Map<String, int> _cart = <String, int>{};
   bool _loading = true;
   String? _error;
-
-  static final NumberFormat _money = NumberFormat.currency(
-    locale: 'es_MX',
-    symbol: r'$',
-  );
 
   @override
   void initState() {
@@ -77,31 +78,21 @@ class _StoreScreenState extends State<StoreScreen> {
     }
 
     final raw = data?['data'];
-    final rows = <_ProductRow>[];
+    final rows = <StoreProductVm>[];
     final catSet = <String>{AppStrings.storeCategoriaTodos};
 
     if (raw is List<dynamic>) {
       for (final e in raw) {
         if (e is! Map) continue;
         final m = Map<String, dynamic>.from(e);
-        final name = m['name']?.toString() ?? AppStrings.storeProductoFallback;
-        final price = m['price'];
-        final c = m['category']?.toString().trim() ?? '';
+        final product = StoreProductVm.fromApiJson(m);
+        if (product.id.isEmpty) continue;
+        final c = product.category.trim();
         if (c.isNotEmpty) {
           catSet.add(c);
         }
-        var priceLabel = r'$0';
-        if (price is num) {
-          priceLabel = _money.format(price.toDouble());
-        }
-        rows.add(
-          _ProductRow(
-            name: name,
-            priceLabel: priceLabel,
-            category: c,
-            imageUrl: m['image_url']?.toString(),
-          ),
-        );
+        rows.add(product);
+        _productCache[product.id] = product;
       }
     }
 
@@ -124,6 +115,87 @@ class _StoreScreenState extends State<StoreScreen> {
         }
       }
     });
+  }
+
+  int get _cartCount => _cart.values.fold<int>(0, (sum, qty) => sum + qty);
+
+  List<StoreCartLine> get _cartLines {
+    final lines = <StoreCartLine>[];
+    for (final entry in _cart.entries) {
+      final product = _productCache[entry.key];
+      if (product == null || entry.value <= 0) continue;
+      lines.add(StoreCartLine(product: product, quantity: entry.value));
+    }
+    return lines;
+  }
+
+  Future<void> _addToCart(StoreProductVm product, [int quantity = 1]) async {
+    final current = _cart[product.id] ?? 0;
+    final remaining = product.stock - current;
+    if (remaining <= 0) {
+      VetgoNotice.show(
+        context,
+        message: 'No hay más stock disponible.',
+        isError: true,
+      );
+      return;
+    }
+    final addQty = quantity < 1
+        ? 1
+        : (quantity > remaining ? remaining : quantity);
+    setState(() => _cart[product.id] = current + addQty);
+  }
+
+  Future<void> _openProduct(StoreProductVm product) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => StoreProductDetailScreen(
+          product: product,
+          quantityInCart: _cart[product.id] ?? 0,
+          onAdd: _addToCart,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _openCheckout(List<StoreCartLine> lines) async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => StoreCheckoutScreen(lines: lines),
+      ),
+    );
+    if (ok == true) {
+      setState(() => _cart.clear());
+      await _loadProducts();
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _openCart() async {
+    if (_cartLines.isEmpty) {
+      VetgoNotice.show(context, message: 'Tu carrito está vacío.');
+      return;
+    }
+    final result = await Navigator.of(context).push<StoreCartResult>(
+      MaterialPageRoute<StoreCartResult>(
+        builder: (_) =>
+            StoreCartScreen(lines: _cartLines, onCheckout: _openCheckout),
+      ),
+    );
+    if (!mounted || result == null || result.submitted) return;
+    setState(() {
+      _cart
+        ..clear()
+        ..addAll(result.quantities);
+    });
+  }
+
+  Future<void> _openOrders() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const StoreOrdersScreen()),
+    );
+    await _loadProducts();
   }
 
   @override
@@ -167,6 +239,25 @@ class _StoreScreenState extends State<StoreScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Mis pedidos',
+            onPressed: _openOrders,
+            icon: const Icon(Icons.receipt_long_outlined),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Carrito',
+              onPressed: _openCart,
+              icon: Badge(
+                isLabelVisible: _cartCount > 0,
+                label: Text('$_cartCount'),
+                child: const Icon(Icons.shopping_cart_outlined),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -280,7 +371,7 @@ class _StoreScreenState extends State<StoreScreen> {
                         mainAxisSpacing: 14,
                         crossAxisSpacing: 14,
                         // Alto suficiente para pie (nombre + precio + CTA); la imagen usa Expanded en la tarjeta.
-                        childAspectRatio: 0.68,
+                        childAspectRatio: 0.58,
                       ),
                       itemCount: _products.length,
                       itemBuilder: (context, i) {
@@ -288,16 +379,18 @@ class _StoreScreenState extends State<StoreScreen> {
                         return StoreProductCard(
                               name: p.name,
                               priceLabel: p.priceLabel,
+                              stock: p.stock,
+                              quantityInCart: _cart[p.id] ?? 0,
                               imageUrl: p.imageUrl,
+                              onTap: () => _openProduct(p),
                               onAdd: () async {
-                                await Future<void>.delayed(
-                                  const Duration(milliseconds: 400),
-                                );
-                                if (!context.mounted) return;
+                                await _addToCart(p);
+                                if (!context.mounted) {
+                                  return;
+                                }
                                 VetgoNotice.show(
                                   context,
-                                  message:
-                                      '${p.name} guardado como interés. La compra queda fuera del MVP.',
+                                  message: '${p.name} agregado al carrito.',
                                 );
                               },
                             )
@@ -388,18 +481,4 @@ class _StoreEmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ProductRow {
-  const _ProductRow({
-    required this.name,
-    required this.priceLabel,
-    required this.category,
-    this.imageUrl,
-  });
-
-  final String name;
-  final String priceLabel;
-  final String category;
-  final String? imageUrl;
 }

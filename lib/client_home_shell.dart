@@ -40,6 +40,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
   List<ClientPetVm> _pets = [];
   bool _petsLoading = true;
   String? _petsError;
+  int _dashboardRefreshSignal = 0;
 
   @override
   void initState() {
@@ -84,19 +85,32 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
     });
   }
 
-  void _openSos() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => EmergencySOSScreen(pets: _pets)),
+  Future<void> _refreshDashboard() async {
+    await _loadPets();
+    if (!mounted) return;
+    setState(() => _dashboardRefreshSignal++);
+  }
+
+  Future<void> _openSos() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => EmergencySOSScreen(pets: _pets)),
     );
+    if (changed == true) {
+      await _refreshDashboard();
+    }
   }
 
   Future<void> _openSchedule() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => ScheduleVisitFlowScreen(pets: _pets),
       ),
     );
-    await _loadPets();
+    if (changed == true) {
+      await _refreshDashboard();
+    } else {
+      await _loadPets();
+    }
   }
 
   void _setTab(int index) {
@@ -139,6 +153,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
         onRefreshPets: _loadPets,
         onOpenEmergency: _openSos,
         onOpenSchedule: _openSchedule,
+        refreshSignal: _dashboardRefreshSignal,
       ),
       const SocialScreen(),
       const StoreScreen(),

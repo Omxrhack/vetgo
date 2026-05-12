@@ -26,6 +26,7 @@ class ClientDashboardScreen extends StatefulWidget {
     required this.onRefreshPets,
     required this.onOpenEmergency,
     required this.onOpenSchedule,
+    required this.refreshSignal,
   });
 
   final String userName;
@@ -33,8 +34,9 @@ class ClientDashboardScreen extends StatefulWidget {
   final bool petsLoading;
   final String? petsError;
   final Future<void> Function() onRefreshPets;
-  final VoidCallback onOpenEmergency;
+  final Future<void> Function() onOpenEmergency;
   final Future<void> Function() onOpenSchedule;
+  final int refreshSignal;
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -54,6 +56,18 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     super.initState();
     _loadAppointments();
     _loadAssignedVet();
+  }
+
+  @override
+  void didUpdateWidget(covariant ClientDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshSignal != oldWidget.refreshSignal) {
+      _refreshDashboardData();
+    }
+  }
+
+  Future<void> _refreshDashboardData() async {
+    await Future.wait<void>([_loadAppointments(), _loadAssignedVet()]);
   }
 
   Future<void> _loadAssignedVet() async {
@@ -112,11 +126,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 
   Future<void> _onRefresh() async {
-    await Future.wait<void>([
-      widget.onRefreshPets(),
-      _loadAppointments(),
-      _loadAssignedVet(),
-    ]);
+    await Future.wait<void>([widget.onRefreshPets(), _refreshDashboardData()]);
   }
 
   Future<void> _openAppointmentDetail(Map<String, dynamic> row) async {

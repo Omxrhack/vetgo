@@ -421,6 +421,95 @@ class VetgoApiClient {
     }
   }
 
+  /// `GET /api/products/:id` — detalle público de producto.
+  Future<VetJsonResult> getProduct({required String productId}) async {
+    try {
+      final r = await _api.get<Map<String, dynamic>>('/products/$productId');
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `POST /api/store/orders` — checkout MVP autenticado, sin pago real.
+  Future<VetJsonResult> createStoreOrder({
+    required String fulfillmentMethod,
+    required List<Map<String, dynamic>> items,
+    String? deliveryAddressText,
+    String? contactName,
+    String? contactPhone,
+    String? notes,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/store/orders',
+        data: <String, dynamic>{
+          'fulfillment_method': fulfillmentMethod,
+          'items': items,
+          if (deliveryAddressText != null && deliveryAddressText.isNotEmpty)
+            'delivery_address_text': deliveryAddressText,
+          if (contactName != null && contactName.isNotEmpty)
+            'contact_name': contactName,
+          if (contactPhone != null && contactPhone.isNotEmpty)
+            'contact_phone': contactPhone,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+        },
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/store/orders`
+  Future<VetJsonResult> listMyStoreOrders() async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/store/orders',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/store/orders/:id`
+  Future<VetJsonResult> getStoreOrder({required String orderId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/store/orders/$orderId',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/store/orders/:id/cancel`
+  Future<VetJsonResult> cancelStoreOrder({required String orderId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/store/orders/$orderId/cancel',
+        data: <String, dynamic>{},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/vets` — catalogo veterinarios (cliente autenticado).
   Future<(List<Map<String, dynamic>>? list, String? error)>
   listVetsCatalog() async {
@@ -487,6 +576,7 @@ class VetgoApiClient {
     String? vetId,
     double? visitLatitude,
     double? visitLongitude,
+    String? visitAddressText,
   }) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
@@ -506,6 +596,8 @@ class VetgoApiClient {
             'visit_latitude': visitLatitude,
             'visit_longitude': visitLongitude,
           },
+          if (visitAddressText != null && visitAddressText.isNotEmpty)
+            'visit_address_text': visitAddressText,
         },
         options: opts,
       );

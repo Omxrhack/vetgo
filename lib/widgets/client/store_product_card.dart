@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 
 import 'package:vetgo/widgets/client/client_soft_card.dart';
 
-/// Tarjeta de producto para la tienda (demo carrito).
+/// Tarjeta de producto para la tienda.
 class StoreProductCard extends StatefulWidget {
   const StoreProductCard({
     super.key,
     required this.name,
     required this.priceLabel,
+    required this.stock,
+    required this.quantityInCart,
     this.imageUrl,
+    this.onTap,
     required this.onAdd,
   });
 
   final String name;
   final String priceLabel;
+  final int stock;
+  final int quantityInCart;
   final String? imageUrl;
+  final VoidCallback? onTap;
   final Future<void> Function() onAdd;
 
   @override
@@ -48,6 +54,7 @@ class _StoreProductCardState extends State<StoreProductCard> {
 
     return ClientSoftCard(
       padding: EdgeInsets.zero,
+      onTap: widget.onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.max,
@@ -66,8 +73,9 @@ class _StoreProductCardState extends State<StoreProductCard> {
                       alignment: Alignment.center,
                     )
                   : ColoredBox(
-                      color: scheme.surfaceContainerHighest
-                          .withValues(alpha: 0.65),
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.65,
+                      ),
                       child: Icon(
                         Icons.pets_rounded,
                         size: 44,
@@ -91,6 +99,26 @@ class _StoreProductCardState extends State<StoreProductCard> {
                     height: 1.15,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.stock > 0 ? 'Stock: ${widget.stock}' : 'Sin stock',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: widget.stock > 0
+                        ? scheme.onSurfaceVariant
+                        : scheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (widget.quantityInCart > 0) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'En carrito: ${widget.quantityInCart}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,8 +148,9 @@ class _StoreProductCardState extends State<StoreProductCard> {
                         child: _busy
                             ? Padding(
                                 key: const ValueKey<String>('busy'),
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 child: SizedBox(
                                   width: 22,
                                   height: 22,
@@ -132,42 +161,43 @@ class _StoreProductCardState extends State<StoreProductCard> {
                                 ),
                               )
                             : _justAdded
-                                ? DecoratedBox(
-                                    key: const ValueKey<String>('ok'),
-                                    decoration: BoxDecoration(
-                                      color: scheme.primaryContainer
-                                          .withValues(alpha: 0.65),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 8,
-                                      ),
-                                      child: Icon(
-                                        Icons.check_rounded,
-                                        size: 20,
-                                        color: scheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  )
-                                : FilledButton.tonal(
-                                    key: const ValueKey<String>('add'),
-                                    onPressed: _tapAdd,
-                                    style: FilledButton.styleFrom(
-                                      minimumSize: const Size(40, 40),
-                                      maximumSize: const Size(44, 44),
-                                      padding: EdgeInsets.zero,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      foregroundColor: scheme.primary,
-                                    ),
-                                    child: const Icon(
-                                      Icons.add_shopping_cart_outlined,
-                                      size: 20,
-                                    ),
+                            ? DecoratedBox(
+                                key: const ValueKey<String>('ok'),
+                                decoration: BoxDecoration(
+                                  color: scheme.primaryContainer.withValues(
+                                    alpha: 0.65,
                                   ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  child: Icon(
+                                    Icons.check_rounded,
+                                    size: 20,
+                                    color: scheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              )
+                            : FilledButton.tonal(
+                                key: const ValueKey<String>('add'),
+                                onPressed: widget.stock > 0 ? _tapAdd : null,
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size(40, 40),
+                                  maximumSize: const Size(44, 44),
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  foregroundColor: scheme.primary,
+                                ),
+                                child: const Icon(
+                                  Icons.add_shopping_cart_outlined,
+                                  size: 20,
+                                ),
+                              ),
                       ),
                     ),
                   ],

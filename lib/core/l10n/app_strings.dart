@@ -72,8 +72,7 @@ abstract final class AppStrings {
   static const clienteCitasErrorCarga =
       'No se pudieron cargar tus citas. Intenta de nuevo m\u00E1s tarde.';
 
-  static const clienteCitaVeterinarioPendiente =
-      'Veterinario por confirmar';
+  static const clienteCitaVeterinarioPendiente = 'Veterinario por confirmar';
 
   static String clienteVisitaProgramadaPara(String fechaHora) =>
       'Visita programada: $fechaHora';
@@ -227,7 +226,7 @@ abstract final class AppStrings {
   static const storeSinResultados = 'No hay productos con estos filtros.';
 
   static String storeCarritoDemo(String productName) =>
-      '$productName a\u00F1adido al carrito (demo).';
+      '$productName a\u00F1adido al carrito.';
 
   static const storeProductoFallback = 'Producto';
 
@@ -236,7 +235,8 @@ abstract final class AppStrings {
 
   static const emergencySubtitulo = 'Respuesta prioritaria 24/7';
 
-  static const emergencyEnviandoAlerta = 'Enviando alerta a veterinarios cercanos';
+  static const emergencyEnviandoAlerta =
+      'Enviando alerta a veterinarios cercanos';
 
   static const emergencySolicitarAyuda = 'Solicitar ayuda\nurgente';
 
@@ -271,9 +271,11 @@ abstract final class AppStrings {
   static String emergencyRegistradaRef(String id) =>
       'Emergencia registrada (ref. $id). Te contactamos en segundos.';
 
-  static const emergencyRegistrada = 'Emergencia registrada. Te contactamos en segundos.';
+  static const emergencyRegistrada =
+      'Emergencia registrada. Te contactamos en segundos.';
 
-  static const emergencyDefaultSosBoton = 'Emergencia SOS \u2014 bot\u00F3n principal';
+  static const emergencyDefaultSosBoton =
+      'Emergencia SOS \u2014 bot\u00F3n principal';
 
   // --- Schedule flow ---
   static const scheduleSolicitudDemo = 'Solicitud registrada (demo).';
@@ -322,8 +324,7 @@ abstract final class AppStrings {
   static const scheduleFechaPasada =
       'Elige una fecha y hora posteriores a ahora.';
 
-  static const mapaOsmAtribucion =
-      '\u00A9 OpenStreetMap contributors';
+  static const mapaOsmAtribucion = '\u00A9 OpenStreetMap contributors';
 
   // --- Login / auth (visible errors) ---
   static const loginSinToken =
@@ -407,8 +408,7 @@ abstract final class AppStrings {
   static const onboardingUbicacionAplicada =
       'Direcci\u00F3n rellenada con tu ubicaci\u00F3n.';
 
-  static const onboardingVetBaseDireccionLabel =
-      'Direcci\u00F3n o zona base';
+  static const onboardingVetBaseDireccionLabel = 'Direcci\u00F3n o zona base';
 
   static const onboardingVetBaseDireccionHint =
       'Opcional. Tambi\u00E9n guardamos coordenadas para cobertura y emergencias.';
