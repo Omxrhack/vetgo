@@ -75,15 +75,17 @@ class _StoreCheckoutScreenState extends State<StoreCheckoutScreen> {
         final fallback = contactName?.isNotEmpty == true
             ? contactName
             : profile?['full_name']?.toString().trim();
-        if (fallback != null && fallback.isNotEmpty)
+        if (fallback != null && fallback.isNotEmpty) {
           _contactName.text = fallback;
+        }
       }
       if (_contactPhone.text.trim().isEmpty) {
         final fallback = contactPhone?.isNotEmpty == true
             ? contactPhone
             : profile?['phone']?.toString().trim();
-        if (fallback != null && fallback.isNotEmpty)
+        if (fallback != null && fallback.isNotEmpty) {
           _contactPhone.text = fallback;
+        }
       }
       if (_notes.text.trim().isEmpty &&
           deliveryNotes != null &&

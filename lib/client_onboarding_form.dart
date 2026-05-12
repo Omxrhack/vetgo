@@ -244,7 +244,6 @@ class ClientOnboardingFormState extends State<ClientOnboardingForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final title = switch (_step) {
       0 => 'Identidad',
       1 => 'Domicilio y tienda',
