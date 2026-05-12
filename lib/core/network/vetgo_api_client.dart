@@ -48,16 +48,18 @@ class VetgoApiClient {
   /// Comprueba `GET /health` en la raíz del servidor (no bajo `/api`).
   Future<HealthCheckResult> checkHealth() async {
     try {
-      final response = await _root.get<dynamic>('${AppConfig.apiBaseUrl}/health');
+      final response = await _root.get<dynamic>(
+        '${AppConfig.apiBaseUrl}/health',
+      );
       final data = response.data;
       final bodyOk = data is Map && data['ok'] == true;
       final ok = response.statusCode == 200 && bodyOk;
-      return HealthCheckResult(ok: ok, message: ok ? 'API OK' : 'Respuesta inesperada');
-    } on DioException catch (e) {
       return HealthCheckResult(
-        ok: false,
-        message: _dioErrorMessage(e),
+        ok: ok,
+        message: ok ? 'API OK' : 'Respuesta inesperada',
       );
+    } on DioException catch (e) {
+      return HealthCheckResult(ok: false, message: _dioErrorMessage(e));
     } catch (e) {
       return HealthCheckResult(ok: false, message: e.toString());
     }
@@ -78,10 +80,7 @@ class VetgoApiClient {
     try {
       final r = await _api.post<Map<String, dynamic>>(
         '/auth/login',
-        data: <String, dynamic>{
-          'email': email.trim(),
-          'password': password,
-        },
+        data: <String, dynamic>{'email': email.trim(), 'password': password},
       );
       final data = r.data;
       if (data == null) {
@@ -97,7 +96,8 @@ class VetgoApiClient {
     final status = e.response?.statusCode;
     final map = parseResponseMap(e.response?.data);
     final code = map?['code'] as String?;
-    final err = map?['error']?.toString() ??
+    final err =
+        map?['error']?.toString() ??
         e.message ??
         'No se pudo conectar. Revisa la red.';
     if (status == 403 && code == 'EMAIL_NOT_CONFIRMED') {
@@ -129,10 +129,7 @@ class VetgoApiClient {
     try {
       final r = await _api.post<Map<String, dynamic>>(
         '/auth/register',
-        data: <String, dynamic>{
-          'email': email.trim(),
-          'password': password,
-        },
+        data: <String, dynamic>{'email': email.trim(), 'password': password},
       );
       final data = r.data;
       if (data == null) {
@@ -154,7 +151,10 @@ class VetgoApiClient {
     }
   }
 
-  String _emailFromRegisterBody(Map<String, dynamic> data, {required String fallback}) {
+  String _emailFromRegisterBody(
+    Map<String, dynamic> data, {
+    required String fallback,
+  }) {
     final user = data['user'];
     if (user is Map && user['email'] != null) {
       return user['email'].toString();
@@ -166,9 +166,8 @@ class VetgoApiClient {
     final status = e.response?.statusCode;
     final map = parseResponseMap(e.response?.data);
     final code = map?['code'] as String?;
-    final err = map?['error']?.toString() ??
-        e.message ??
-        'Error al registrarse.';
+    final err =
+        map?['error']?.toString() ?? e.message ?? 'Error al registrarse.';
     if (status == 409 && code == 'EMAIL_ALREADY_VERIFIED') {
       return RegisterOutcome.emailAlreadyVerified(err);
     }
@@ -186,10 +185,7 @@ class VetgoApiClient {
     try {
       final r = await _api.post<Map<String, dynamic>>(
         '/auth/verify-otp',
-        data: <String, dynamic>{
-          'email': email.trim(),
-          'token': token.trim(),
-        },
+        data: <String, dynamic>{'email': email.trim(), 'token': token.trim()},
       );
       final data = r.data;
       if (data == null) {
@@ -198,7 +194,8 @@ class VetgoApiClient {
       return VerifyOtpOutcome.success(AuthSession.fromJson(data));
     } on DioException catch (e) {
       final map = parseResponseMap(e.response?.data);
-      final err = map?['error']?.toString() ??
+      final err =
+          map?['error']?.toString() ??
           e.message ??
           'Código incorrecto o expirado.';
       return VerifyOtpOutcome.failure(err);
@@ -251,14 +248,14 @@ class VetgoApiClient {
   }
 
   /// Igual que [fetchMe], pero indica si el servidor rechazo la sesion (401/403/404).
-  Future<(AuthSession? session, bool authRejected)> fetchMeWithAuthHint({required String accessToken}) async {
+  Future<(AuthSession? session, bool authRejected)> fetchMeWithAuthHint({
+    required String accessToken,
+  }) async {
     try {
       final r = await _api.get<Map<String, dynamic>>(
         '/auth/me',
         options: Options(
-          headers: <String, dynamic>{
-            'Authorization': 'Bearer $accessToken',
-          },
+          headers: <String, dynamic>{'Authorization': 'Bearer $accessToken'},
         ),
       );
       final data = r.data;
@@ -266,8 +263,12 @@ class VetgoApiClient {
       return (
         AuthSession(
           accessToken: accessToken,
-          user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
-          profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+          user: data['user'] is Map<String, dynamic>
+              ? data['user'] as Map<String, dynamic>
+              : null,
+          profile: data['profile'] is Map<String, dynamic>
+              ? data['profile'] as Map<String, dynamic>
+              : null,
         ),
         false,
       );
@@ -288,17 +289,19 @@ class VetgoApiClient {
         '/auth/onboarding',
         data: body,
         options: Options(
-          headers: <String, dynamic>{
-            'Authorization': 'Bearer $accessToken',
-          },
+          headers: <String, dynamic>{'Authorization': 'Bearer $accessToken'},
         ),
       );
       final data = r.data;
       if (data == null) return null;
       return AuthSession(
         accessToken: accessToken,
-        user: data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : null,
-        profile: data['profile'] is Map<String, dynamic> ? data['profile'] as Map<String, dynamic> : null,
+        user: data['user'] is Map<String, dynamic>
+            ? data['user'] as Map<String, dynamic>
+            : null,
+        profile: data['profile'] is Map<String, dynamic>
+            ? data['profile'] as Map<String, dynamic>
+            : null,
       );
     } on DioException {
       return null;
@@ -312,10 +315,7 @@ class VetgoApiClient {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
-      final r = await _api.get<dynamic>(
-        '/pets/$ownerId',
-        options: opts,
-      );
+      final r = await _api.get<dynamic>('/pets/$ownerId', options: opts);
       final data = r.data;
       if (data is! List<dynamic>) {
         return (null, 'Formato de respuesta inesperado.');
@@ -334,6 +334,68 @@ class VetgoApiClient {
     }
   }
 
+  /// `POST /api/pets`
+  Future<VetJsonResult> createPet(Map<String, dynamic> body) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/pets',
+        data: body,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/pets/:id`
+  Future<VetJsonResult> updatePet({
+    required String petId,
+    required Map<String, dynamic> body,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/pets/$petId',
+        data: body,
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `DELETE /api/pets/:id`
+  Future<String?> deletePet({required String petId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return 'Sesión no disponible.';
+    try {
+      await _api.delete<void>('/pets/$petId', options: opts);
+      return null;
+    } on DioException catch (e) {
+      return _vetDioMessage(e);
+    }
+  }
+
+  /// `GET /api/pets/record/:id`
+  Future<VetJsonResult> getPetRecord({required String petId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/pets/record/$petId',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/products` — catálogo (no requiere token).
   Future<(Map<String, dynamic>? data, String? error)> listProducts({
     int page = 1,
@@ -346,7 +408,8 @@ class VetgoApiClient {
         'page': page,
         'limit': limit,
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
-        if (category != null && category.trim().isNotEmpty) 'category': category.trim(),
+        if (category != null && category.trim().isNotEmpty)
+          'category': category.trim(),
       };
       final r = await _api.get<Map<String, dynamic>>(
         '/products',
@@ -359,14 +422,12 @@ class VetgoApiClient {
   }
 
   /// `GET /api/vets` — catalogo veterinarios (cliente autenticado).
-  Future<(List<Map<String, dynamic>>? list, String? error)> listVetsCatalog() async {
+  Future<(List<Map<String, dynamic>>? list, String? error)>
+  listVetsCatalog() async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
-      final r = await _api.get<Map<String, dynamic>>(
-        '/vets',
-        options: opts,
-      );
+      final r = await _api.get<Map<String, dynamic>>('/vets', options: opts);
       final raw = r.data?['vets'];
       if (raw is! List<dynamic>) {
         return (null, 'Formato de respuesta inesperado.');
@@ -405,7 +466,8 @@ class VetgoApiClient {
           'latitude': latitude,
           'longitude': longitude,
           if (status != null && status.isNotEmpty) 'status': status,
-          if (preferredVetId != null && preferredVetId.isNotEmpty) 'preferred_vet_id': preferredVetId,
+          if (preferredVetId != null && preferredVetId.isNotEmpty)
+            'preferred_vet_id': preferredVetId,
         },
         options: opts,
       );
@@ -434,7 +496,8 @@ class VetgoApiClient {
           'scheduled_at': scheduledAtIso,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
           if (vetId != null && vetId.isNotEmpty) 'vet_id': vetId,
-          if (visitLatitude != null && visitLongitude != null) ...<String, dynamic>{
+          if (visitLatitude != null &&
+              visitLongitude != null) ...<String, dynamic>{
             'visit_latitude': visitLatitude,
             'visit_longitude': visitLongitude,
           },
@@ -448,7 +511,9 @@ class VetgoApiClient {
   }
 
   /// `PATCH /api/vet/appointments/:id/claim` — asignar al veterinario una cita del pool.
-  Future<VetJsonResult> claimVetAppointment({required String appointmentId}) async {
+  Future<VetJsonResult> claimVetAppointment({
+    required String appointmentId,
+  }) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
@@ -517,6 +582,24 @@ class VetgoApiClient {
     }
   }
 
+  /// `PATCH /api/appointments/:id/status`
+  Future<VetJsonResult> cancelAppointment({
+    required String appointmentId,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/appointments/$appointmentId/status',
+        data: <String, dynamic>{'status': 'cancelled'},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `GET /api/tracking/:id`
   Future<VetJsonResult> getTrackingSession({required String sessionId}) async {
     final opts = await _authorizedOptions();
@@ -524,6 +607,21 @@ class VetgoApiClient {
     try {
       final r = await _api.get<Map<String, dynamic>>(
         '/tracking/$sessionId',
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `GET /api/tracking/active`
+  Future<VetJsonResult> listActiveTrackingSessions() async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/tracking/active',
         options: opts,
       );
       return (r.data, null);
@@ -561,9 +659,7 @@ class VetgoApiClient {
     final token = await AuthStorage.readAccessToken();
     if (token == null || token.isEmpty) return null;
     return Options(
-      headers: <String, dynamic>{
-        'Authorization': 'Bearer $token',
-      },
+      headers: <String, dynamic>{'Authorization': 'Bearer $token'},
     );
   }
 
@@ -714,6 +810,41 @@ class VetgoApiClient {
     }
   }
 
+  /// `PATCH /api/vet/emergencies/:id/close`
+  Future<VetJsonResult> closeVetEmergency({required String emergencyId}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/emergencies/$emergencyId/close',
+        data: <String, dynamic>{},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  /// `PATCH /api/vet/appointments/:id/status`
+  Future<VetJsonResult> updateVetAppointmentStatus({
+    required String appointmentId,
+    required String status,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/vet/appointments/$appointmentId/status',
+        data: <String, dynamic>{'status': status},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   /// `POST /api/tracking/sessions`
   Future<VetJsonResult> createTrackingSession({
     String? appointmentId,
@@ -750,7 +881,9 @@ class VetgoApiClient {
   }
 
   /// `POST /api/auth/resend-otp`. Si [alreadyVerified] es true, el usuario debe ir a login.
-  Future<({String? error, bool alreadyVerified})> resendOtp(String email) async {
+  Future<({String? error, bool alreadyVerified})> resendOtp(
+    String email,
+  ) async {
     try {
       await _api.post<Map<String, dynamic>>(
         '/auth/resend-otp',
@@ -760,7 +893,8 @@ class VetgoApiClient {
     } on DioException catch (e) {
       final map = parseResponseMap(e.response?.data);
       final code = map?['code'] as String?;
-      final err = map?['error']?.toString() ??
+      final err =
+          map?['error']?.toString() ??
           e.message ??
           'No se pudo reenviar el código.';
       final verified =
@@ -805,7 +939,11 @@ class VetgoApiClient {
     if (location != null) body['location'] = location;
     if (yearsExperience != null) body['years_experience'] = yearsExperience;
     try {
-      final r = await _api.patch<Map<String, dynamic>>('/profiles/me', data: body, options: opts);
+      final r = await _api.patch<Map<String, dynamic>>(
+        '/profiles/me',
+        data: body,
+        options: opts,
+      );
       return (r.data, null);
     } on DioException catch (e) {
       return (null, _vetDioMessage(e));
@@ -833,7 +971,10 @@ class VetgoApiClient {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
-      final r = await _api.delete<Map<String, dynamic>>('/follows/$followingId', options: opts);
+      final r = await _api.delete<Map<String, dynamic>>(
+        '/follows/$followingId',
+        options: opts,
+      );
       return (r.data, null);
     } on DioException catch (e) {
       return (null, _vetDioMessage(e));
@@ -892,7 +1033,9 @@ class VetgoApiClient {
         options: opts,
       );
       final url = r.data?['url']?.toString().trim();
-      if (url == null || url.isEmpty) return (null, 'Respuesta inválida del servidor.');
+      if (url == null || url.isEmpty) {
+        return (null, 'Respuesta inválida del servidor.');
+      }
       return (url, null);
     } on DioException catch (e) {
       return (null, _vetDioMessage(e));
@@ -900,17 +1043,15 @@ class VetgoApiClient {
   }
 
   /// `POST /api/posts/:id/repost`
-  Future<VetJsonResult> createRepost(
-    String postId, {
-    String? quoteBody,
-  }) async {
+  Future<VetJsonResult> createRepost(String postId, {String? quoteBody}) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
       final r = await _api.post<Map<String, dynamic>>(
         '/posts/$postId/repost',
         data: <String, dynamic>{
-          if (quoteBody != null && quoteBody.isNotEmpty) 'quote_body': quoteBody,
+          if (quoteBody != null && quoteBody.isNotEmpty)
+            'quote_body': quoteBody,
         },
         options: opts,
       );
@@ -937,7 +1078,11 @@ class VetgoApiClient {
   }
 
   /// `GET /api/posts/:id/comments`
-  Future<VetJsonResult> getPostComments(String postId, {int page = 1, int limit = 40}) async {
+  Future<VetJsonResult> getPostComments(
+    String postId, {
+    int page = 1,
+    int limit = 40,
+  }) async {
     final opts = await _authorizedOptions();
     if (opts == null) return (null, 'Sesión no disponible.');
     try {
@@ -997,7 +1142,11 @@ class VetgoApiClient {
     };
     if (comment != null) body['comment'] = comment;
     try {
-      final r = await _api.post<Map<String, dynamic>>('/reviews', data: body, options: opts);
+      final r = await _api.post<Map<String, dynamic>>(
+        '/reviews',
+        data: body,
+        options: opts,
+      );
       return (r.data, null);
     } on DioException catch (e) {
       return (null, _vetDioMessage(e));
@@ -1005,7 +1154,10 @@ class VetgoApiClient {
   }
 
   /// `GET /api/profiles/:id/reviews`
-  Future<VetJsonResult> getProfileReviews(String profileId, {int page = 1}) async {
+  Future<VetJsonResult> getProfileReviews(
+    String profileId, {
+    int page = 1,
+  }) async {
     try {
       final r = await _api.get<Map<String, dynamic>>(
         '/profiles/$profileId/reviews',
@@ -1029,11 +1181,55 @@ class VetgoApiClient {
     }
   }
 
+  Future<VetJsonResult> searchProfiles({
+    required String query,
+    int limit = 20,
+  }) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.get<Map<String, dynamic>>(
+        '/profiles/search',
+        queryParameters: <String, dynamic>{'q': query, 'limit': limit},
+        options: opts,
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
   Future<VetJsonResult> getExplorePosts({int limit = 5}) async {
     try {
       final r = await _api.get<Map<String, dynamic>>(
         '/posts/explore',
         queryParameters: <String, dynamic>{'limit': limit},
+      );
+      return (r.data, null);
+    } on DioException catch (e) {
+      return (null, _vetDioMessage(e));
+    }
+  }
+
+  Future<String?> deletePost(String postId) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return 'Sesión no disponible.';
+    try {
+      await _api.delete<void>('/posts/$postId', options: opts);
+      return null;
+    } on DioException catch (e) {
+      return _vetDioMessage(e);
+    }
+  }
+
+  Future<VetJsonResult> reportPost(String postId, {String? reason}) async {
+    final opts = await _authorizedOptions();
+    if (opts == null) return (null, 'Sesión no disponible.');
+    try {
+      final r = await _api.post<Map<String, dynamic>>(
+        '/posts/$postId/report',
+        data: <String, dynamic>{'reason': reason ?? 'Contenido inapropiado'},
+        options: opts,
       );
       return (r.data, null);
     } on DioException catch (e) {
@@ -1059,7 +1255,10 @@ class _TokenRefreshInterceptor extends Interceptor {
   bool _refreshing = false;
 
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     final status = err.response?.statusCode;
     final alreadyRetried = err.requestOptions.extra['_retried'] == true;
 
@@ -1078,9 +1277,7 @@ class _TokenRefreshInterceptor extends Interceptor {
             baseUrl: _api.options.baseUrl,
             connectTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 15),
-            headers: {
-              Headers.contentTypeHeader: Headers.jsonContentType,
-            },
+            headers: {Headers.contentTypeHeader: Headers.jsonContentType},
           ),
         );
 

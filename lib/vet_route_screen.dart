@@ -58,8 +58,13 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
     await _loadSession();
     if (!mounted || _error != null) return;
     unawaited(_ensureLocationPermission());
-    _tickTimer = Timer.periodic(const Duration(seconds: 12), (_) => _pushLocationIfDue());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _pushLocationIfDue(force: true));
+    _tickTimer = Timer.periodic(
+      const Duration(seconds: 12),
+      (_) => _pushLocationIfDue(),
+    );
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _pushLocationIfDue(force: true),
+    );
   }
 
   Future<void> _loadSession() async {
@@ -67,7 +72,9 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
       _loading = true;
       _error = null;
     });
-    final (data, err) = await _api.getTrackingSession(sessionId: widget.trackingSessionId);
+    final (data, err) = await _api.getTrackingSession(
+      sessionId: widget.trackingSessionId,
+    );
     if (!mounted) return;
     if (err != null || data == null) {
       setState(() {
@@ -96,7 +103,9 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
     }
 
     final etaRaw = data['eta_minutes'];
-    final etaParsed = etaRaw is num ? etaRaw.round() : int.tryParse(etaRaw?.toString() ?? '');
+    final etaParsed = etaRaw is num
+        ? etaRaw.round()
+        : int.tryParse(etaRaw?.toString() ?? '');
     _serverEtaMin = (etaParsed != null && etaParsed >= 0) ? etaParsed : null;
 
     setState(() {
@@ -146,7 +155,8 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
       perm = await Geolocator.requestPermission();
     }
     if (!mounted) return;
-    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
       setState(() => _permissionDenied = true);
       return;
     }
@@ -157,7 +167,8 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
     if (_session == null || _error != null) return;
     final now = DateTime.now();
     if (!force &&
-        now.difference(_lastPatchAt) < const Duration(seconds: _patchMinIntervalSeconds)) {
+        now.difference(_lastPatchAt) <
+            const Duration(seconds: _patchMinIntervalSeconds)) {
       return;
     }
 
@@ -200,7 +211,11 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
       }
     } catch (_) {
       if (force && mounted) {
-        VetgoNotice.show(context, message: AppStrings.vetRoutePermisoUbicacion, isError: true);
+        VetgoNotice.show(
+          context,
+          message: AppStrings.vetRoutePermisoUbicacion,
+          isError: true,
+        );
       }
     }
   }
@@ -209,6 +224,19 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
     setState(() => _locationBusy = true);
     await _pushLocationIfDue(force: true);
     if (mounted) setState(() => _locationBusy = false);
+  }
+
+  Future<void> _closeEmergencyIfAny() async {
+    final emergencyId = _session?['emergency_id']?.toString();
+    if (emergencyId == null || emergencyId.isEmpty) return;
+    final (_, err) = await _api.closeVetEmergency(emergencyId: emergencyId);
+    if (!mounted) return;
+    if (err != null) {
+      VetgoNotice.show(context, message: err, isError: true);
+      return;
+    }
+    VetgoNotice.show(context, message: 'Emergencia cerrada.');
+    Navigator.of(context).maybePop();
   }
 
   @override
@@ -234,123 +262,148 @@ class _VetRouteScreenState extends State<VetRouteScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: scheme.primary))
           : _error != null
-              ? Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    _error!,
-                    style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
+          ? Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                _error!,
+                style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return VetRouteOsmMap(
+                          vetPoint: _vetPoint,
+                          destinationPoint: _destPoint,
+                          height: constraints.maxHeight.isFinite
+                              ? constraints.maxHeight
+                              : 320,
+                        );
+                      },
+                    ),
                   ),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return VetRouteOsmMap(
-                              vetPoint: _vetPoint,
-                              destinationPoint: _destPoint,
-                              height: constraints.maxHeight.isFinite
-                                  ? constraints.maxHeight
-                                  : 320,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      child: Text(
-                        AppStrings.mapaOsmAtribucion,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.labelSmall?.copyWith(color: muted),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                      child: VetSoftCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              _contextSubtitle(),
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            if (_noDestinationCoords && _destPoint == null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                AppStrings.vetRouteSinCoordenadasDestino,
-                                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
-                              ),
-                            ],
-                            if (_distanceKm != null && _destPoint != null) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                AppStrings.vetRouteDistanciaKm(_distanceKm!),
-                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                            if (_estimateEtaMinutes() != null && _destPoint != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                AppStrings.vetRouteEtaAproxMinutos(_estimateEtaMinutes()!),
-                                style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                              ),
-                            ],
-                            if (_serverEtaMin != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                AppStrings.vetRouteEtaServidorMinutos(_serverEtaMin!),
-                                style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                              ),
-                            ],
-                            if (_permissionDenied) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                AppStrings.vetRoutePermisoUbicacion,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.error.withValues(alpha: 0.85),
-                                  height: 1.35,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 14),
-                            FilledButton.icon(
-                              onPressed: _locationBusy ? null : _manualPush,
-                              icon: _locationBusy
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: scheme.onPrimary,
-                                      ),
-                                    )
-                                  : const Icon(Icons.my_location_rounded),
-                              label: Text(
-                                _locationBusy
-                                    ? AppStrings.vetRouteEnviandoUbicacion
-                                    : AppStrings.vetRouteActualizarUbicacion,
-                              ),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: VetOperatorColors.mintDeep,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Text(
+                    AppStrings.mapaOsmAtribucion,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  child: VetSoftCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          _contextSubtitle(),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (_noDestinationCoords && _destPoint == null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            AppStrings.vetRouteSinCoordenadasDestino,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: muted,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                        if (_distanceKm != null && _destPoint != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            AppStrings.vetRouteDistanciaKm(_distanceKm!),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        if (_estimateEtaMinutes() != null &&
+                            _destPoint != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            AppStrings.vetRouteEtaAproxMinutos(
+                              _estimateEtaMinutes()!,
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: muted,
+                            ),
+                          ),
+                        ],
+                        if (_serverEtaMin != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            AppStrings.vetRouteEtaServidorMinutos(
+                              _serverEtaMin!,
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: muted,
+                            ),
+                          ),
+                        ],
+                        if (_permissionDenied) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            AppStrings.vetRoutePermisoUbicacion,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.error.withValues(alpha: 0.85),
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        FilledButton.icon(
+                          onPressed: _locationBusy ? null : _manualPush,
+                          icon: _locationBusy
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: scheme.onPrimary,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location_rounded),
+                          label: Text(
+                            _locationBusy
+                                ? AppStrings.vetRouteEnviandoUbicacion
+                                : AppStrings.vetRouteActualizarUbicacion,
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: VetOperatorColors.mintDeep,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        if ((_session?['emergency_id']?.toString() ?? '')
+                            .isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          FilledButton.icon(
+                            onPressed: _closeEmergencyIfAny,
+                            icon: const Icon(
+                              Icons.check_circle_outline_rounded,
+                            ),
+                            label: const Text('Cerrar emergencia'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

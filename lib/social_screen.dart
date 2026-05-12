@@ -72,6 +72,7 @@ class _SocialScreenState extends State<SocialScreen> {
 
   /// Evita envíos duplicados de like en el mismo post mientras la API responde.
   final Set<String> _pendingLikePostIds = {};
+
   /// Autores seguidos desde el botón + en posts «Descubre» (sesión).
   final Set<String> _recommendedFollowedIds = {};
   final Set<String> _recommendedFollowLoadingIds = {};
@@ -113,9 +114,7 @@ class _SocialScreenState extends State<SocialScreen> {
       }
     });
     if (err != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
   }
 
@@ -164,17 +163,16 @@ class _SocialScreenState extends State<SocialScreen> {
     });
 
     // Capa 2: sugerencias y explore
-    final layer2 = await Future.wait<dynamic>([
-      suggestFuture,
-      exploreFuture,
-    ]);
+    final layer2 = await Future.wait<dynamic>([suggestFuture, exploreFuture]);
     if (!mounted) return;
 
     final suggestTuple = layer2[0] as (Map<String, dynamic>?, String?);
     final exploreTuple = layer2[1] as (Map<String, dynamic>?, String?);
 
     final suggestions = _parseSuggestions(suggestTuple.$1);
-    final exploreRaw = _parseFeedEntries(exploreTuple.$1 ?? <String, dynamic>{});
+    final exploreRaw = _parseFeedEntries(
+      exploreTuple.$1 ?? <String, dynamic>{},
+    );
     final explore = filterHomeFeedForViewer(exploreRaw, _myUserId);
 
     setState(() {
@@ -211,7 +209,9 @@ class _SocialScreenState extends State<SocialScreen> {
       [];
 
   /// Parseo del JSON del feed; usa [compute] si hay muchas filas (menos trabajo en el isolate de UI).
-  Future<List<FeedEntryVm>> _decodeFeedEntries(Map<String, dynamic> data) async {
+  Future<List<FeedEntryVm>> _decodeFeedEntries(
+    Map<String, dynamic> data,
+  ) async {
     final raw = data['posts'] as List<dynamic>?;
     final n = raw?.length ?? 0;
     if (n < 20) {
@@ -263,11 +263,11 @@ class _SocialScreenState extends State<SocialScreen> {
       case FeedPostEntryVm(:final feedAt):
         return FeedPostEntryVm(feedAt: feedAt, post: p);
       case FeedRepostEntryVm(
-          :final feedAt,
-          :final repostId,
-          :final quoteBody,
-          :final reposter,
-        ):
+        :final feedAt,
+        :final repostId,
+        :final quoteBody,
+        :final reposter,
+      ):
         return FeedRepostEntryVm(
           feedAt: feedAt,
           repostId: repostId,
@@ -319,14 +319,19 @@ class _SocialScreenState extends State<SocialScreen> {
     }
     _patchDisplayPost(
       optimistic.copyWith(
-        likeCount: (data['like_count'] as num?)?.toInt() ?? optimistic.likeCount,
-        viewerHasLiked: data['viewer_has_liked'] as bool? ?? optimistic.viewerHasLiked,
+        likeCount:
+            (data['like_count'] as num?)?.toInt() ?? optimistic.likeCount,
+        viewerHasLiked:
+            data['viewer_has_liked'] as bool? ?? optimistic.viewerHasLiked,
       ),
     );
     _pendingLikePostIds.remove(post.id);
   }
 
-  Future<void> _openPostDetail(FeedEntryVm entry, {required bool recommended}) async {
+  Future<void> _openPostDetail(
+    FeedEntryVm entry, {
+    required bool recommended,
+  }) async {
     final display = entry.displayPost;
     final timeLabel = _socialFeedRelativeTime(display.createdAt);
     final PostAuthorVm? reposter;
@@ -357,8 +362,9 @@ class _SocialScreenState extends State<SocialScreen> {
               VetgoSocialHeroineRoute<void>(
                 builder: (_) => PublicProfileScreen(
                   profileId: display.author.id,
-                  heroineAvatarFlightTag:
-                      vetgoSocialAuthorAvatarFlightTag(display.id),
+                  heroineAvatarFlightTag: vetgoSocialAuthorAvatarFlightTag(
+                    display.id,
+                  ),
                 ),
               ),
             );
@@ -376,12 +382,89 @@ class _SocialScreenState extends State<SocialScreen> {
     );
   }
 
+  Future<void> _openSearch() async {
+    await showSearch<void>(
+      context: context,
+      delegate: _ProfileSearchDelegate(api: _api),
+    );
+  }
+
+  Future<void> _handlePostMenu(PostVm post) async {
+    final isMine = post.author.id == _myUserId;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isMine)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('Eliminar publicación'),
+                onTap: () => Navigator.of(context).pop('delete'),
+              )
+            else
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Reportar publicación'),
+                onTap: () => Navigator.of(context).pop('report'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+
+    if (action == 'delete') {
+      final err = await _api.deletePost(post.id);
+      if (!mounted) return;
+      if (err != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(err)));
+        return;
+      }
+      setState(() {
+        _feedEntries = _feedEntries
+            .where((e) => e.displayPost.id != post.id)
+            .toList();
+        _exploreEntries = _exploreEntries
+            .where((e) => e.displayPost.id != post.id)
+            .toList();
+        _feedItems = _buildFeedItems(
+          _feedEntries,
+          _suggestions,
+          _exploreEntries,
+        );
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Publicación eliminada.')));
+      return;
+    }
+
+    final (_, err) = await _api.reportPost(post.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          err ?? 'Reporte recibido. Gracias por cuidar la comunidad.',
+        ),
+      ),
+    );
+  }
+
   void _dismissRecommended(FeedEntryVm entry) {
     final id = entry.displayPost.id;
     setState(() {
       _feedItems = _feedItems
-          .where((item) =>
-              !(item is _PostItem && item.recommended && item.entry.displayPost.id == id))
+          .where(
+            (item) =>
+                !(item is _PostItem &&
+                    item.recommended &&
+                    item.entry.displayPost.id == id),
+          )
           .toList();
     });
   }
@@ -395,7 +478,11 @@ class _SocialScreenState extends State<SocialScreen> {
     if (result != null && mounted) {
       setState(() {
         _feedEntries = [result, ..._feedEntries];
-        _feedItems = _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
+        _feedItems = _buildFeedItems(
+          _feedEntries,
+          _suggestions,
+          _exploreEntries,
+        );
       });
     }
   }
@@ -431,9 +518,12 @@ class _SocialScreenState extends State<SocialScreen> {
               actions: [
                 IconButton(
                   tooltip: 'Buscar',
-                  icon: const FaIcon(FontAwesomeIcons.magnifyingGlass, size: 18),
+                  icon: const FaIcon(
+                    FontAwesomeIcons.magnifyingGlass,
+                    size: 18,
+                  ),
                   color: scheme.onSurfaceVariant,
-                  onPressed: () {},
+                  onPressed: _openSearch,
                 ),
                 const SizedBox(width: 4),
               ],
@@ -522,7 +612,10 @@ class _SocialScreenState extends State<SocialScreen> {
                           onPressed: _load,
                           style: FilledButton.styleFrom(
                             shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 14,
+                            ),
                           ),
                           child: const Text('Reintentar'),
                         ),
@@ -575,43 +668,57 @@ class _SocialScreenState extends State<SocialScreen> {
                   itemBuilder: (ctx, i) {
                     final item = _feedItems[i];
                     return switch (item) {
-                      _PostItem() => _SocialFeedPostTile(
-                          entry: item.entry,
-                          recommended: item.recommended,
-                          theme: theme,
-                          scheme: scheme,
-                          myUserId: _myUserId,
-                          recommendedFollowedIds: _recommendedFollowedIds,
-                          recommendedFollowLoadingIds: _recommendedFollowLoadingIds,
-                          onRecommendedFollow: _followRecommendedAuthor,
-                          onDismissRecommended:
-                              item.recommended ? () => _dismissRecommended(item.entry) : null,
-                          onFeedUpdated: (entry) {
-                            final u = entry.displayPost;
-                            setState(() {
-                              _feedEntries = filterHomeFeedForViewer([
-                                entry,
-                                ..._feedEntries.map((e) {
-                                  if (e.displayPost.id != u.id) return e;
-                                  return _entryWithUpdatedPost(e, u);
-                                }),
-                              ], _myUserId);
-                              _exploreEntries = _exploreEntries.map((e) {
-                                if (e.displayPost.id != u.id) return e;
-                                return _entryWithUpdatedPost(e, u);
-                              }).toList();
-                              _feedItems =
-                                  _buildFeedItems(_feedEntries, _suggestions, _exploreEntries);
-                            });
-                          },
-                          onLikePost: _handleLike,
-                          onOpenPostDetail: () =>
-                              _openPostDetail(item.entry, recommended: item.recommended),
-                          onSharePost: _sharePost,
-                        )
+                      _PostItem() =>
+                        _SocialFeedPostTile(
+                              entry: item.entry,
+                              recommended: item.recommended,
+                              theme: theme,
+                              scheme: scheme,
+                              myUserId: _myUserId,
+                              recommendedFollowedIds: _recommendedFollowedIds,
+                              recommendedFollowLoadingIds:
+                                  _recommendedFollowLoadingIds,
+                              onRecommendedFollow: _followRecommendedAuthor,
+                              onDismissRecommended: item.recommended
+                                  ? () => _dismissRecommended(item.entry)
+                                  : null,
+                              onFeedUpdated: (entry) {
+                                final u = entry.displayPost;
+                                setState(() {
+                                  _feedEntries = filterHomeFeedForViewer([
+                                    entry,
+                                    ..._feedEntries.map((e) {
+                                      if (e.displayPost.id != u.id) return e;
+                                      return _entryWithUpdatedPost(e, u);
+                                    }),
+                                  ], _myUserId);
+                                  _exploreEntries = _exploreEntries.map((e) {
+                                    if (e.displayPost.id != u.id) return e;
+                                    return _entryWithUpdatedPost(e, u);
+                                  }).toList();
+                                  _feedItems = _buildFeedItems(
+                                    _feedEntries,
+                                    _suggestions,
+                                    _exploreEntries,
+                                  );
+                                });
+                              },
+                              onLikePost: _handleLike,
+                              onOpenPostDetail: () => _openPostDetail(
+                                item.entry,
+                                recommended: item.recommended,
+                              ),
+                              onSharePost: _sharePost,
+                              onMorePost: _handlePostMenu,
+                            )
                             .animate()
                             .fadeIn(duration: 260.ms, delay: (i * 20).ms)
-                            .slideY(begin: 0.03, end: 0, duration: 260.ms, curve: Curves.easeOutCubic)
+                            .slideY(
+                              begin: 0.03,
+                              end: 0,
+                              duration: 260.ms,
+                              curve: Curves.easeOutCubic,
+                            )
                             .scale(
                               begin: const Offset(0.98, 0.98),
                               end: const Offset(1, 1),
@@ -619,13 +726,11 @@ class _SocialScreenState extends State<SocialScreen> {
                               curve: Curves.easeOutCubic,
                             ),
                       _SuggestionCarouselItem() => _SuggestionCarousel(
-                          profiles: item.profiles,
-                          api: _api,
-                          theme: theme,
-                          scheme: scheme,
-                        )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: (i * 20).ms),
+                        profiles: item.profiles,
+                        api: _api,
+                        theme: theme,
+                        scheme: scheme,
+                      ).animate().fadeIn(duration: 300.ms, delay: (i * 20).ms),
                     };
                   },
                 ),
@@ -663,6 +768,7 @@ class _SocialFeedPostTile extends StatelessWidget {
     required this.onLikePost,
     required this.onOpenPostDetail,
     required this.onSharePost,
+    required this.onMorePost,
   });
 
   final FeedEntryVm entry;
@@ -678,6 +784,7 @@ class _SocialFeedPostTile extends StatelessWidget {
   final Future<void> Function(PostVm post) onLikePost;
   final VoidCallback onOpenPostDetail;
   final void Function(PostVm post) onSharePost;
+  final Future<void> Function(PostVm post) onMorePost;
 
   @override
   Widget build(BuildContext context) {
@@ -712,7 +819,8 @@ class _SocialFeedPostTile extends StatelessWidget {
       onDismissRecommended: onDismissRecommended,
       recommendedFollowed: showRecommendedFollow && followed,
       recommendedFollowLoading: showRecommendedFollow && loading,
-      onRecommendedFollowTap: showRecommendedFollow &&
+      onRecommendedFollowTap:
+          showRecommendedFollow &&
               !followed &&
               !loading &&
               onRecommendedFollow != null
@@ -727,8 +835,9 @@ class _SocialFeedPostTile extends StatelessWidget {
         VetgoSocialHeroineRoute<void>(
           builder: (_) => PublicProfileScreen(
             profileId: display.author.id,
-            heroineAvatarFlightTag:
-                vetgoSocialAuthorAvatarFlightTag(display.id),
+            heroineAvatarFlightTag: vetgoSocialAuthorAvatarFlightTag(
+              display.id,
+            ),
           ),
         ),
       ),
@@ -747,6 +856,98 @@ class _SocialFeedPostTile extends StatelessWidget {
       onCommentTap: onOpenPostDetail,
       onOpenThread: onOpenPostDetail,
       onShareTap: () => onSharePost(display),
+      onMoreTap: () => onMorePost(display),
+    );
+  }
+}
+
+class _ProfileSearchDelegate extends SearchDelegate<void> {
+  _ProfileSearchDelegate({required this.api})
+    : super(searchFieldLabel: 'Buscar perfiles');
+
+  final VetgoApiClient api;
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          onPressed: () => query = '',
+          icon: const Icon(Icons.close_rounded),
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      onPressed: () => close(context, null),
+      icon: const Icon(Icons.arrow_back_rounded),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _buildList(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildList(context);
+
+  Widget _buildList(BuildContext context) {
+    final q = query.trim();
+    if (q.length < 2) {
+      return const Center(child: Text('Escribe al menos 2 letras.'));
+    }
+    return FutureBuilder<VetJsonResult>(
+      future: api.searchProfiles(query: q),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final (data, err) = snapshot.data!;
+        if (err != null) return Center(child: Text(err));
+        final raw = data?['profiles'];
+        final profiles = raw is List
+            ? raw.whereType<Map<String, dynamic>>().toList()
+            : <Map<String, dynamic>>[];
+        if (profiles.isEmpty) {
+          return const Center(child: Text('Sin resultados.'));
+        }
+        return ListView.separated(
+          itemCount: profiles.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final p = profiles[i];
+            final id = p['id']?.toString() ?? '';
+            final avatar = p['avatar_url']?.toString();
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: avatar != null && avatar.isNotEmpty
+                    ? NetworkImage(avatar)
+                    : null,
+                child: avatar == null || avatar.isEmpty
+                    ? const Icon(Icons.person_rounded)
+                    : null,
+              ),
+              title: Text(p['full_name']?.toString() ?? 'Perfil'),
+              subtitle: Text(
+                [p['role'], p['location']]
+                    .where((e) => e != null && e.toString().isNotEmpty)
+                    .join(' · '),
+              ),
+              onTap: id.isEmpty
+                  ? null
+                  : () {
+                      close(context, null);
+                      Navigator.of(context).push<void>(
+                        VetgoSocialHeroineRoute<void>(
+                          builder: (_) => PublicProfileScreen(profileId: id),
+                        ),
+                      );
+                    },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -790,7 +991,11 @@ class _ComposeBox extends StatelessWidget {
                       ? NetworkImage(avatarUrl!)
                       : null,
                   child: avatarUrl == null || avatarUrl!.isEmpty
-                      ? Icon(Icons.person_rounded, size: 22, color: scheme.primary)
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 22,
+                          color: scheme.primary,
+                        )
                       : null,
                 ),
               ),
@@ -853,10 +1058,20 @@ class _SuggestionCarouselState extends State<_SuggestionCarousel> {
     setState(() => _loading.add(id));
     if (_following.contains(id)) {
       await widget.api.unfollowUser(id);
-      if (mounted) setState(() { _following.remove(id); _loading.remove(id); });
+      if (mounted) {
+        setState(() {
+          _following.remove(id);
+          _loading.remove(id);
+        });
+      }
     } else {
       await widget.api.followUser(id);
-      if (mounted) setState(() { _following.add(id); _loading.remove(id); });
+      if (mounted) {
+        setState(() {
+          _following.add(id);
+          _loading.remove(id);
+        });
+      }
     }
   }
 
@@ -907,8 +1122,9 @@ class _SuggestionCarouselState extends State<_SuggestionCarousel> {
                         VetgoSocialHeroineRoute<void>(
                           builder: (_) => PublicProfileScreen(
                             profileId: p.id,
-                            heroineAvatarFlightTag:
-                                vetgoSocialProfileHeroTag(p.id),
+                            heroineAvatarFlightTag: vetgoSocialProfileHeroTag(
+                              p.id,
+                            ),
                           ),
                         ),
                       ),
@@ -961,11 +1177,16 @@ class _SuggestionCard extends StatelessWidget {
               child: CircleAvatar(
                 radius: 24,
                 backgroundColor: scheme.primaryContainer,
-                backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                backgroundImage:
+                    profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                     ? NetworkImage(profile.avatarUrl!)
                     : null,
                 child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
-                    ? Icon(Icons.person_rounded, size: 24, color: scheme.primary)
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: 24,
+                        color: scheme.primary,
+                      )
                     : null,
               ),
             ),
@@ -993,33 +1214,46 @@ class _SuggestionCard extends StatelessWidget {
                     child: SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.primary,
+                      ),
                     ),
                   )
                 : isFollowing
-                    ? OutlinedButton(
-                        onPressed: onFollowTap,
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-                          side: BorderSide(color: scheme.outline.withValues(alpha: 0.45)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
-                        child: const Text('Siguiendo'),
-                      )
-                    : FilledButton(
-                        onPressed: onFollowTap,
-                        style: FilledButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          textStyle: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
-                        child: const Text('Seguir'),
+                ? OutlinedButton(
+                    onPressed: onFollowTap,
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      textStyle: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
+                      side: BorderSide(
+                        color: scheme.outline.withValues(alpha: 0.45),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text('Siguiendo'),
+                  )
+                : FilledButton(
+                    onPressed: onFollowTap,
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      textStyle: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text('Seguir'),
+                  ),
           ),
         ],
       ),

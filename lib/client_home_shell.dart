@@ -3,9 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 
 import 'package:vetgo/client_dashboard_screen.dart';
+import 'package:vetgo/client/schedule_visit_flow_screen.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
 import 'package:vetgo/emergency_sos_screen.dart';
-import 'package:vetgo/models/client_demo_data.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/profile_screen.dart';
 import 'package:vetgo/public_profile_screen.dart';
@@ -71,7 +71,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
       setState(() {
         _petsLoading = false;
         _petsError = err;
-        _pets = List<ClientPetVm>.from(ClientDemoData.pets);
+        _pets = [];
       });
       return;
     }
@@ -86,10 +86,17 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
 
   void _openSos() {
     Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => EmergencySOSScreen(pets: _pets)),
+    );
+  }
+
+  Future<void> _openSchedule() async {
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => EmergencySOSScreen(pets: _pets),
+        builder: (_) => ScheduleVisitFlowScreen(pets: _pets),
       ),
     );
+    await _loadPets();
   }
 
   void _setTab(int index) {
@@ -131,6 +138,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
         petsError: _petsError,
         onRefreshPets: _loadPets,
         onOpenEmergency: _openSos,
+        onOpenSchedule: _openSchedule,
       ),
       const SocialScreen(),
       const StoreScreen(),
@@ -177,8 +185,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
                     curve: Curves.easeOutCubic,
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                       color: color,
                       letterSpacing: 0.1,
                     ),
@@ -191,9 +198,7 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
                     width: selected ? 14 : 4,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? scheme.primary
-                          : Colors.transparent,
+                      color: selected ? scheme.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
@@ -226,33 +231,34 @@ class _ClientHomeShellState extends State<ClientHomeShell> {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: GestureDetector(
               onTap: _openSos,
-              child: Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: scheme.error.withValues(alpha: 0.28),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.sos_rounded,
-                  size: 26,
-                  color: scheme.onErrorContainer,
-                ),
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scaleXY(
-                    begin: 1,
-                    end: 1.05,
-                    duration: 1800.ms,
-                    curve: Curves.easeInOutSine,
-                  ),
+              child:
+                  Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: scheme.errorContainer,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: scheme.error.withValues(alpha: 0.28),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.sos_rounded,
+                          size: 26,
+                          color: scheme.onErrorContainer,
+                        ),
+                      )
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .scaleXY(
+                        begin: 1,
+                        end: 1.05,
+                        duration: 1800.ms,
+                        curve: Curves.easeInOutSine,
+                      ),
             ),
           ),
           buildBarItem(

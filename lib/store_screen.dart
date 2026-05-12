@@ -28,8 +28,10 @@ class _StoreScreenState extends State<StoreScreen> {
   bool _loading = true;
   String? _error;
 
-  static final NumberFormat _money =
-      NumberFormat.currency(locale: 'es_MX', symbol: r'$');
+  static final NumberFormat _money = NumberFormat.currency(
+    locale: 'es_MX',
+    symbol: r'$',
+  );
 
   @override
   void initState() {
@@ -52,8 +54,9 @@ class _StoreScreenState extends State<StoreScreen> {
     final cat = (_categoryIndex > 0 && _categoryIndex < _categories.length)
         ? _categories[_categoryIndex]
         : null;
-    final categoryParam =
-        (cat != null && cat != AppStrings.storeCategoriaTodos) ? cat : null;
+    final categoryParam = (cat != null && cat != AppStrings.storeCategoriaTodos)
+        ? cat
+        : null;
 
     final (data, err) = await _api.listProducts(
       page: 1,
@@ -105,8 +108,10 @@ class _StoreScreenState extends State<StoreScreen> {
     final sortedCats =
         catSet.where((c) => c != AppStrings.storeCategoriaTodos).toList()
           ..sort();
-    final nextCategories =
-        <String>[AppStrings.storeCategoriaTodos, ...sortedCats];
+    final nextCategories = <String>[
+      AppStrings.storeCategoriaTodos,
+      ...sortedCats,
+    ];
 
     setState(() {
       _loading = false;
@@ -193,7 +198,9 @@ class _StoreScreenState extends State<StoreScreen> {
                 style: theme.textTheme.bodyLarge,
                 decoration: InputDecoration(
                   hintText: AppStrings.storeBuscarHint,
-                  hintStyle: TextStyle(color: ClientPastelColors.mutedOn(context)),
+                  hintStyle: TextStyle(
+                    color: ClientPastelColors.mutedOn(context),
+                  ),
                   prefixIcon: Icon(
                     Icons.search_rounded,
                     color: scheme.primary.withValues(alpha: 0.85),
@@ -221,7 +228,10 @@ class _StoreScreenState extends State<StoreScreen> {
                   ),
                   suffixIcon: IconButton(
                     tooltip: AppStrings.storeBuscarTooltip,
-                    icon: Icon(Icons.arrow_forward_rounded, color: scheme.primary),
+                    icon: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: scheme.primary,
+                    ),
                     onPressed: _loadProducts,
                   ),
                 ),
@@ -250,36 +260,32 @@ class _StoreScreenState extends State<StoreScreen> {
           Expanded(
             child: _loading
                 ? Center(
-                    child: CircularProgressIndicator(
-                      color: scheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: scheme.primary),
                   )
                 : _products.isEmpty
-                    ? _StoreEmptyState(
-                        message: _error ?? AppStrings.storeSinResultados,
-                        showRetry: _error != null,
-                        onRetry: _loadProducts,
-                        isError: _error != null,
-                      )
-                    : RefreshIndicator(
-                        color: scheme.primary,
-                        onRefresh: _loadProducts,
-                        edgeOffset: 12,
-                        child: GridView.builder(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 14,
-                            crossAxisSpacing: 14,
-                            // Alto suficiente para pie (nombre + precio + CTA); la imagen usa Expanded en la tarjeta.
-                            childAspectRatio: 0.68,
-                          ),
-                          itemCount: _products.length,
-                          itemBuilder: (context, i) {
-                            final p = _products[i];
-                            return StoreProductCard(
+                ? _StoreEmptyState(
+                    message: _error ?? AppStrings.storeSinResultados,
+                    showRetry: _error != null,
+                    onRetry: _loadProducts,
+                    isError: _error != null,
+                  )
+                : RefreshIndicator(
+                    color: scheme.primary,
+                    onRefresh: _loadProducts,
+                    edgeOffset: 12,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        // Alto suficiente para pie (nombre + precio + CTA); la imagen usa Expanded en la tarjeta.
+                        childAspectRatio: 0.68,
+                      ),
+                      itemCount: _products.length,
+                      itemBuilder: (context, i) {
+                        final p = _products[i];
+                        return StoreProductCard(
                               name: p.name,
                               priceLabel: p.priceLabel,
                               imageUrl: p.imageUrl,
@@ -291,26 +297,26 @@ class _StoreScreenState extends State<StoreScreen> {
                                 VetgoNotice.show(
                                   context,
                                   message:
-                                      AppStrings.storeCarritoDemo(p.name),
+                                      '${p.name} guardado como interés. La compra queda fuera del MVP.',
                                 );
                               },
                             )
-                                .animate()
-                                .fadeIn(
-                                  delay: (35 * i).ms,
-                                  duration: 280.ms,
-                                  curve: Curves.easeOutCubic,
-                                )
-                                .slideY(
-                                  begin: 0.03,
-                                  end: 0,
-                                  delay: (35 * i).ms,
-                                  duration: 280.ms,
-                                  curve: Curves.easeOutCubic,
-                                );
-                          },
-                        ),
-                      ),
+                            .animate()
+                            .fadeIn(
+                              delay: (35 * i).ms,
+                              duration: 280.ms,
+                              curve: Curves.easeOutCubic,
+                            )
+                            .slideY(
+                              begin: 0.03,
+                              end: 0,
+                              delay: (35 * i).ms,
+                              duration: 280.ms,
+                              curve: Curves.easeOutCubic,
+                            );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -342,8 +348,9 @@ class _StoreEmptyState extends StatelessWidget {
     final iconFg = isError
         ? scheme.error
         : scheme.onSurfaceVariant.withValues(alpha: 0.65);
-    final iconData =
-        isError ? Icons.cloud_off_outlined : Icons.inventory_2_outlined;
+    final iconData = isError
+        ? Icons.cloud_off_outlined
+        : Icons.inventory_2_outlined;
 
     return Center(
       child: Padding(
@@ -352,10 +359,7 @@ class _StoreEmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             DecoratedBox(
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
               child: Padding(
                 padding: const EdgeInsets.all(22),
                 child: Icon(iconData, size: 48, color: iconFg),

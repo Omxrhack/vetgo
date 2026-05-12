@@ -34,6 +34,7 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
   bool _loading = true;
   final Map<String, bool> _routeBusy = {};
   final Map<String, bool> _claimBusy = {};
+  final Map<String, bool> _statusBusy = {};
 
   @override
   void initState() {
@@ -82,7 +83,9 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
 
   Future<void> _claimAppointment(String appointmentId) async {
     setState(() => _claimBusy[appointmentId] = true);
-    final (_, err) = await widget.api.claimVetAppointment(appointmentId: appointmentId);
+    final (_, err) = await widget.api.claimVetAppointment(
+      appointmentId: appointmentId,
+    );
     if (!mounted) return;
     setState(() => _claimBusy[appointmentId] = false);
     if (err != null) {
@@ -90,6 +93,25 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
       return;
     }
     VetgoNotice.show(context, message: AppStrings.vetScheduleCitaAsignadaOk);
+    await _load();
+  }
+
+  Future<void> _updateStatus(String appointmentId, String status) async {
+    setState(() => _statusBusy[appointmentId] = true);
+    final (_, err) = await widget.api.updateVetAppointmentStatus(
+      appointmentId: appointmentId,
+      status: status,
+    );
+    if (!mounted) return;
+    setState(() => _statusBusy[appointmentId] = false);
+    if (err != null) {
+      VetgoNotice.show(context, message: err, isError: true);
+      return;
+    }
+    VetgoNotice.show(
+      context,
+      message: status == 'completed' ? 'Cita completada.' : 'Cita actualizada.',
+    );
     await _load();
   }
 
@@ -128,15 +150,21 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                       ? SizedBox(
                           key: const ValueKey<String>('l'),
                           height: 200,
-                          child: Center(child: CircularProgressIndicator(color: scheme.primary)),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: scheme.primary,
+                            ),
+                          ),
                         )
                       : _error != null && (_schedule == null)
-                          ? Text(
-                              key: const ValueKey<String>('e'),
-                              _error!,
-                              style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
-                            )
-                          : _buildTimeline(theme),
+                      ? Text(
+                          key: const ValueKey<String>('e'),
+                          _error!,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: scheme.error,
+                          ),
+                        )
+                      : _buildTimeline(theme),
                 ),
               ),
             ),
@@ -176,32 +204,51 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
           ),
         Text(
           AppStrings.vetScheduleLineaDelDia,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 14),
         ...List.generate(list.length, (i) {
-          final row = list[i] is Map<String, dynamic> ? list[i] as Map<String, dynamic> : {};
+          final row = list[i] is Map<String, dynamic>
+              ? list[i] as Map<String, dynamic>
+              : {};
           final id = row['id']?.toString() ?? '$i';
           final vetIdAssigned = row['vet_id'];
           final isPoolAppointment = vetIdAssigned == null;
           final scheduledRaw = row['scheduled_at']?.toString();
-          final dt = scheduledRaw != null ? DateTime.tryParse(scheduledRaw)?.toLocal() : null;
-          final timeLabel = dt != null ? DateFormat('HH:mm').format(dt) : '--:--';
-          final petMap = row['pet'] is Map<String, dynamic> ? row['pet'] as Map<String, dynamic> : {};
+          final dt = scheduledRaw != null
+              ? DateTime.tryParse(scheduledRaw)?.toLocal()
+              : null;
+          final timeLabel = dt != null
+              ? DateFormat('HH:mm').format(dt)
+              : '--:--';
+          final petMap = row['pet'] is Map<String, dynamic>
+              ? row['pet'] as Map<String, dynamic>
+              : {};
           final petName = petMap['name']?.toString() ?? AppStrings.vetMascota;
           final species = petMap['species']?.toString() ?? '';
           final breed = petMap['breed']?.toString() ?? '';
-          final speciesLine = [species, breed].where((s) => s.trim().isNotEmpty).join(' \u00B7 ');
+          final speciesLine = [
+            species,
+            breed,
+          ].where((s) => s.trim().isNotEmpty).join(' \u00B7 ');
           final addr = row['client_address'] is Map<String, dynamic>
-              ? (row['client_address'] as Map<String, dynamic>)['address_text']?.toString()
+              ? (row['client_address'] as Map<String, dynamic>)['address_text']
+                    ?.toString()
               : null;
-          final vetMap = row['vet'] is Map<String, dynamic> ? row['vet'] as Map<String, dynamic> : {};
+          final vetMap = row['vet'] is Map<String, dynamic>
+              ? row['vet'] as Map<String, dynamic>
+              : {};
           final vetName = vetMap['full_name']?.toString().trim() ?? '';
           final addrNotes = row['client_address'] is Map<String, dynamic>
-              ? (row['client_address'] as Map<String, dynamic>)['address_notes']?.toString()
+              ? (row['client_address'] as Map<String, dynamic>)['address_notes']
+                    ?.toString()
               : null;
           final busy = _routeBusy[id] == true;
-          final subtitleAddr = addr?.trim().isNotEmpty == true ? addr!.trim() : AppStrings.vetScheduleSinColonia;
+          final subtitleAddr = addr?.trim().isNotEmpty == true
+              ? addr!.trim()
+              : AppStrings.vetScheduleSinColonia;
           final notes = row['notes']?.toString().trim() ?? '';
           final statusRaw = row['status']?.toString() ?? '';
 
@@ -219,10 +266,14 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                         height: 14,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: VetOperatorColors.mintDeep.withValues(alpha: 0.85),
+                          color: VetOperatorColors.mintDeep.withValues(
+                            alpha: 0.85,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: VetOperatorColors.mintSoft.withValues(alpha: 0.9),
+                              color: VetOperatorColors.mintSoft.withValues(
+                                alpha: 0.9,
+                              ),
                               blurRadius: 10,
                               spreadRadius: 2,
                             ),
@@ -236,7 +287,9 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                           margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
-                            color: VetOperatorColors.mintSoft.withValues(alpha: 0.85),
+                            color: VetOperatorColors.mintSoft.withValues(
+                              alpha: 0.85,
+                            ),
                           ),
                         ),
                     ],
@@ -253,14 +306,24 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                         borderRadius: VetSoftCard.radius,
                         child: ExpansionTile(
                           key: PageStorageKey<String>('appt_$id'),
-                          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          tilePadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          childrenPadding: const EdgeInsets.fromLTRB(
+                            16,
+                            0,
+                            16,
+                            16,
+                          ),
                           title: Row(
                             children: [
                               Expanded(
                                 child: Text(
                                   timeLabel,
-                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                               if (isPoolAppointment)
@@ -270,11 +333,18 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                     visualDensity: VisualDensity.compact,
                                     label: Text(
                                       AppStrings.vetScheduleCitaSinAsignar,
-                                      style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
-                                    backgroundColor: VetOperatorColors.peach.withValues(alpha: 0.55),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    backgroundColor: VetOperatorColors.peach
+                                        .withValues(alpha: 0.55),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ),
                             ],
@@ -284,8 +354,12 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                             children: [
                               const SizedBox(height: 4),
                               Text(
-                                speciesLine.isNotEmpty ? '$petName \u00B7 $speciesLine' : petName,
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                speciesLine.isNotEmpty
+                                    ? '$petName \u00B7 $speciesLine'
+                                    : petName,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               if (!isPoolAppointment) ...[
                                 const SizedBox(height: 8),
@@ -295,24 +369,35 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                     Icon(
                                       Icons.medical_information_outlined,
                                       size: 17,
-                                      color: VetOperatorColors.mintDeep.withValues(alpha: 0.9),
+                                      color: VetOperatorColors.mintDeep
+                                          .withValues(alpha: 0.9),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            AppStrings.vetScheduleVeterinarioTitulo,
-                                            style: theme.textTheme.labelSmall?.copyWith(
-                                              color: muted,
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                            AppStrings
+                                                .vetScheduleVeterinarioTitulo,
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(
+                                                  color: muted,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            vetName.isNotEmpty ? vetName : AppStrings.clienteCitaVeterinarioPendiente,
-                                            style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                            vetName.isNotEmpty
+                                                ? vetName
+                                                : AppStrings
+                                                      .clienteCitaVeterinarioPendiente,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: muted,
+                                                  height: 1.35,
+                                                ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -324,14 +409,20 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                               ],
                               Text(
                                 subtitleAddr,
-                                style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: muted,
+                                ),
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              if (addrNotes != null && addrNotes.trim().isNotEmpty)
+                              if (addrNotes != null &&
+                                  addrNotes.trim().isNotEmpty)
                                 Text(
                                   addrNotes.trim(),
-                                  style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: muted,
+                                    height: 1.35,
+                                  ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -350,18 +441,22 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                       padding: const EdgeInsets.only(bottom: 8),
                                       child: Text(
                                         AppStrings.vetScheduleEstado(statusRaw),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: muted,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: muted,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ),
                                   if (notes.isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
                                       child: Text(
                                         notes,
-                                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(height: 1.35),
                                       ),
                                     ),
                                   TextButton.icon(
@@ -370,32 +465,85 @@ class _VetScheduleScreenState extends State<VetScheduleScreen> {
                                       if (petId == null) return;
                                       Navigator.of(context).push<void>(
                                         MaterialPageRoute<void>(
-                                          builder: (_) => VetPatientRecordScreen(petId: petId),
+                                          builder: (_) =>
+                                              VetPatientRecordScreen(
+                                                petId: petId,
+                                              ),
                                         ),
                                       );
                                     },
                                     icon: const Icon(Icons.article_outlined),
-                                    label: Text(AppStrings.vetScheduleVerExpediente),
+                                    label: Text(
+                                      AppStrings.vetScheduleVerExpediente,
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   if (isPoolAppointment) ...[
                                     Text(
-                                      AppStrings.vetScheduleRutaRequiereAsignacion,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                      AppStrings
+                                          .vetScheduleRutaRequiereAsignacion,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: muted,
+                                            height: 1.35,
+                                          ),
                                     ),
                                     const SizedBox(height: 10),
                                     VetAsyncPrimaryButton(
                                       label: AppStrings.vetScheduleTomarCita,
                                       busy: _claimBusy[id] == true,
-                                      onPressed:
-                                          _claimBusy[id] == true ? null : () => _claimAppointment(id),
+                                      onPressed: _claimBusy[id] == true
+                                          ? null
+                                          : () => _claimAppointment(id),
                                     ),
-                                  ] else
+                                  ] else ...[
                                     VetAsyncPrimaryButton(
                                       label: AppStrings.vetScheduleIniciarRuta,
                                       busy: busy,
-                                      onPressed: busy ? null : () => _startRoute(id),
+                                      onPressed: busy
+                                          ? null
+                                          : () => _startRoute(id),
                                     ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed:
+                                                _statusBusy[id] == true ||
+                                                    statusRaw == 'completed'
+                                                ? null
+                                                : () => _updateStatus(
+                                                    id,
+                                                    'completed',
+                                                  ),
+                                            icon: const Icon(
+                                              Icons
+                                                  .check_circle_outline_rounded,
+                                            ),
+                                            label: const Text('Completar'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed:
+                                                _statusBusy[id] == true ||
+                                                    statusRaw == 'cancelled'
+                                                ? null
+                                                : () => _updateStatus(
+                                                    id,
+                                                    'cancelled',
+                                                  ),
+                                            icon: const Icon(
+                                              Icons.cancel_outlined,
+                                            ),
+                                            label: const Text('Cancelar'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

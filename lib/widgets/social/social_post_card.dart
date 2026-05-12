@@ -91,6 +91,7 @@ class SocialPostCard extends StatelessWidget {
     this.onCommentTap,
     this.onLikeTap,
     this.onShareTap,
+    this.onMoreTap,
     this.onOpenThread,
     this.brandGreen = const Color(0xFF1B8A4E),
     this.showBottomDivider = true,
@@ -121,6 +122,7 @@ class SocialPostCard extends StatelessWidget {
   final VoidCallback? onCommentTap;
   final VoidCallback? onLikeTap;
   final VoidCallback? onShareTap;
+  final VoidCallback? onMoreTap;
 
   /// Tap en el cuerpo del post (abrir hilo / detalle).
   final VoidCallback? onOpenThread;
@@ -301,6 +303,7 @@ class SocialPostCard extends StatelessWidget {
           recommendedFollowed: recommendedFollowed,
           recommendedFollowLoading: recommendedFollowLoading,
           onRecommendedFollowTap: onRecommendedFollowTap,
+          onMoreTap: onMoreTap,
           heroineAuthorFlightTag: heroineAuthorFlightTag,
         ),
       ),
@@ -494,6 +497,7 @@ class _AuthorHeaderRow extends StatelessWidget {
     this.recommendedFollowed = false,
     this.recommendedFollowLoading = false,
     this.onRecommendedFollowTap,
+    this.onMoreTap,
     this.heroineAuthorFlightTag,
   });
 
@@ -506,6 +510,7 @@ class _AuthorHeaderRow extends StatelessWidget {
   final bool recommendedFollowed;
   final bool recommendedFollowLoading;
   final VoidCallback? onRecommendedFollowTap;
+  final VoidCallback? onMoreTap;
   final String? heroineAuthorFlightTag;
 
   @override
@@ -608,7 +613,7 @@ class _AuthorHeaderRow extends StatelessWidget {
               : textColumn,
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: onMoreTap,
           icon: Icon(
             Icons.more_horiz_rounded,
             size: 22,

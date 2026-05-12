@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:vetgo/core/l10n/app_strings.dart';
 import 'package:vetgo/core/network/vetgo_api_client.dart';
+import 'package:vetgo/live_tracking_screen.dart';
 import 'package:vetgo/models/client_pet_vm.dart';
 import 'package:vetgo/pet_profile_screen.dart';
 import 'package:vetgo/vet_profile_screen.dart';
@@ -23,6 +24,7 @@ class ClientDashboardScreen extends StatefulWidget {
     this.petsError,
     required this.onRefreshPets,
     required this.onOpenEmergency,
+    required this.onOpenSchedule,
   });
 
   final String userName;
@@ -31,6 +33,7 @@ class ClientDashboardScreen extends StatefulWidget {
   final String? petsError;
   final Future<void> Function() onRefreshPets;
   final VoidCallback onOpenEmergency;
+  final Future<void> Function() onOpenSchedule;
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -80,7 +83,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     }
     final raw = data?['appointments'];
     final list = raw is List
-        ? raw.map((e) => e is Map<String, dynamic> ? e : <String, dynamic>{}).toList()
+        ? raw
+              .map((e) => e is Map<String, dynamic> ? e : <String, dynamic>{})
+              .toList()
         : <Map<String, dynamic>>[];
     setState(() {
       _apptLoading = false;
@@ -92,14 +97,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   List<Map<String, dynamic>> _upcomingAppointments() {
     final now = DateTime.now();
     final startToday = DateTime(now.year, now.month, now.day);
-    return _appointmentsRaw.where((a) {
-      final st = a['status']?.toString() ?? '';
-      if (st == 'cancelled' || st == 'completed') return false;
-      final rawT = a['scheduled_at']?.toString();
-      final t = rawT != null ? DateTime.tryParse(rawT)?.toLocal() : null;
-      if (t == null) return false;
-      return !t.isBefore(startToday);
-    }).take(12).toList();
+    return _appointmentsRaw
+        .where((a) {
+          final st = a['status']?.toString() ?? '';
+          if (st == 'cancelled' || st == 'completed') return false;
+          final rawT = a['scheduled_at']?.toString();
+          final t = rawT != null ? DateTime.tryParse(rawT)?.toLocal() : null;
+          if (t == null) return false;
+          return !t.isBefore(startToday);
+        })
+        .take(12)
+        .toList();
   }
 
   Future<void> _onRefresh() async {
@@ -110,11 +118,207 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     ]);
   }
 
+  Future<void> _openTracking() async {
+    final (data, err) = await _api.listActiveTrackingSessions();
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
+    final sessions = data?['sessions'];
+    final first = sessions is List && sessions.isNotEmpty
+        ? (sessions.first is Map<String, dynamic>
+              ? sessions.first as Map<String, dynamic>
+              : null)
+        : null;
+    final id = first?['id']?.toString();
+    if (id == null || id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay una ruta activa para rastrear.')),
+      );
+      return;
+    }
+    final ctx = first?['context'];
+    final vetName = ctx is Map<String, dynamic>
+        ? (ctx['subtitle']?.toString() ?? 'Veterinario en camino')
+        : 'Veterinario en camino';
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LiveTrackingScreen(
+          trackingSessionId: id,
+          vetName: vetName,
+          etaLabel: _etaLabel(first),
+        ),
+      ),
+    );
+  }
+
+  String _etaLabel(Map<String, dynamic>? session) {
+    final raw = session?['eta_minutes'];
+    final minutes = raw is num
+        ? raw.round()
+        : int.tryParse(raw?.toString() ?? '');
+    if (minutes == null) return 'ETA pendiente';
+    return '$minutes min';
+  }
+
+  void _showHistory() {
+    final recent = _recentAppointments();
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        if (recent.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Todavía no tienes historial de citas.'),
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          itemCount: recent.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (_, i) {
+            final row = recent[i];
+            final dt = DateTime.tryParse(
+              row['scheduled_at']?.toString() ?? '',
+            )?.toLocal();
+            final petName = row['pet'] is Map
+                ? row['pet']['name']?.toString() ?? 'Mascota'
+                : 'Mascota';
+            final canReview =
+                row['status'] == 'completed' &&
+                row['vet'] is Map &&
+                (row['vet'] as Map)['id'] != null;
+            final canCancel =
+                row['status'] == 'pending' || row['status'] == 'confirmed';
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_note_rounded),
+              title: Text(
+                petName,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: Text(
+                dt != null
+                    ? DateFormat('d MMM y · HH:mm', 'es').format(dt)
+                    : 'Fecha no disponible',
+              ),
+              trailing: canReview
+                  ? TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _openReviewDialog(row);
+                      },
+                      child: const Text('Reseñar'),
+                    )
+                  : canCancel
+                  ? TextButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _cancelAppointment(row['id'].toString());
+                      },
+                      child: const Text('Cancelar'),
+                    )
+                  : Text(row['status']?.toString() ?? ''),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _cancelAppointment(String appointmentId) async {
+    final (_, err) = await _api.cancelAppointment(appointmentId: appointmentId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(err ?? 'Cita cancelada.')));
+    if (err == null) await _loadAppointments();
+  }
+
+  Future<void> _openReviewDialog(Map<String, dynamic> row) async {
+    int rating = 5;
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Dejar reseña'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final value = i + 1;
+                  return IconButton(
+                    onPressed: () => setDialogState(() => rating = value),
+                    icon: Icon(
+                      value <= rating
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                    ),
+                  );
+                }),
+              ),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  labelText: 'Comentario opcional',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Enviar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) {
+      controller.dispose();
+      return;
+    }
+    final vet = row['vet'] as Map;
+    final (data, err) = await _api.createReview(
+      revieweeId: vet['id'].toString(),
+      appointmentId: row['id'].toString(),
+      rating: rating,
+      comment: controller.text.trim().isEmpty ? null : controller.text.trim(),
+    );
+    controller.dispose();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          err ?? (data != null ? 'Reseña enviada.' : 'Reseña recibida.'),
+        ),
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> _recentAppointments() {
     final cloned = List<Map<String, dynamic>>.from(_appointmentsRaw);
     cloned.sort((a, b) {
-      final ad = DateTime.tryParse(a['scheduled_at']?.toString() ?? '')?.toUtc();
-      final bd = DateTime.tryParse(b['scheduled_at']?.toString() ?? '')?.toUtc();
+      final ad = DateTime.tryParse(
+        a['scheduled_at']?.toString() ?? '',
+      )?.toUtc();
+      final bd = DateTime.tryParse(
+        b['scheduled_at']?.toString() ?? '',
+      )?.toUtc();
       if (ad == null && bd == null) return 0;
       if (ad == null) return 1;
       if (bd == null) return -1;
@@ -128,7 +332,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final muted = scheme.onSurface.withValues(alpha: 0.68);
-    final displayName = widget.userName.trim().isEmpty ? 'amigo' : widget.userName.trim();
+    final displayName = widget.userName.trim().isEmpty
+        ? 'amigo'
+        : widget.userName.trim();
 
     return RefreshIndicator(
       color: scheme.primary,
@@ -233,42 +439,56 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                     )
                   else if (_assignedVet != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: _AssignedVetCard(
-                        vet: _assignedVet!,
-                        onBookTap: widget.onOpenEmergency,
-                      ),
-                    )
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: _AssignedVetCard(
+                            vet: _assignedVet!,
+                            onBookTap: widget.onOpenEmergency,
+                          ),
+                        )
                         .animate()
                         .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
-                        .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutCubic),
+                        .slideY(
+                          begin: 0.03,
+                          end: 0,
+                          duration: 300.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 22),
-                    child: Row(
-                      children: [
-                        _QuickActionChip(
-                          icon: Icons.add_circle_outline_rounded,
-                          label: 'Nueva cita',
-                          onTap: widget.onOpenEmergency,
+                        padding: const EdgeInsets.only(bottom: 22),
+                        child: Row(
+                          children: [
+                            _QuickActionChip(
+                              icon: Icons.add_circle_outline_rounded,
+                              label: 'Nueva cita',
+                              onTap: () {
+                                widget.onOpenSchedule();
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            _QuickActionChip(
+                              icon: Icons.history_rounded,
+                              label: 'Historial',
+                              onTap: _showHistory,
+                            ),
+                            const SizedBox(width: 10),
+                            _QuickActionChip(
+                              icon: Icons.map_outlined,
+                              label: 'Rastrear',
+                              onTap: () {
+                                _openTracking();
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        _QuickActionChip(
-                          icon: Icons.history_rounded,
-                          label: 'Historial',
-                          onTap: () {},
-                        ),
-                        const SizedBox(width: 10),
-                        _QuickActionChip(
-                          icon: Icons.map_outlined,
-                          label: 'Rastrear',
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
-                  )
+                      )
                       .animate()
                       .fadeIn(duration: 280.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.03, end: 0, duration: 280.ms, curve: Curves.easeOutCubic),
+                      .slideY(
+                        begin: 0.03,
+                        end: 0,
+                        duration: 280.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                   if (widget.petsError != null && widget.petsError!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -277,12 +497,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Icon(Icons.cloud_off_rounded, color: scheme.error, size: 26),
+                            Icon(
+                              Icons.cloud_off_rounded,
+                              color: scheme.error,
+                              size: 26,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 '${AppStrings.mascotasErrorParcial} (${widget.petsError})',
-                                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: muted,
+                                  height: 1.35,
+                                ),
                               ),
                             ),
                           ],
@@ -290,57 +517,95 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                       ),
                     ),
                   DashboardSection(
-                    title: AppStrings.tusMascotas,
-                    subtitleColor: muted,
-                    bottomSpacing: 22,
-                    spacingBeforeChild: 10,
-                    trailing: TextButton(
-                      onPressed: widget.pets.isEmpty
-                          ? null
-                          : () {
-                              Navigator.of(context).push<void>(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => PetProfileScreen(pet: widget.pets.first),
-                                ),
-                              );
-                            },
-                      child: const Text(AppStrings.verExpediente),
-                    ),
-                    child: _buildPetsSection(theme, muted),
-                  )
+                        title: AppStrings.tusMascotas,
+                        subtitleColor: muted,
+                        bottomSpacing: 22,
+                        spacingBeforeChild: 10,
+                        trailing: TextButton(
+                          onPressed: widget.pets.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.of(context).push<void>(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => PetProfileScreen(
+                                        pet: widget.pets.first,
+                                        onChanged: widget.onRefreshPets,
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: const Text(AppStrings.verExpediente),
+                        ),
+                        child: _buildPetsSection(theme, muted),
+                      )
                       .animate()
                       .fadeIn(duration: 320.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.03, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
+                      .slideY(
+                        begin: 0.03,
+                        end: 0,
+                        duration: 320.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                   DashboardSection(
-                    title: AppStrings.clienteProximasCitas,
-                    subtitleColor: muted,
-                    bottomSpacing: 18,
-                    spacingBeforeChild: 10,
-                    child: _buildClientAppointmentsSection(theme, muted),
-                  )
+                        title: AppStrings.clienteProximasCitas,
+                        subtitleColor: muted,
+                        bottomSpacing: 18,
+                        spacingBeforeChild: 10,
+                        child: _buildClientAppointmentsSection(theme, muted),
+                      )
                       .animate()
-                      .fadeIn(delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.03, end: 0, delay: 25.ms, duration: 340.ms, curve: Curves.easeOutCubic),
+                      .fadeIn(
+                        delay: 25.ms,
+                        duration: 340.ms,
+                        curve: Curves.easeOutCubic,
+                      )
+                      .slideY(
+                        begin: 0.03,
+                        end: 0,
+                        delay: 25.ms,
+                        duration: 340.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                   DashboardSection(
-                    title: AppStrings.clienteSaludTitulo,
-                    subtitleColor: muted,
-                    bottomSpacing: 22,
-                    spacingBeforeChild: 10,
-                    child: _buildHealthRemindersSection(theme, muted),
-                  )
+                        title: AppStrings.clienteSaludTitulo,
+                        subtitleColor: muted,
+                        bottomSpacing: 22,
+                        spacingBeforeChild: 10,
+                        child: _buildHealthRemindersSection(theme, muted),
+                      )
                       .animate()
-                      .fadeIn(delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.04, end: 0, delay: 50.ms, duration: 380.ms, curve: Curves.easeOutCubic),
+                      .fadeIn(
+                        delay: 50.ms,
+                        duration: 380.ms,
+                        curve: Curves.easeOutCubic,
+                      )
+                      .slideY(
+                        begin: 0.04,
+                        end: 0,
+                        delay: 50.ms,
+                        duration: 380.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                   DashboardSection(
-                    title: AppStrings.clienteActividadTitulo,
-                    subtitleColor: muted,
-                    bottomSpacing: 16,
-                    spacingBeforeChild: 10,
-                    child: _buildRecentActivitySection(theme, muted),
-                  )
+                        title: AppStrings.clienteActividadTitulo,
+                        subtitleColor: muted,
+                        bottomSpacing: 16,
+                        spacingBeforeChild: 10,
+                        child: _buildRecentActivitySection(theme, muted),
+                      )
                       .animate()
-                      .fadeIn(delay: 100.ms, duration: 400.ms, curve: Curves.easeOutCubic)
-                      .slideY(begin: 0.04, end: 0, delay: 100.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                      .fadeIn(
+                        delay: 100.ms,
+                        duration: 400.ms,
+                        curve: Curves.easeOutCubic,
+                      )
+                      .slideY(
+                        begin: 0.04,
+                        end: 0,
+                        delay: 100.ms,
+                        duration: 400.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
                 ],
               ),
             ),
@@ -372,7 +637,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       );
     } else {
       final first = upcoming.first;
-      final dt = DateTime.tryParse(first['scheduled_at']?.toString() ?? '')?.toLocal();
+      final dt = DateTime.tryParse(
+        first['scheduled_at']?.toString() ?? '',
+      )?.toLocal();
       if (dt != null) {
         final pretty =
             '${DateFormat('d MMM', 'es').format(dt)} a las ${DateFormat.Hm('es').format(dt)}';
@@ -398,7 +665,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     final scheme = theme.colorScheme;
 
     return _animatedSectionState(
-      stateKey: 'health_${reminders.length}_${widget.pets.length}_${upcoming.length}',
+      stateKey:
+          'health_${reminders.length}_${widget.pets.length}_${upcoming.length}',
       child: ClientSoftCard(
         color: scheme.secondaryContainer.withValues(alpha: 0.32),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -446,7 +714,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Text(
             AppStrings.clienteActividadVacia,
-            style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: muted,
+              height: 1.35,
+            ),
           ),
         );
       } else {
@@ -455,16 +726,16 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < recent.length; i++)
-              ActivityTimelineTile(row: recent[i], isLast: i == recent.length - 1),
+              ActivityTimelineTile(
+                row: recent[i],
+                isLast: i == recent.length - 1,
+              ),
           ],
         );
       }
     }
 
-    return _animatedSectionState(
-      stateKey: stateKey,
-      child: content,
-    );
+    return _animatedSectionState(stateKey: stateKey, child: content);
   }
 
   Widget _buildClientAppointmentsSection(ThemeData theme, Color muted) {
@@ -484,12 +755,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Icon(Icons.calendar_month_rounded, color: theme.colorScheme.error, size: 26),
+            Icon(
+              Icons.calendar_month_rounded,
+              color: theme.colorScheme.error,
+              size: 26,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 AppStrings.clienteCitasErrorCarga,
-                style: theme.textTheme.bodySmall?.copyWith(color: muted, height: 1.35),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: muted,
+                  height: 1.35,
+                ),
               ),
             ),
           ],
@@ -503,20 +781,30 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Text(
             AppStrings.clienteSinCitasProgramadas,
-            style: theme.textTheme.bodyMedium?.copyWith(color: muted, height: 1.35),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: muted,
+              height: 1.35,
+            ),
           ),
         );
       } else {
         stateKey = 'appointments_list_${upcoming.length}';
         final first = upcoming.first;
         final rawDt = first['scheduled_at']?.toString();
-        final apptDt = rawDt != null ? DateTime.tryParse(rawDt)?.toLocal() : null;
-        final dayNum = apptDt != null ? DateFormat('d', 'es').format(apptDt) : '—';
+        final apptDt = rawDt != null
+            ? DateTime.tryParse(rawDt)?.toLocal()
+            : null;
+        final dayNum = apptDt != null
+            ? DateFormat('d', 'es').format(apptDt)
+            : '—';
         final monthAbbr = apptDt != null
             ? DateFormat('MMM', 'es').format(apptDt).toUpperCase()
             : '';
-        final timeLabel = apptDt != null ? DateFormat('h:mm a', 'es').format(apptDt) : '—';
-        final petName = (first['pet'] is Map ? first['pet']['name']?.toString() : null) ??
+        final timeLabel = apptDt != null
+            ? DateFormat('h:mm a', 'es').format(apptDt)
+            : '—';
+        final petName =
+            (first['pet'] is Map ? first['pet']['name']?.toString() : null) ??
             AppStrings.vetMascota;
         final vetMap = first['vet'] is Map<String, dynamic>
             ? first['vet'] as Map<String, dynamic>
@@ -584,7 +872,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                           Text(
                             vetName,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.55,
+                              ),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -615,19 +905,24 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                     final aDt = DateTime.tryParse(
                       a['scheduled_at']?.toString() ?? '',
                     )?.toLocal();
-                    final aPet = (a['pet'] is Map
-                        ? a['pet']['name']?.toString()
-                        : null) ??
+                    final aPet =
+                        (a['pet'] is Map
+                            ? a['pet']['name']?.toString()
+                            : null) ??
                         AppStrings.vetMascota;
                     return ClientSoftCard(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 14,
-                              color: theme.colorScheme.primary),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
                           const SizedBox(width: 6),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,8 +930,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                             children: [
                               Text(
                                 aDt != null
-                                    ? DateFormat('d MMM · H:mm', 'es')
-                                        .format(aDt)
+                                    ? DateFormat(
+                                        'd MMM · H:mm',
+                                        'es',
+                                      ).format(aDt)
                                     : '—',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -645,8 +942,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                               Text(
                                 aPet,
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.55),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.55,
+                                  ),
                                 ),
                               ),
                             ],
@@ -663,10 +961,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       }
     }
 
-    return _animatedSectionState(
-      stateKey: stateKey,
-      child: content,
-    );
+    return _animatedSectionState(stateKey: stateKey, child: content);
   }
 
   Widget _buildPetsSection(ThemeData theme, Color muted) {
@@ -712,7 +1007,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               onTap: () {
                 Navigator.of(context).push<void>(
                   MaterialPageRoute<void>(
-                    builder: (_) => PetProfileScreen(pet: p),
+                    builder: (_) => PetProfileScreen(
+                      pet: p,
+                      onChanged: widget.onRefreshPets,
+                    ),
                   ),
                 );
               },
@@ -722,13 +1020,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       );
     }
 
-    return _animatedSectionState(
-      stateKey: stateKey,
-      child: content,
-    );
+    return _animatedSectionState(stateKey: stateKey, child: content);
   }
 
-  Widget _animatedSectionState({required String stateKey, required Widget child}) {
+  Widget _animatedSectionState({
+    required String stateKey,
+    required Widget child,
+  }) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 240),
       reverseDuration: const Duration(milliseconds: 180),
@@ -744,20 +1042,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ),
         );
       },
-      child: KeyedSubtree(
-        key: ValueKey<String>(stateKey),
-        child: child,
-      ),
+      child: KeyedSubtree(key: ValueKey<String>(stateKey), child: child),
     );
   }
 }
 
-
 class _AssignedVetCard extends StatelessWidget {
-  const _AssignedVetCard({
-    required this.vet,
-    required this.onBookTap,
-  });
+  const _AssignedVetCard({required this.vet, required this.onBookTap});
 
   final Map<String, dynamic> vet;
   final VoidCallback onBookTap;
@@ -771,7 +1062,9 @@ class _AssignedVetCard extends StatelessWidget {
     final specialty = vet['specialty']?.toString().isNotEmpty == true
         ? vet['specialty'].toString()
         : 'Medicina veterinaria general';
-    final since = DateTime.tryParse(vet['relationship_since']?.toString() ?? '');
+    final since = DateTime.tryParse(
+      vet['relationship_since']?.toString() ?? '',
+    );
     final sinceLabel = since != null
         ? 'Cliente desde ${DateFormat('MMMM yyyy', 'es').format(since)}'
         : 'Tu veterinario de confianza';
@@ -792,8 +1085,9 @@ class _AssignedVetCard extends StatelessWidget {
           CircleAvatar(
             radius: 36,
             backgroundColor: scheme.primaryContainer,
-            backgroundImage:
-                avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                ? NetworkImage(avatarUrl)
+                : null,
             child: avatarUrl == null || avatarUrl.isEmpty
                 ? Icon(Icons.person_rounded, size: 36, color: scheme.primary)
                 : null,
@@ -834,7 +1128,10 @@ class _AssignedVetCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: scheme.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(20),
@@ -842,7 +1139,11 @@ class _AssignedVetCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.favorite_rounded, size: 11, color: scheme.primary),
+                      Icon(
+                        Icons.favorite_rounded,
+                        size: 11,
+                        color: scheme.primary,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         sinceLabel,
@@ -903,7 +1204,9 @@ class _PetCarouselTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
               child: SizedBox(
                 height: 118,
                 child: pet.photoUrl != null && pet.photoUrl!.isNotEmpty
@@ -942,7 +1245,10 @@ class _PetCarouselTile extends StatelessWidget {
                   if (apptChip != null) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: scheme.primary.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(20),
@@ -950,7 +1256,11 @@ class _PetCarouselTile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.calendar_today_rounded, size: 10, color: scheme.primary),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 10,
+                            color: scheme.primary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             apptChip,
@@ -973,14 +1283,12 @@ class _PetCarouselTile extends StatelessWidget {
   }
 
   Widget _petPlaceholder(ColorScheme scheme) => Container(
-        color: scheme.primaryContainer,
-        child: Center(
-          child: Icon(Icons.pets_rounded, color: scheme.primary, size: 40),
-        ),
-      );
+    color: scheme.primaryContainer,
+    child: Center(
+      child: Icon(Icons.pets_rounded, color: scheme.primary, size: 40),
+    ),
+  );
 }
-
-
 
 class _HealthReminderModel {
   const _HealthReminderModel({required this.icon, required this.text});
